@@ -76,7 +76,7 @@ public abstract class EnumPanel<E extends SimEnum> extends JPanel {
 
 		JLabel titleLabel = new JLabel(title);
 		GridBagConstraints gbc_flow = new GridBagConstraints();
-		gbc_flow.insets = new Insets(0, 0, 5, 5);
+		gbc_flow.insets = new Insets(5, 5, 5, 5);
 		gbc_flow.gridx = 0;
 		gbc_flow.gridy = 0;
 		add(titleLabel, gbc_flow);

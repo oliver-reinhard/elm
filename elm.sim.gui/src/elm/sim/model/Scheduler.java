@@ -48,14 +48,40 @@ public class Scheduler extends AbstractSimObject {
 		if (oldValue != newValue) {
 			status = newValue;
 			fireModelChanged(Attribute.STATUS, oldValue, newValue);
+			if (newValue == Status.OVERLOAD) {
+				simulateWaitTime();
+			}
 		}
+	}
+
+	private void simulateWaitTime() {
+		Thread thread = new Thread("Wait Time Simulator") {
+			@Override
+			public synchronized void run() {
+				for(int t = 6; t>=0; t--) {
+					setWaitingTimeSeconds(t);
+					try {
+						wait(1000);
+					} catch (InterruptedException e) {
+						break;
+					}
+				}
+				setStatus(Status.SATURATION);
+			}
+		};
+		thread.start();
 	}
 
 	public Status getStatus() {
 		return status;
 	}
 
-	public void setWaitingTimeSeconds(int newValue) {
+	/**
+	 * Should not be invoked from outside the scheduler.
+	 * 
+	 * @param newValue
+	 */
+	protected void setWaitingTimeSeconds(int newValue) {
 		assert newValue >= 0;
 		int oldValue = waitingTimeSeconds;
 		if (oldValue != newValue) {

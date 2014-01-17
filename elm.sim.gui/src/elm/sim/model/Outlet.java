@@ -186,6 +186,7 @@ public class Outlet extends AbstractSimObject {
 					setDemandEnabled(DemandEnablement.OFF);
 					LOG.info("A2 - turn current flow off in Overload");
 				} else {
+					setStatus(schedulerStatus);
 					// allow to increase or decrease the demand
 					setDemandEnabled(DemandEnablement.UP_DOWN);
 					LOG.info("A3 - turn current flow off");

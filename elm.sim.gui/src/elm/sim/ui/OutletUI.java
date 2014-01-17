@@ -13,6 +13,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.border.EtchedBorder;
 
 import elm.sim.metamodel.SimModelEvent;
@@ -89,35 +90,43 @@ public class OutletUI extends JPanel {
 	private final SimModelListener modelListener = new SimModelListener() {
 
 		@Override
-		public void modelChanged(SimModelEvent e) {
-			if (!model.equals(e.getSource())) {
-				throw new IllegalArgumentException("Wrong event source: " + e.getSource().toString());
+		public void modelChanged(final SimModelEvent event) {
+			if (!model.equals(event.getSource())) {
+				throw new IllegalArgumentException("Wrong event source: " + event.getSource().toString());
 			}
+			// Update widget's on Swing thread (invocation comes from scheduler on its own thread)
+			SwingUtilities.invokeLater(new Runnable() {
+				@Override
+				public void run() {
 
-			switch ((Outlet.Attribute) e.getAttribute()) {
-			case DEMAND_FLOW:
-				demandFlow.setSelection((Flow) e.getNewValue());
-				break;
-			case DEMAND_TEMPERATURE:
-				demandTemperature.setSelection((Temperature) e.getNewValue());
-				break;
-			case DEMAND_ENABLEMENT:
-				setDemandEnablement((DemandEnablement) e.getNewValue());
-				break;
-			case STATUS:
-				setStatus((Status) e.getNewValue());
-				break;
-			case WAITING_TIME_PERCENT:
-				setWaitingTimePercent((int) e.getNewValue());
-				break;
-			case ACTUAL_FLOW:
-				actualFlow.setSelection((Flow) e.getNewValue());
-				break;
-			case NAME:
-				// cannot change
-			default:
-				throw new IllegalArgumentException(e.getAttribute().id());
-			}
+					switch ((Outlet.Attribute) event.getAttribute()) {
+					case DEMAND_FLOW:
+						demandFlow.setSelection((Flow) event.getNewValue());
+						break;
+					case DEMAND_TEMPERATURE:
+						demandTemperature.setSelection((Temperature) event.getNewValue());
+						break;
+					case DEMAND_ENABLEMENT:
+						setDemandEnablement((DemandEnablement) event.getNewValue());
+						break;
+					case STATUS:
+						setStatus((Status) event.getNewValue());
+						break;
+					case WAITING_TIME_PERCENT:
+						if (model.getStatus() == Status.OVERLOAD) {
+							setWaitingTimePercent((int) event.getNewValue());
+						}
+						break;
+					case ACTUAL_FLOW:
+						actualFlow.setSelection((Flow) event.getNewValue());
+						break;
+					case NAME:
+						// cannot change
+					default:
+						throw new IllegalArgumentException(event.getAttribute().id());
+					}
+				}
+			});
 		}
 	};
 
@@ -228,21 +237,21 @@ public class OutletUI extends JPanel {
 			demandFlow.setEnabled(false);
 			break;
 		case DOWN:
-			demandFlow.setEnabled(true);  // enable all
+			demandFlow.setEnabled(true); // enable all
 			List<Flow> list = new ArrayList<Flow>();
 			for (Flow flow : Flow.values()) {
 				if (flow.greaterThan(model.getDemandFlow())) {
 					list.add(flow);
 				}
 			}
-			demandFlow.setEnabled(false, list.toArray(new Flow[] {}));  // enable all
+			demandFlow.setEnabled(false, list.toArray(new Flow[] {})); // enable all
 			break;
 		case UP_DOWN:
 			demandFlow.setEnabled(true);
 			break;
 		default:
 			throw new IllegalArgumentException(enablement.toString());
-		
+
 		}
 	}
 
