@@ -323,25 +323,31 @@ public class OutletUI extends JPanel {
 		if (schedulerStatus == Status.ERROR) {
 			outletStatus = Status.ERROR;
 			BLINKER.start(status);
+		} else if (schedulerStatus == Status.OFF) {
+			outletStatus = Status.OFF;
+			status.setIcon(SimulationUtil.getIcon(outletStatus));
 		} else {
 			if (this.on) {
 				outletStatus = Status.ON;
-			} else	if (schedulerStatus == Status.OVERLOAD) {
+			} else if (schedulerStatus == Status.OVERLOAD) {
 				outletStatus = Status.OVERLOAD;
 				this.waitingTimePercent.setEnabled(true);
 				this.waitingTimePercent.setValue(waitingTimePercent);
-			} else if (schedulerStatus == Status.OFF) {
-				outletStatus = Status.OFF;
+
 			} else {
 				outletStatus = schedulerStatus;
 			}
 			status.setIcon(SimulationUtil.getIcon(outletStatus));
-			updatedOnOffEnablement();
 		}
+		updatedOnOffEnablement();
 	}
-	
+
 	private void updatedOnOffEnablement() {
-		onOff.setEnabled(outletStatus == Status.ON || outletStatus == Status.SATURATION);
+		boolean enable = outletStatus == Status.ON || outletStatus == Status.SATURATION;
+		if (!enable) {
+			setOn(false);
+		}
+		onOff.setEnabled(enable);
 	}
 
 	@Override
@@ -398,7 +404,7 @@ public class OutletUI extends JPanel {
 			throw new IllegalArgumentException();
 		}
 	}
-	
+
 	private void setOn(boolean on) {
 		this.on = on;
 		onOff.setSelected(on);

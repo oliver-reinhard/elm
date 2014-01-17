@@ -22,7 +22,7 @@ public class SchedulerModel {
 	}
 
 	/**
-	 * This constructor implies {@link Status#ERROR}.
+	 * This constructor implies {@link Status#OVERLOAD}.
 	 * 
 	 * @param waitingTimePercent
 	 *            must be {@code > 0} and {@code <= 100}
@@ -33,14 +33,14 @@ public class SchedulerModel {
 	}
 
 	/**
-	 * This constructor implies that the passed status is <em>not</em> {@link Status#ERROR} and thus that the waiting time is {@code 0}.
+	 * This constructor implies that the passed status is <em>not</em> {@link Status#OVERLOAD} and thus that the waiting time is {@code 0}.
 	 * 
 	 * @param status
-	 *            cannot be {@link Status#ERROR}
+	 *            cannot be {@link Status#OVERLOAD}
 	 */
 	public SchedulerModel(Status status) {
 		this(status, 0);
-		assert status != Status.ERROR;
+		assert status != Status.OVERLOAD;
 	}
 
 	public Status getStatus() {
@@ -48,7 +48,7 @@ public class SchedulerModel {
 	}
 
 	/**
-	 * The waiting time is only set if {@link #getStatus()} returns {@link Status#ERROR}.
+	 * The waiting time is only set if {@link #getStatus()} returns {@link Status#OVERLOAD}.
 	 * 
 	 * @return a value between {@code 0} and {@code 100}
 	 */

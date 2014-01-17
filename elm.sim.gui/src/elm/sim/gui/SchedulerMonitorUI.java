@@ -142,6 +142,7 @@ public class SchedulerMonitorUI extends JPanel {
 
 		statusError = new JRadioButton(Status.ERROR.getLabel());
 		statusError.setFocusable(false);
+		statusError.addActionListener(statusListener);
 		GridBagConstraints gbc_status5 = new GridBagConstraints();
 		gbc_status5.anchor = GridBagConstraints.WEST;
 		gbc_status5.insets = new Insets(0, 0, 5, 0);
