@@ -1,6 +1,8 @@
 package elm.sim.model;
 
-public enum Temperature {
+import elm.sim.metamodel.SimEnum;
+
+public enum Temperature implements SimEnum {
 	TEMP_1(30), TEMP_2(38), TEMP_3(42), TEMP_4(48);
 
 	private final int degreesCelsius;
@@ -15,5 +17,13 @@ public enum Temperature {
 
 	public String getLabel() {
 		return Integer.toString(degreesCelsius) + "°C";
+	}
+	
+	public boolean greaterThan(Temperature other) {
+		return this.getDegreesCelsius() > other.getDegreesCelsius();
+	}
+	
+	public boolean lessThan(Temperature other) {
+		return this.getDegreesCelsius() < other.getDegreesCelsius();
 	}
 }

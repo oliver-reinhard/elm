@@ -1,8 +1,10 @@
 package elm.sim.model;
 
-public enum Flow {
+import elm.sim.metamodel.SimEnum;
+
+public enum Flow implements SimEnum {
 	
-	LOW(4, "wenig"), MEDIUM(8, "mittel"), HIGH(12, "viel");
+	NONE(0, "aus"), LOW(4, "wenig"), MEDIUM(8, "mittel"), HIGH(12, "viel");
 	
 	private final int litresPerMinute;
 	private final String label;
@@ -18,5 +20,13 @@ public enum Flow {
 
 	public String getLabel() {
 		return label;
+	}
+	
+	public boolean greaterThan(Flow other) {
+		return this.getLitresPerMinute() > other.getLitresPerMinute();
+	}
+	
+	public boolean lessThan(Flow other) {
+		return this.getLitresPerMinute() < other.getLitresPerMinute();
 	}
 }

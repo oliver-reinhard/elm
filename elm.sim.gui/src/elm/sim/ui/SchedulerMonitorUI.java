@@ -17,7 +17,9 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.border.EtchedBorder;
 
-import elm.sim.model.SchedulerModel;
+import elm.sim.metamodel.SimModelEvent;
+import elm.sim.metamodel.SimModelListener;
+import elm.sim.model.Scheduler;
 import elm.sim.model.Status;
 
 public class SchedulerMonitorUI extends JPanel {
@@ -27,7 +29,7 @@ public class SchedulerMonitorUI extends JPanel {
 	private static final Logger LOG = Logger.getLogger(SchedulerMonitorUI.class.getName());
 
 	// State
-	private Status status;
+	private final Scheduler model;
 
 	// Widgets
 	private final JRadioButton statusOff;
@@ -46,7 +48,7 @@ public class SchedulerMonitorUI extends JPanel {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			Object src = e.getSource();
-			Status oldStatus = status;
+			Status status;
 			if (src == statusOff)
 				status = Status.OFF;
 			else if (src == statusOn)
@@ -60,14 +62,37 @@ public class SchedulerMonitorUI extends JPanel {
 			else
 				throw new IllegalStateException();
 			info("Status changed: " + status.getLabel());
-			firePropertyChange(SchedulerModel.Properties.STATUS.id(), oldStatus, status);
+			model.setStatus(status);
+		}
+	};
+
+	private final SimModelListener modelListener = new SimModelListener() {
+
+		@Override
+		public void modelChanged(SimModelEvent e) {
+			if (!model.equals(e.getSource())) {
+				throw new IllegalArgumentException("Wrong event source: " + e.getSource().toString());
+			}
+
+			switch ((Scheduler.Attribute) e.getAttribute()) {
+			case STATUS:
+				break;
+			case WAITING_TIME_SECONDS:
+				break;
+			default:
+				throw new IllegalArgumentException(e.getAttribute().id());
+			}
 		}
 	};
 
 	/**
 	 * Create the panel.
 	 */
-	public SchedulerMonitorUI() {
+	public SchedulerMonitorUI(Scheduler model) {
+		assert model != null;
+		this.model = model;
+		model.addModelListener(modelListener);
+
 		GridBagLayout gridBagLayout = new GridBagLayout();
 		gridBagLayout.columnWidths = new int[] { 0, 0 };
 		gridBagLayout.columnWeights = new double[] { 1.0, Double.MIN_VALUE };
@@ -192,6 +217,39 @@ public class SchedulerMonitorUI extends JPanel {
 		gbc_outlets.gridx = 0;
 		gbc_outlets.gridy = 5;
 		add(outlets, gbc_outlets);
+
+		updateFromModel(model);
+	}
+
+	private void updateFromModel(Scheduler model) {
+		setStatus(model.getStatus());
+	}
+
+	public Scheduler getModel() {
+		return model;
+	}
+
+	private void setStatus(Status status) {
+		assert status != null;
+		switch (status) {
+		case ON:
+			statusOn.setSelected(true);
+			break;
+		case OFF:
+			statusOff.setSelected(true);
+			break;
+		case SATURATION:
+			statusSaturation.setSelected(true);
+			break;
+		case OVERLOAD:
+			statusOverload.setSelected(true);
+			break;
+		case ERROR:
+			statusError.setSelected(true);
+			break;
+		default:
+			throw new IllegalArgumentException(status.toString());
+		}
 	}
 
 	private void info(String msg) {

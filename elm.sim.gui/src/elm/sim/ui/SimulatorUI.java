@@ -3,16 +3,15 @@ package elm.sim.ui;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
-import elm.sim.model.Flow;
-import elm.sim.model.OutletModel;
-import elm.sim.model.SchedulerModel;
+import elm.sim.metamodel.SimModelEvent;
+import elm.sim.metamodel.SimModelListener;
+import elm.sim.model.Outlet;
+import elm.sim.model.Scheduler;
 import elm.sim.model.Status;
 import elm.sim.model.Temperature;
 
@@ -25,14 +24,14 @@ public class SimulatorUI extends JFrame {
 
 	public SimulatorUI() {
 		setTitle("Dusche");
-		setSize(400, 300);
+		setSize(500, 300);
 		setLocationRelativeTo(null);
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
 		JPanel panel = new JPanel();
 		GridBagLayout gbl = new GridBagLayout();
 		panel.setLayout(gbl);
 		
-		outlet_1 = new OutletUI("Dusche");
+		outlet_1 = new OutletUI(new Outlet("Dusche", Temperature.TEMP_3));
 
 		GridBagConstraints gbc_outlet1 = new GridBagConstraints();
 		gbc_outlet1.insets = new Insets(5, 5, 5, 5);
@@ -40,7 +39,7 @@ public class SimulatorUI extends JFrame {
 		gbc_outlet1.gridy = 0;
 		panel.add(outlet_1, gbc_outlet1);
 		
-		scheduler = new SchedulerMonitorUI();
+		scheduler = new SchedulerMonitorUI(new Scheduler());
 		GridBagConstraints gbc_scheduler = new GridBagConstraints();
 		gbc_scheduler.insets = new Insets(5, 5, 5, 5);
 		gbc_scheduler.gridx = 1;
@@ -49,30 +48,27 @@ public class SimulatorUI extends JFrame {
 		
 		getContentPane().add(panel);
 		
-		outlet_1.setModel(new OutletModel(null, Flow.HIGH, Temperature.TEMP_1, false));
-		// outlet_1.setModel(new SchedulerModel(70));
-		outlet_1.setModel(new SchedulerModel(Status.SATURATION));
-		outlet_1.addPropertyChangeListener(new PropertyChangeListener() {
-
+		
+		outlet_1.getModel().addModelListener(new SimModelListener() {
+			
 			@Override
-			public void propertyChange(PropertyChangeEvent evt) {
-				System.out.println("PCL: source = " + evt.getSource());
-				System.out.println("PCL: value = " + evt.getPropertyName() + ": " + evt.getOldValue() + " --> " + evt.getNewValue());
+			public void modelChanged(SimModelEvent e) {
+				System.out.println("PCL: source = " + e.getSource());
+				System.out.println("PCL: value = " + e.getAttribute().id() + ": " + e.getOldValue() + " --> " + e.getNewValue());
 			}
 		});
-		
-		scheduler.addPropertyChangeListener(new PropertyChangeListener() {
 
+		scheduler.getModel().addModelListener(new SimModelListener() {
+			
 			@Override
-			public void propertyChange(PropertyChangeEvent evt) {
-				System.out.println("PCL: source = " + evt.getSource());
-				System.out.println("PCL: value = " + evt.getPropertyName() + ": " + evt.getOldValue() + " --> " + evt.getNewValue());
+			public void modelChanged(SimModelEvent e) {
+				System.out.println("PCL: source = " + e.getSource());
+				System.out.println("PCL: value = " + e.getAttribute().id() + ": " + e.getOldValue() + " --> " + e.getNewValue());
 				
-				if (SchedulerModel.Properties.STATUS.id().equals(evt.getPropertyName())) {
-					if (Status.OVERLOAD == evt.getNewValue()) {
-						outlet_1.setModel(new SchedulerModel(25));
-					} else {
-						outlet_1.setModel(new SchedulerModel((Status) evt.getNewValue()));
+				if (e.getAttribute() == Scheduler.Attribute.STATUS) {
+					outlet_1.getModel().setSchedulerStatus((Status)e.getNewValue());
+					if (Status.OVERLOAD == e.getNewValue()) {
+						outlet_1.getModel().setWaitingTimePercent(25);
 					}
 				}
 			}
