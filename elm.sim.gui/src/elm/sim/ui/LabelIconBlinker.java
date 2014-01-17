@@ -1,4 +1,4 @@
-package elm.sim.gui;
+package elm.sim.ui;
 
 import java.util.ArrayList;
 import java.util.List;

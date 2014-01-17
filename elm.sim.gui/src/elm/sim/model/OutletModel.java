@@ -1,4 +1,4 @@
-package elm.sim.gui;
+package elm.sim.model;
 
 /**
  * Apart from the name, which is mandatory, all fields are optional.

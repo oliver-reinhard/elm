@@ -1,4 +1,4 @@
-package elm.sim.gui;
+package elm.sim.ui;
 
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -9,6 +9,12 @@ import java.beans.PropertyChangeListener;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
+
+import elm.sim.model.Flow;
+import elm.sim.model.OutletModel;
+import elm.sim.model.SchedulerModel;
+import elm.sim.model.Status;
+import elm.sim.model.Temperature;
 
 public class SimulatorUI extends JFrame {
 

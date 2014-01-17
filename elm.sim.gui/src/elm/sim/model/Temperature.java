@@ -1,4 +1,4 @@
-package elm.sim.gui;
+package elm.sim.model;
 
 public enum Temperature {
 	TEMP_1(30), TEMP_2(38), TEMP_3(42), TEMP_4(48);

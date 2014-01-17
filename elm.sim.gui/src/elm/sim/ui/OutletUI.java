@@ -1,4 +1,4 @@
-package elm.sim.gui;
+package elm.sim.ui;
 
 import java.awt.Font;
 import java.awt.GridBagConstraints;
@@ -17,6 +17,12 @@ import javax.swing.JRadioButton;
 import javax.swing.JToggleButton;
 import javax.swing.SwingConstants;
 import javax.swing.border.EtchedBorder;
+
+import elm.sim.model.Flow;
+import elm.sim.model.OutletModel;
+import elm.sim.model.SchedulerModel;
+import elm.sim.model.Status;
+import elm.sim.model.Temperature;
 
 public class OutletUI extends JPanel {
 

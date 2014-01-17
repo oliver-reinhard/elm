@@ -1,4 +1,4 @@
-package elm.sim.gui;
+package elm.sim.model;
 
 public enum Status {
 	OFF("Aus"), ON("Ein"), SATURATION("Sättigung"), OVERLOAD("Überlast"), ERROR("Fehler");

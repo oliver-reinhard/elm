@@ -1,4 +1,4 @@
-package elm.sim.gui;
+package elm.sim.ui;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -7,6 +7,8 @@ import java.util.WeakHashMap;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
+
+import elm.sim.model.Status;
 
 public class SimulationUtil {
 	
