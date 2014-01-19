@@ -15,9 +15,9 @@ import javax.swing.border.EtchedBorder;
 
 import elm.sim.metamodel.SimModelEvent;
 import elm.sim.metamodel.SimModelListener;
-import elm.sim.model.EnumPanel;
 import elm.sim.model.Scheduler;
 import elm.sim.model.Status;
+import elm.sim.model.impl.SchedulerImpl;
 
 public class SchedulerMonitorUI extends JPanel {
 
@@ -26,7 +26,7 @@ public class SchedulerMonitorUI extends JPanel {
 	private static final Logger LOG = Logger.getLogger(SchedulerMonitorUI.class.getName());
 
 	@SuppressWarnings("serial")
-	class StatusPanel extends EnumPanel<Status> {
+	class StatusPanel extends EnumSelectorPanel<Status> {
 
 		StatusPanel() {
 			super("Status", Status.OFF, Status.ON, Status.SATURATION, Status.OVERLOAD, Status.ERROR);
@@ -40,7 +40,7 @@ public class SchedulerMonitorUI extends JPanel {
 	}
 
 	// State
-	private final Scheduler model;
+	private final SchedulerImpl model;
 
 	// Widgets
 	private final StatusPanel statusPanel;
@@ -59,7 +59,7 @@ public class SchedulerMonitorUI extends JPanel {
 			SwingUtilities.invokeLater(new Runnable() {
 				@Override
 				public void run() {
-					switch ((Scheduler.Attribute) event.getAttribute()) {
+					switch ((SchedulerImpl.Attribute) event.getAttribute()) {
 					case STATUS:
 						statusPanel.setSelection((Status) event.getNewValue());
 						break;
@@ -77,7 +77,7 @@ public class SchedulerMonitorUI extends JPanel {
 	/**
 	 * Create the panel.
 	 */
-	public SchedulerMonitorUI(Scheduler model) {
+	public SchedulerMonitorUI(SchedulerImpl model) {
 		assert model != null;
 		this.model = model;
 		model.addModelListener(modelListener);
@@ -149,7 +149,7 @@ public class SchedulerMonitorUI extends JPanel {
 		statusPanel.setSelection(model.getStatus());
 	}
 
-	public Scheduler getModel() {
+	public SchedulerImpl getModel() {
 		return model;
 	}
 

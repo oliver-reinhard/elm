@@ -10,10 +10,11 @@ import javax.swing.SwingUtilities;
 
 import elm.sim.metamodel.SimModelEvent;
 import elm.sim.metamodel.SimModelListener;
-import elm.sim.model.Outlet;
 import elm.sim.model.Scheduler;
 import elm.sim.model.Status;
 import elm.sim.model.Temperature;
+import elm.sim.model.impl.OutletImpl;
+import elm.sim.model.impl.SchedulerImpl;
 
 public class SimulatorUI extends JFrame {
 
@@ -33,21 +34,21 @@ public class SimulatorUI extends JFrame {
 		panel.setLayout(gbl);
 		
 		
-		scheduler = new SchedulerMonitorUI(new Scheduler());
+		scheduler = new SchedulerMonitorUI(new SchedulerImpl());
 		GridBagConstraints gbc_scheduler = new GridBagConstraints();
 		gbc_scheduler.insets = new Insets(5, 5, 5, 5);
 		gbc_scheduler.gridx = 0;
 		gbc_scheduler.gridy = 0;
 		panel.add(scheduler, gbc_scheduler);
 
-		outlet_1 = new OutletUI(new Outlet("2 OG lk - Dusche", Temperature.TEMP_3));
+		outlet_1 = new OutletUI(new OutletImpl("2 OG lk - Dusche", Temperature.TEMP_3));
 		GridBagConstraints gbc_outlet_1 = new GridBagConstraints();
 		gbc_outlet_1.insets = new Insets(5, 5, 5, 5);
 		gbc_outlet_1.gridx = 1;
 		gbc_outlet_1.gridy = 0;
 		panel.add(outlet_1, gbc_outlet_1);
 		
-		outlet_2 = new OutletUI(new Outlet("2 OG lk - Küche", Temperature.TEMP_3));
+		outlet_2 = new OutletUI(new OutletImpl("2 OG lk - Küche", Temperature.TEMP_3));
 		GridBagConstraints gbc_outlet_2 = new GridBagConstraints();
 		gbc_outlet_2.insets = new Insets(5, 5, 5, 5);
 		gbc_outlet_2.gridx = 2;

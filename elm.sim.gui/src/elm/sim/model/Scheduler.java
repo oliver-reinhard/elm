@@ -1,11 +1,11 @@
 package elm.sim.model;
 
-import elm.sim.metamodel.AbstractSimObject;
 import elm.sim.metamodel.SimAttribute;
+import elm.sim.model.impl.SchedulerImpl;
 
-public class Scheduler extends AbstractSimObject {
+public interface Scheduler {
 
-	/** A simple metamodel of the {@link Outlet}. */
+	/** A simple metamodel of the {@link SchedulerImpl}. */
 	public enum Attribute implements SimAttribute {
 		STATUS("Status"), WAITING_TIME_SECONDS("Wartezeit [s]");
 
@@ -27,75 +27,18 @@ public class Scheduler extends AbstractSimObject {
 
 	public static final int NO_WAITING_TIME = 0;
 
-	private Status status = Status.OFF;
+	String getLabel();
 
-	/** Forecasted waiting time in seconds; {@code 0} means currently no waiting time. */
-	private int waitingTimeSeconds = NO_WAITING_TIME;
+	SimAttribute[] getSimAttributes();
 
-	@Override
-	public String getLabel() {
-		return "Scheduler";
-	}
+	void setStatus(Status newValue);
 
-	@Override
-	public SimAttribute[] getSimAttributes() {
-		return Attribute.values();
-	}
-
-	public void setStatus(Status newValue) {
-		assert newValue != null;
-		Status oldValue = status;
-		if (oldValue != newValue) {
-			status = newValue;
-			fireModelChanged(Attribute.STATUS, oldValue, newValue);
-			if (newValue == Status.OVERLOAD) {
-				simulateWaitTime();
-			}
-		}
-	}
-
-	private void simulateWaitTime() {
-		Thread thread = new Thread("Wait Time Simulator") {
-			@Override
-			public synchronized void run() {
-				for(int t = 6; t>=0; t--) {
-					setWaitingTimeSeconds(t);
-					try {
-						wait(1000);
-					} catch (InterruptedException e) {
-						break;
-					}
-				}
-				setStatus(Status.SATURATION);
-			}
-		};
-		thread.start();
-	}
-
-	public Status getStatus() {
-		return status;
-	}
-
-	/**
-	 * Should not be invoked from outside the scheduler.
-	 * 
-	 * @param newValue
-	 */
-	protected void setWaitingTimeSeconds(int newValue) {
-		assert newValue >= 0;
-		int oldValue = waitingTimeSeconds;
-		if (oldValue != newValue) {
-			waitingTimeSeconds = newValue;
-			fireModelChanged(Attribute.WAITING_TIME_SECONDS, oldValue, newValue);
-		}
-	}
+	Status getStatus();
 
 	/**
 	 * The waiting time is only set if {@link #getStatus()} returns {@link Status#OVERLOAD}.
 	 * 
 	 * @return a value between {@code 0} and {@code 100}
 	 */
-	public int getWaitingTimePercent() {
-		return waitingTimeSeconds;
-	}
+	int getWaitingTimePercent();
 }

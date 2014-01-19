@@ -19,11 +19,11 @@ import javax.swing.border.EtchedBorder;
 import elm.sim.metamodel.SimModelEvent;
 import elm.sim.metamodel.SimModelListener;
 import elm.sim.model.DemandEnablement;
-import elm.sim.model.EnumPanel;
 import elm.sim.model.Flow;
 import elm.sim.model.Outlet;
 import elm.sim.model.Status;
 import elm.sim.model.Temperature;
+import elm.sim.model.impl.OutletImpl;
 
 public class OutletUI extends JPanel {
 
@@ -35,7 +35,7 @@ public class OutletUI extends JPanel {
 	private static final LabelIconBlinker BLINKER = new LabelIconBlinker(SimulationUtil.getIcon(Status.ERROR), SimulationUtil.getIcon(Status.OFF));
 
 	@SuppressWarnings("serial")
-	class DemandFlow extends EnumPanel<Flow> {
+	class DemandFlow extends EnumSelectorPanel<Flow> {
 
 		DemandFlow() {
 			super("Soll-Menge", Flow.NONE, Flow.LOW, Flow.MEDIUM, Flow.HIGH);
@@ -49,7 +49,7 @@ public class OutletUI extends JPanel {
 	}
 
 	@SuppressWarnings("serial")
-	class ActualFlow extends EnumPanel<Flow> {
+	class ActualFlow extends EnumSelectorPanel<Flow> {
 
 		ActualFlow() {
 			super("Ist-Menge", Flow.NONE, Flow.LOW, Flow.MEDIUM, Flow.HIGH);
@@ -63,7 +63,7 @@ public class OutletUI extends JPanel {
 	}
 
 	@SuppressWarnings("serial")
-	class DemandTemperature extends EnumPanel<Temperature> {
+	class DemandTemperature extends EnumSelectorPanel<Temperature> {
 
 		DemandTemperature() {
 			super("Soll-Temperatur", Temperature.TEMP_1, Temperature.TEMP_2, Temperature.TEMP_3, Temperature.TEMP_3);
@@ -99,7 +99,7 @@ public class OutletUI extends JPanel {
 				@Override
 				public void run() {
 
-					switch ((Outlet.Attribute) event.getAttribute()) {
+					switch ((OutletImpl.Attribute) event.getAttribute()) {
 					case DEMAND_FLOW:
 						demandFlow.setSelection((Flow) event.getNewValue());
 						break;
@@ -113,9 +113,7 @@ public class OutletUI extends JPanel {
 						setStatus((Status) event.getNewValue());
 						break;
 					case WAITING_TIME_PERCENT:
-						if (model.getStatus() == Status.OVERLOAD) {
-							setWaitingTimePercent((int) event.getNewValue());
-						}
+						setWaitingTimePercent((int) event.getNewValue());
 						break;
 					case ACTUAL_FLOW:
 						actualFlow.setSelection((Flow) event.getNewValue());
@@ -135,7 +133,7 @@ public class OutletUI extends JPanel {
 	 * @param model
 	 *            cannot be {@code}
 	 */
-	public OutletUI(final Outlet model) {
+	public OutletUI(final OutletImpl model) {
 		assert model != null;
 		this.model = model;
 		model.addModelListener(modelListener);

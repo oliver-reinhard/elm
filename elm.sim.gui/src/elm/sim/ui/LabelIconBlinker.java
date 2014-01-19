@@ -7,7 +7,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.SwingUtilities;
 
-class LabelIconBlinker implements Runnable {
+public class LabelIconBlinker implements Runnable {
 	private final List<JLabel>	labels	= new ArrayList<JLabel>();
 	private Thread				running;
 	private boolean				shouldStop;
@@ -36,8 +36,8 @@ class LabelIconBlinker implements Runnable {
 	public synchronized void stop(JLabel label) {
 		labels.remove(label);
 		if (labels.isEmpty() && running != null) {
-			this.notify();
 			shouldStop = true;
+			this.notify();
 			running = null;
 		}
 	}

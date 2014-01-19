@@ -1,4 +1,4 @@
-package elm.sim.model;
+package elm.sim.ui;
 
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -19,13 +19,21 @@ import javax.swing.border.EtchedBorder;
 
 import elm.sim.metamodel.SimEnum;
 
-public abstract class EnumPanel<E extends SimEnum> extends JPanel {
+/**
+ * Uses an enumeration (actually a {@link SimEnum} to build a vertical column of {@link JRadioButton}s.
+ * 
+ * @param <E>
+ *            actual enumeration type
+ */
+public abstract class EnumSelectorPanel<E extends SimEnum> extends JPanel {
 
 	private static final long serialVersionUID = 1L;
 
-	private static final Logger LOG = Logger.getLogger(EnumPanel.class.getName());
-	
-	{ LOG.setLevel(Level.WARNING); }
+	private static final Logger LOG = Logger.getLogger(EnumSelectorPanel.class.getName());
+
+	{
+		LOG.setLevel(Level.WARNING);
+	}
 
 	private final E[] literals;
 	private final List<JRadioButton> buttons = new ArrayList<JRadioButton>();
@@ -54,12 +62,17 @@ public abstract class EnumPanel<E extends SimEnum> extends JPanel {
 	};
 
 	/**
-	 * Create the panel.
+	 * 
+	 * @param title
+	 *            title above the radio-button column, cannot be {@code null} or empty
+	 * @param literals
+	 *            literals for which to display a radio button, cannot be {@code null} or empty
 	 */
 	@SuppressWarnings("unchecked")
-	public EnumPanel(String title, E... literals) {
+	public EnumSelectorPanel(String title, E... literals) {
 		assert title != null && !title.isEmpty();
-		assert literals.length > 0;
+
+		assert literals != null && literals.length > 0;
 
 		setName(title);
 		this.literals = literals;
@@ -88,6 +101,12 @@ public abstract class EnumPanel<E extends SimEnum> extends JPanel {
 		}
 	}
 
+	/**
+	 * Invoked when a radio button is chosen by the user
+	 * 
+	 * @param newValue
+	 *            the chosen enum value
+	 */
 	abstract protected void selectionChanged(E newValue);
 
 	public void setSelection(E value) {
@@ -106,6 +125,9 @@ public abstract class EnumPanel<E extends SimEnum> extends JPanel {
 		throw new IllegalArgumentException("Unsupported element: " + value.toString());
 	}
 
+	/**
+	 * Enables or disables all the radio buttons on the panel.
+	 */
 	@Override
 	public void setEnabled(boolean enabled) {
 		super.setEnabled(enabled);
@@ -114,8 +136,16 @@ public abstract class EnumPanel<E extends SimEnum> extends JPanel {
 		}
 	}
 
+	/**
+	 * Enables or disables only the radio buttons for the given literals.
+	 * 
+	 * @param enabled
+	 * @param literals
+	 *            cannot be {@code null}
+	 */
 	@SuppressWarnings("unchecked")
 	public void setEnabled(boolean enabled, E... literals) {
+		assert literals != null;
 		for (E literal : literals) {
 			int index = checkLiteral(literal); // throws Exception
 			buttons.get(index).setEnabled(enabled);

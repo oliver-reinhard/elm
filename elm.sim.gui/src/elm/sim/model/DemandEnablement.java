@@ -3,7 +3,12 @@ package elm.sim.model;
 import elm.sim.metamodel.SimEnum;
 
 public enum DemandEnablement implements SimEnum {
-	OFF("Aus"), DOWN("Ab"), UP_DOWN("Auf+Ab");
+	/** Demand values cannot be modified. */
+	OFF("Aus"),
+	/** Demand values can be decreased from their current value towards a safer value but not be increased. */
+	DOWN("Ab"),
+	/** Demand values can be increased or decreased freely. */ 
+	UP_DOWN("Auf+Ab");
 	
 	private final String label;
 
