@@ -22,6 +22,10 @@ public enum Flow implements SimEnum {
 		return label;
 	}
 	
+	public boolean isOn() {
+		return this != NONE;
+	}
+	
 	public boolean greaterThan(Flow other) {
 		return this.getLitresPerMinute() > other.getLitresPerMinute();
 	}

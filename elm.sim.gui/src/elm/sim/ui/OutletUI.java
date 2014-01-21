@@ -66,7 +66,7 @@ public class OutletUI extends JPanel {
 	class DemandTemperature extends EnumSelectorPanel<Temperature> {
 
 		DemandTemperature() {
-			super("Soll-Temperatur", Temperature.TEMP_1, Temperature.TEMP_2, Temperature.TEMP_3, Temperature.TEMP_3);
+			super("Soll-Temperatur", Temperature.TEMP_1, Temperature.TEMP_2, Temperature.TEMP_3, Temperature.TEMP_4);
 		}
 
 		@Override
@@ -166,6 +166,7 @@ public class OutletUI extends JPanel {
 
 		// Demand Temperature
 		demandTemperature = new DemandTemperature();
+		demandTemperature.setEnabled(false);
 		add(demandTemperature, createEnumConstraints(1, 1));
 
 		// Actual Flow
@@ -233,19 +234,32 @@ public class OutletUI extends JPanel {
 		switch (enablement) {
 		case OFF:
 			demandFlow.setEnabled(false);
+			demandTemperature.setEnabled(false);
 			break;
 		case DOWN:
-			demandFlow.setEnabled(true); // enable all
-			List<Flow> list = new ArrayList<Flow>();
+			demandFlow.setEnabled(true); // disable all
+			// enable only those lower than the current demand:
+			List<Flow> flows = new ArrayList<Flow>();
 			for (Flow flow : Flow.values()) {
 				if (flow.greaterThan(model.getDemandFlow())) {
-					list.add(flow);
+					flows.add(flow);
 				}
 			}
-			demandFlow.setEnabled(false, list.toArray(new Flow[] {})); // enable all
+			demandFlow.setEnabled(false, flows.toArray(new Flow[] {}));
+			//
+			demandTemperature.setEnabled(true); // disable all
+			// enable only those lower than the current demand:
+			List<Temperature> temperatures = new ArrayList<Temperature>();
+			for (Temperature temp : Temperature.values()) {
+				if (temp.greaterThan(model.getDemandTemperature())) {
+					temperatures.add(temp);
+				}
+			}
+			demandTemperature.setEnabled(false, temperatures.toArray(new Temperature[] {})); // enable all
 			break;
 		case UP_DOWN:
 			demandFlow.setEnabled(true);
+			demandTemperature.setEnabled(true);
 			break;
 		default:
 			throw new IllegalArgumentException(enablement.toString());

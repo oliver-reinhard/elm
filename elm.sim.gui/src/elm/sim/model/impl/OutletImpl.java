@@ -167,9 +167,9 @@ public class OutletImpl extends AbstractSimObject implements Outlet {
 	 */
 	protected void updateDerived() {
 		// Are we in the middle of an actual flow?
-		if (actualFlow.greaterThan(Flow.NONE)) {
+		if (actualFlow.isOn()) {
 			if (schedulerStatus.in(ON, SATURATION, OVERLOAD)) {
-				if (demandFlow.greaterThan(Flow.NONE)) {
+				if (demandFlow.isOn()) {
 					setStatus(ON);
 					// allow to increase or decrease the demand
 					setDemandEnabled(DemandEnablement.UP_DOWN);
@@ -187,9 +187,9 @@ public class OutletImpl extends AbstractSimObject implements Outlet {
 				setActualFlow(demandFlow);
 
 			} else { // schedulerStatus.in(OFF, ERROR)
-				setStatus(schedulerStatus);
-				// allow to decrease the demand
-				setDemandEnabled(DemandEnablement.DOWN); // enable reduction
+				setStatus(schedulerStatus);  // user can see why demand-flow increase is disabled
+				// allow to decrease the demand:
+				setDemandEnabled(DemandEnablement.DOWN);
 				if (demandFlow.lessThan(actualFlow)) {
 					setActualFlow(demandFlow);
 					LOG.info("A4 - turn current flow down");
@@ -199,7 +199,7 @@ public class OutletImpl extends AbstractSimObject implements Outlet {
 			}
 
 		} else if (schedulerStatus.in(ON, SATURATION)) {
-			if (demandFlow.greaterThan(Flow.NONE)) {
+			if (demandFlow.isOn()) {
 				setStatus(ON);
 				LOG.info("B1 - turn current flow on");
 			} else {
