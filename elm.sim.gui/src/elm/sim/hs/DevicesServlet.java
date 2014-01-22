@@ -1,6 +1,7 @@
-package elm.test.googleHttpClient.jetty;
+package elm.sim.hs;
 
 import java.io.IOException;
+import java.util.List;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
@@ -15,25 +16,30 @@ import org.eclipse.jetty.util.log.Logger;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-@SuppressWarnings("serial")
-public class JettyServlet extends HttpServlet {
-	static final Logger LOG = Log.getLogger(JettyServlet.class);
+import elm.sim.hs.model.Device;
 
-	private int counter = 1;
+@SuppressWarnings("serial")
+public class DevicesServlet extends HttpServlet {
+
+	static final Logger LOG = Log.getLogger(DevicesServlet.class);
+
+	private final HomeServerDB database;
+
+	public DevicesServlet(HomeServerDB database) {
+		this.database = database;
+	}
 
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
-		Member member = new Member();
-		member.setName("member no. " + (counter++));
-		sendSingleMessage(response, member);
+		sendSingleMessage(response, database.getDevices());
 	}
 
-	private void sendSingleMessage(HttpServletResponse response, Member member) throws IOException {
+	private void sendSingleMessage(HttpServletResponse response, List<Device> devices) throws IOException {
 		response.setContentType("text/json;charset=utf-8");
 		Gson gson = new GsonBuilder().create(); // new GsonBuilder().setPrettyPrinting().create();
-		String str = gson.toJson(member);
-		LOG.info("Sending Member: " + str);
+		String str = gson.toJson(devices.get(0));
+		LOG.info("Sending FIRST Device: " + str);
 		response.getWriter().println(str);
 	}
 
@@ -47,5 +53,4 @@ public class JettyServlet extends HttpServlet {
 			dispatcher.forward(request, response);
 		}
 	}
-
 }

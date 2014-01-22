@@ -1,4 +1,4 @@
-package elm.test.googleHttpClient.jetty;
+package elm.sim.hs;
 
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
@@ -8,7 +8,8 @@ import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 
-public class JettyServer {
+
+public class HomeServerSimulation {
  
     public static void main(String[] args) throws Exception {
 
@@ -21,9 +22,12 @@ public class JettyServer {
        // resource_handler.setWelcomeFiles(new String[]{ "index.html" });
         resource_handler.setResourceBase(".");
 
+    	final HomeServerDB database = new HomeServerDB();
+		HomeServerDB.addMockData(database);
+    	
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
         context.setContextPath("/");
-        context.addServlet(new ServletHolder(new JettyServlet()), "/chat/*");
+        context.addServlet(new ServletHolder(new DevicesServlet(database)), "/hs/*");
         
         HandlerList handlers = new HandlerList();
         handlers.setHandlers(new Handler[] { resource_handler, context, new DefaultHandler() });

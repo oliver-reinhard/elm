@@ -17,7 +17,7 @@ public class JettyTestClient {
 			String str = response.getContentAsString();
 			System.out.println("Str = " + str);
 			Gson gson = new GsonBuilder().create();
-			Member2 member = gson.fromJson(str, Member2.class);
+			Member member = gson.fromJson(str, Member.class);
 			System.out.println("Member " + member.getName());
 			
 		} catch (Exception e) {

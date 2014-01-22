@@ -21,7 +21,7 @@ public class GoogleHttpTestClient {
 	static final JsonFactory JSON_FACTORY = new JacksonFactory();
 
 	private static void parseResponse(HttpResponse response) throws IOException {
-		Member2 member = response.parseAs(Member2.class);
+		Member member = response.parseAs(Member.class);
 		System.out.println("Member " + member.getName());
 	}
 
