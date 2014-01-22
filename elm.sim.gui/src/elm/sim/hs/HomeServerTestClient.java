@@ -24,11 +24,13 @@ import elm.sim.hs.model.ServerStatus;
 
 public class HomeServerTestClient {
 
-	private static final String HS_URI = "http://192.168.204.204";
+	private static final String DEFAULT_HOME_SERVER_URI = "http://192.168.204.204";
 
 	private static final Logger LOG = Logger.getLogger(HomeServerTestClient.class.getName());
-	
-	{ LOG.setLevel(Level.INFO); }
+
+	{
+		LOG.setLevel(Level.INFO);
+	}
 
 	private final String baseUri;
 	private final HttpClient client;
@@ -162,7 +164,7 @@ public class HomeServerTestClient {
 			System.out.println(desc + " status    = " + status);
 		}
 	}
-	
+
 	public Short getDemandTemperature(String deviceID) {
 		assert deviceID != null && !deviceID.isEmpty();
 		ServerStatus result = get("/devices/setpoint/" + deviceID, ServerStatus.class);
@@ -174,7 +176,9 @@ public class HomeServerTestClient {
 	}
 
 	public static void main(String[] args) throws URISyntaxException {
-		HomeServerTestClient client = new HomeServerTestClient(HS_URI, "admin", "geheim");
+
+		final String defaultPass = "geheim";
+		HomeServerTestClient client = new HomeServerTestClient(DEFAULT_HOME_SERVER_URI, "admin", defaultPass);
 
 		try {
 			client.start();
@@ -189,15 +193,17 @@ public class HomeServerTestClient {
 
 			// Change demand temperature:
 			client.setDemandTemperature(deviceID, 391);
-			
-			Short demandTemp = client.getDemandTemperature("A001FFFF8C");
+
+			Short demandTemp = client.getDemandTemperature(deviceID);
 			System.out.println("Demand temp = " + demandTemp);
 
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
 			try {
-				client.stop();
+				if (client != null) {
+					client.stop();
+				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
