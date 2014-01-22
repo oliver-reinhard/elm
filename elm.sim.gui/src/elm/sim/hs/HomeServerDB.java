@@ -11,14 +11,14 @@ import elm.sim.hs.model.HomeServerFieldNamingStrategy;
 import elm.sim.hs.model.Info;
 import elm.sim.hs.model.Log;
 import elm.sim.hs.model.Server;
-import elm.sim.hs.model.ServerStatus;
+import elm.sim.hs.model.HomeServerResponse;
 import elm.sim.hs.model.Service;
 import elm.sim.hs.model.Setup;
 import elm.sim.hs.model.Status;
 
 public class HomeServerDB {
 
-	private ServerStatus status;
+	private HomeServerResponse status;
 
 	private final List<Device> devices = new ArrayList<Device>();
 
@@ -27,7 +27,7 @@ public class HomeServerDB {
 	 * 
 	 * @return {@code null before initialized}
 	 */
-	public ServerStatus getStatus() {
+	public HomeServerResponse getStatus() {
 		return status;
 	}
 
@@ -46,7 +46,7 @@ public class HomeServerDB {
 	}
 
 	public static Device addMockData(HomeServerDB db) {
-		final ServerStatus status = new ServerStatus();
+		final HomeServerResponse status = new HomeServerResponse();
 		db.status = status;
 		status.version = "1.0";
 		status.total = 6;

@@ -19,12 +19,16 @@ import org.eclipse.jetty.http.HttpMethod;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import elm.sim.hs.model.Device;
 import elm.sim.hs.model.HomeServerObject;
-import elm.sim.hs.model.ServerStatus;
+import elm.sim.hs.model.HomeServerResponse;
 
 public class HomeServerTestClient {
 
 	private static final String DEFAULT_HOME_SERVER_URI = "http://192.168.204.204";
+
+	public static final int HTTP_OK = 200;
+	public static final int HTTP_ACCEPTED = 202;
 
 	private static final Logger LOG = Logger.getLogger(HomeServerTestClient.class.getName());
 
@@ -72,21 +76,80 @@ public class HomeServerTestClient {
 		return gson;
 	}
 
-	public ServerStatus getServerStatus() {
-		return get("", ServerStatus.class);
-	}
-
-	public ServerStatus getDevices(boolean showCache) {
-		return get("/devices" + (showCache ? "" : "?showCache=false"), ServerStatus.class);
-	}
-
-	public ServerStatus getDeviceStatus(String deviceID) {
-		assert deviceID != null && !deviceID.isEmpty();
-		return get("/devices/status/" + deviceID, ServerStatus.class);
+	public HomeServerResponse getServerStatus() {
+		return doGet("", HomeServerResponse.class);
 	}
 
 	/**
-	 * Invokes a GET call, processes the return status, handles exceptions.
+	 * Returns those devices not registered at this Home Server, regardless of whether they are currently turned on or off.
+	 * 
+	 * @return {@code null} on errors
+	 */
+	public HomeServerResponse getRegisteredDevices() {
+		return doGet("/devices", HomeServerResponse.class);
+	}
+
+	/**
+	 * Returns all devices that the Home Server ever contacted since its last reboot. This includes devices that are not registered at this Home Server.
+	 * <p>
+	 * <b>Note: </b>this method does not need to be called. It would be used to (manually) register new devices at the Home Server.
+	 * </p>
+	 * <p>
+	 * 
+	 * @return {@code null} on errors
+	 */
+	public HomeServerResponse getAllDevices() {
+		return doGet("/devices?showCache=true", HomeServerResponse.class);
+	}
+
+	public HomeServerResponse getDeviceStatus(String deviceID) {
+		assert deviceID != null && !deviceID.isEmpty();
+		return doGet("/devices/status/" + deviceID, HomeServerResponse.class);
+	}
+
+	/**
+	 * Initializes a device discovery an an update of the its device list at the Home Server.
+	 * <p>
+	 * <b>Note: </b>this method does not need to be called. Discovery is used before new devices can be registered at the Home Server.
+	 * </p>
+	 * <p>
+	 * <b>Note 2: </b>the discovery process, i.e. the invocation of this method, blocks out other calls for up to 10 seconds; the devices list may be incomplete
+	 * before that period has expired.
+	 * </p>
+	 * 
+	 * @return {@code false} if the operation ended in a status {@code != 200} or if it threw an exception, else {@code true}
+	 */
+	public boolean discoverDevices() {
+		return doPost("/devices", "autoConnect=false", new int[] { HTTP_ACCEPTED });
+	}
+
+	public Short getDemandTemperature(String deviceID) {
+		assert deviceID != null && !deviceID.isEmpty();
+		HomeServerResponse result = doGet("/devices/setpoint/" + deviceID, HomeServerResponse.class);
+		if (result != null) {
+			return result.devices.get(0).status.setpoint;
+		} else {
+			return null;
+		}
+	}
+
+	/**
+	 * 
+	 * @param newTemp
+	 *            in 1/10 degree Celsius, cannot be {@code < 0}
+	 * @param deviceID
+	 *            cannot be {@code null} or empty
+	 * @return {@code false} if the operation ended in a status {@code != 200} or if it threw an exception, else {@code true}
+	 */
+	public boolean setDemandTemperature(String deviceID, int newTemp) {
+		assert newTemp >= 0;
+		assert deviceID != null && !deviceID.isEmpty();
+
+		return doPost("/devices/setpoint/" + deviceID, "data=" + newTemp, new int[] { HTTP_OK });
+	}
+
+	/**
+	 * Sends a GET request, processes the return status, handles exceptions. The request is considered successful if it yields {@value #HTTP_OK}.
 	 * 
 	 * @param resourcePath
 	 *            cannot be {@code null} but can be empty
@@ -94,7 +157,22 @@ public class HomeServerTestClient {
 	 *            cannot be {@code null}
 	 * @return {@code null} if not-OK return status or an exception
 	 */
-	private <T extends HomeServerObject> T get(String resourcePath, Class<T> resultClass) {
+	private <T extends HomeServerObject> T doGet(String resourcePath, Class<T> resultClass) {
+		return doGet(resourcePath, resultClass, new int[] { HTTP_OK });
+	}
+
+	/**
+	 * Sends a GET request, processes the return status, handles exceptions.
+	 * 
+	 * @param resourcePath
+	 *            cannot be {@code null} but can be empty
+	 * @param resultClass
+	 *            cannot be {@code null}
+	 * @param httpSuccessStatuses
+	 *            the list of HTTP statuses that are to be considered a success
+	 * @return {@code null} if not-OK return status or an exception
+	 */
+	private <T extends HomeServerObject> T doGet(String resourcePath, Class<T> resultClass, int[] httpSuccessStatuses) {
 		assert resourcePath != null;
 		assert resultClass != null;
 
@@ -102,8 +180,8 @@ public class HomeServerTestClient {
 			ContentResponse response = client.GET(getBaseUri() + resourcePath);
 			final String responseAsString = response.getContentAsString();
 			int status = response.getStatus();
-			if (status != 200) {
-				LOG.log(Level.SEVERE, "Querying resource path failed: " + resourcePath + ", Status " + status);
+			if (!isSuccess(httpSuccessStatuses, status)) {
+				LOG.log(Level.SEVERE, "Querying resource path failed: " + resourcePath + ", Status: " + status);
 				if (LOG.getLevel() == Level.INFO) {
 					final String desc = "GET " + resourcePath + " Response";
 					System.out.println(desc + " status    = " + status);
@@ -130,49 +208,50 @@ public class HomeServerTestClient {
 	}
 
 	/**
+	 * Sends a POST request, processes the return status, handles exceptions.
 	 * 
-	 * @param newTemp
-	 *            in 1/10 degree Celsius, cannot be {@code < 0}
-	 * @param deviceID
+	 * @param resourcePath
 	 *            cannot be {@code null} or empty
-	 * @throws InterruptedException
-	 * @throws TimeoutException
-	 * @throws ExecutionException
+	 * @param content
+	 *            can be {@code null} or empty
+	 * @param httpSuccessStatuses
+	 *            the list of HTTP statuses that are to be considered a success
+	 * @return {@code false} if the post ended in a status {@code != 200} or if it threw an exception, else {@code true}
 	 */
-	public void setDemandTemperature(String deviceID, int newTemp) throws InterruptedException, TimeoutException, ExecutionException {
-		assert newTemp >= 0;
-		assert deviceID != null && !deviceID.isEmpty();
-
-		final String resourcePath = "/devices/setpoint/" + deviceID;
-		final String content = "data=" + newTemp;
-		Request postRequest = client.newRequest(getBaseUri() + resourcePath).method(HttpMethod.PUT);
-		postRequest.content(new StringContentProvider(content), "application/x-www-form-urlencoded");
-		Response response = postRequest.send();
-		int status = response.getStatus();
-
-		final String desc = "PUT " + resourcePath + " Response";
-		if (status != 200) {
-			LOG.log(Level.SEVERE, "Querying resource path failed: " + resourcePath + ", Status " + status);
-			if (LOG.getLevel() == Level.INFO) {
-				System.out.println(desc + " status    = " + status);
-				if (response instanceof ContentResponse) {
-					System.out.println(desc + " as String = " + ((ContentResponse) response).getContentAsString());
-				}
+	private boolean doPost(String resourcePath, String content, int[] httpSuccessStatuses) {
+		assert resourcePath != null && !resourcePath.isEmpty();
+		try {
+			Request postRequest = client.newRequest(getBaseUri() + resourcePath).method(HttpMethod.POST);
+			if (content != null) {
+				postRequest.content(new StringContentProvider(content), "application/x-www-form-urlencoded");
 			}
-		} else if (LOG.getLevel() == Level.INFO) {
-			System.out.println();
-			System.out.println(desc + " status    = " + status);
+			Response response;
+			response = postRequest.send();
+			int status = response.getStatus();
+
+			final String desc = "POST " + resourcePath + " (" + content + ") Response";
+			if (!isSuccess(httpSuccessStatuses, status)) {
+				LOG.log(Level.SEVERE, "Posting resource path failed: " + resourcePath + ", Status: " + status);
+				if (LOG.getLevel() == Level.INFO) {
+					System.out.println(desc + " status    = " + status);
+				}
+				return false;
+			} else if (LOG.getLevel() == Level.INFO) {
+				System.out.println();
+				System.out.println(desc + " status    = " + status);
+			}
+			return true;
+		} catch (InterruptedException | TimeoutException | ExecutionException e) {
+			LOG.log(Level.SEVERE, "Posting resource path failed: " + resourcePath, e);
+			return false;
 		}
 	}
 
-	public Short getDemandTemperature(String deviceID) {
-		assert deviceID != null && !deviceID.isEmpty();
-		ServerStatus result = get("/devices/setpoint/" + deviceID, ServerStatus.class);
-		if (result != null) {
-			return result.devices.get(0).status.setpoint;
-		} else {
-			return null;
+	private boolean isSuccess(int[] httpSuccessStatuses, int status) {
+		for (int s : httpSuccessStatuses) {
+			if (status == s) return true;
 		}
+		return false;
 	}
 
 	public static void main(String[] args) throws URISyntaxException {
@@ -186,16 +265,26 @@ public class HomeServerTestClient {
 			// ContentResponse response = client.GET("http://localhost:8080/hs?action");
 			client.getServerStatus();
 
-			client.getDevices(true);
+			HomeServerResponse response = client.getRegisteredDevices();
+			if (response != null) {
+				for (Device dev : response.devices) {
+					if (!dev.isAlive()) {
+						LOG.warning("Registered Device " + dev.id + " is not connected.");
+						// Do not send request with this device ID.
+					}
+				}
+			}
 
 			String deviceID = "A001FFFF8A";
-			client.getDeviceStatus(deviceID);
-
-			// Change demand temperature:
-			client.setDemandTemperature(deviceID, 391);
-
-			Short demandTemp = client.getDemandTemperature(deviceID);
-			System.out.println("Demand temp = " + demandTemp);
+			if (response.isDeviceAlive(deviceID)) {
+				client.getDeviceStatus(deviceID);
+	
+				// Change demand temperature:
+				client.setDemandTemperature(deviceID, 190);
+	
+				Short demandTemp = client.getDemandTemperature(deviceID);
+				System.out.println("Demand temp = " + demandTemp);
+			}
 
 		} catch (Exception e) {
 			e.printStackTrace();

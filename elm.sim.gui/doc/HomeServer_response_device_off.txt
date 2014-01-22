@@ -1,0 +1,204 @@
+client.start();
+
+client.getServerStatus();
+
+HomeServerResponse response = client.getRegisteredDevices();
+if (response != null) {
+	for (Device dev : response.devices) {
+		if (!dev.isAlive()) {
+			LOG.warning("Registered Device " + dev.id + " is not connected.");
+			// Do not send request with this device ID.
+		}
+	}
+}
+
+String deviceID = "A001FFFF8A";
+if (response.isDeviceAlive(deviceID)) {
+	client.getDeviceStatus(deviceID);
+
+	// Change demand temperature:
+	client.setDemandTemperature(deviceID, 190);
+
+	Short demandTemp = client.getDemandTemperature(deviceID);
+	System.out.println("Demand temp = " + demandTemp);
+}
+
+-------------------------------
+Device switched off a few seconds before running the above queries
+-------------------------------		
+
+GET  Response status    = 200
+GET  Response as String = {"version":"1.0","total":6,"cached":true,"success":true,"error":0,"time":1390401142,"services":[{"deviceList":"/devices"},{"deviceStatus":"/devices/status"},{"deviceSetpoint":"/devices/setpoint"},{"deviceLogs":"/devices/logs"},{"fileList":"/files"},{"timerList":"/timers"}],"server":{"id":"D4CA6DB451EE","channel":106,"address":178}}
+GET  Result             = elm.sim.hs.model.HomeServerResponse: {
+  "version": "1.0",
+  "total": 6,
+  "cached": true,
+  "success": true,
+  "error": 0,
+  "time": 1390401142,
+  "services": [
+    {
+      "deviceList": "/devices"
+    },
+    {
+      "deviceStatus": "/devices/status"
+    },
+    {
+      "deviceSetpoint": "/devices/setpoint"
+    },
+    {
+      "deviceLogs": "/devices/logs"
+    },
+    {
+      "fileList": "/files"
+    },
+    {
+      "timerList": "/timers"
+    }
+  ],
+  "server": {
+    "id": "D4CA6DB451EE",
+    "channel": 106,
+    "address": 178
+  }
+}
+
+GET /devices Response status    = 200
+GET /devices Response as String = {"version":"1.0","total":1,"cached":true,"success":true,"error":0,"time":1390401142,"devices":[{"id":"A001FFFF8A","rssi":-18,"lqi":6,"connected":true,"info":{"setpoint":190,"flags":1,"error":0,"access":255,"activity":1390401123,"serverUri":"http://192.168.204.204","serverCh":106,"serverAddr":178}}]}
+GET /devices Result             = elm.sim.hs.model.HomeServerResponse: {
+  "version": "1.0",
+  "total": 1,
+  "cached": true,
+  "success": true,
+  "error": 0,
+  "time": 1390401142,
+  "devices": [
+    {
+      "id": "A001FFFF8A",
+      "rssi": -18,
+      "lqi": 6,
+      "connected": true,
+      "info": {
+        "setpoint": 190,
+        "flags": 1,
+        "error": 0,
+        "access": 255,
+        "activity": 1390401123,
+        "serverCh": 106,
+        "serverAddr": 178
+      }
+    }
+  ]
+}
+GET /devices/status/A001FFFF8A Response status    = 404
+GET /devices/status/A001FFFF8A Response as String = {"version":"1.0","total":0,"cached":true,"success":true,"error":-3,"time":1390401143}
+Jan 22, 2014 3:32:23 PM elm.sim.hs.HomeServerTestClient doGet
+SEVERE: Querying resource path failed: /devices/status/A001FFFF8A, Status: 404
+Jan 22, 2014 3:32:24 PM elm.sim.hs.HomeServerTestClient doPost
+SEVERE: Posting resource path failed: /devices/setpoint/A001FFFF8A, Status: 404
+POST /devices/setpoint/A001FFFF8A (data=190) Response status    = 404
+
+GET /devices/setpoint/A001FFFF8A Response status    = 200
+GET /devices/setpoint/A001FFFF8A Response as String = {"version":"1.0","total":1,"cached":true,"success":true,"error":0,"time":1390401143,"devices":[{"id":"A001FFFF8A","rssi":-18,"lqi":6,"status":{"setpoint":190,"tIn":151,"tOut":242,"tP1":350,"tP2":0,"tP3":0,"tP4":450,"flow":0,"power":0,"powerMax":60,"flags":1,"error":-3}}]}
+GET /devices/setpoint/A001FFFF8A Result             = elm.sim.hs.model.HomeServerResponse: {
+  "version": "1.0",
+  "total": 1,
+  "cached": true,
+  "success": true,
+  "error": 0,
+  "time": 1390401143,
+  "devices": [
+    {
+      "id": "A001FFFF8A",
+      "rssi": -18,
+      "lqi": 6,
+      "connected": false,
+      "status": {
+        "setpoint": 190,
+        "tIn": 151,
+        "tOut": 242,
+        "tP1": 350,
+        "tP2": 0,
+        "tP3": 0,
+        "tP4": 450,
+        "flow": 0,
+        "power": 0,
+        "powerMax": 60,
+        "flags": 1,
+        "error": -3
+      }
+    }
+  ]
+}
+Demand temp = 190
+
+
+-----------------------------
+Running again after a minute:
+-----------------------------
+
+GET  Response status    = 200
+GET  Response as String = {"version":"1.0","total":6,"cached":true,"success":true,"error":0,"time":1390401240,"services":[{"deviceList":"/devices"},{"deviceStatus":"/devices/status"},{"deviceSetpoint":"/devices/setpoint"},{"deviceLogs":"/devices/logs"},{"fileList":"/files"},{"timerList":"/timers"}],"server":{"id":"D4CA6DB451EE","channel":106,"address":178}}
+GET  Result             = elm.sim.hs.model.HomeServerResponse: {
+  "version": "1.0",
+  "total": 6,
+  "cached": true,
+  "success": true,
+  "error": 0,
+  "time": 1390401240,
+  "services": [
+    {
+      "deviceList": "/devices"
+    },
+    {
+      "deviceStatus": "/devices/status"
+    },
+    {
+      "deviceSetpoint": "/devices/setpoint"
+    },
+    {
+      "deviceLogs": "/devices/logs"
+    },
+    {
+      "fileList": "/files"
+    },
+    {
+      "timerList": "/timers"
+    }
+  ],
+  "server": {
+    "id": "D4CA6DB451EE",
+    "channel": 106,
+    "address": 178
+  }
+}
+
+GET /devices Response status    = 200
+GET /devices Response as String = {"version":"1.0","total":1,"cached":true,"success":true,"error":0,"time":1390401240,"devices":[{"id":"A001FFFF8A","rssi":-18,"lqi":6,"connected":true,"info":{"setpoint":190,"flags":1,"error":-3,"access":255,"activity":1390401123,"serverUri":"http://192.168.204.204","serverCh":106,"serverAddr":178}}]}
+GET /devices Result             = elm.sim.hs.model.HomeServerResponse: {
+  "version": "1.0",
+  "total": 1,
+  "cached": true,
+  "success": true,
+  "error": 0,
+  "time": 1390401240,
+  "devices": [
+    {
+      "id": "A001FFFF8A",
+      "rssi": -18,
+      "lqi": 6,
+      "connected": true,
+      "info": {
+        "setpoint": 190,
+        "flags": 1,
+        "error": -3,
+        "access": 255,
+        "activity": 1390401123,
+        "serverCh": 106,
+        "serverAddr": 178
+      }
+    }
+  ]
+}
+Jan 22, 2014 3:34:00 PM elm.sim.hs.HomeServerTestClient main
+WARNING: Registered Device A001FFFF8A is not connected.

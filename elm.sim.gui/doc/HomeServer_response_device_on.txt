@@ -1,0 +1,159 @@
+client.start();
+
+client.getServerStatus();
+
+HomeServerResponse response = client.getRegisteredDevices();
+if (response != null) {
+	for (Device dev : response.devices) {
+		if (!dev.isAlive()) {
+			LOG.warning("Registered Device " + dev.id + " is not connected.");
+			// Do not send request with this device ID.
+		}
+	}
+}
+
+String deviceID = "A001FFFF8A";
+if (response.isDeviceAlive(deviceID)) {
+	client.getDeviceStatus(deviceID);
+
+	// Change demand temperature:
+	client.setDemandTemperature(deviceID, 190);
+
+	Short demandTemp = client.getDemandTemperature(deviceID);
+	System.out.println("Demand temp = " + demandTemp);
+}
+
+-------------------------------
+			
+GET  Response status    = 200
+GET  Response as String = {"version":"1.0","total":6,"cached":true,"success":true,"error":0,"time":1390400888,"services":[{"deviceList":"/devices"},{"deviceStatus":"/devices/status"},{"deviceSetpoint":"/devices/setpoint"},{"deviceLogs":"/devices/logs"},{"fileList":"/files"},{"timerList":"/timers"}],"server":{"id":"D4CA6DB451EE","channel":106,"address":178}}
+GET  Result             = elm.sim.hs.model.HomeServerResponse: {
+  "version": "1.0",
+  "total": 6,
+  "cached": true,
+  "success": true,
+  "error": 0,
+  "time": 1390400888,
+  "services": [
+    {
+      "deviceList": "/devices"
+    },
+    {
+      "deviceStatus": "/devices/status"
+    },
+    {
+      "deviceSetpoint": "/devices/setpoint"
+    },
+    {
+      "deviceLogs": "/devices/logs"
+    },
+    {
+      "fileList": "/files"
+    },
+    {
+      "timerList": "/timers"
+    }
+  ],
+  "server": {
+    "id": "D4CA6DB451EE",
+    "channel": 106,
+    "address": 178
+  }
+}
+
+GET /devices Response status    = 200
+GET /devices Response as String = {"version":"1.0","total":1,"cached":true,"success":true,"error":0,"time":1390400888,"devices":[{"id":"A001FFFF8A","rssi":-19,"lqi":5,"connected":true,"info":{"setpoint":190,"flags":1,"error":0,"access":255,"activity":1390400883,"serverUri":"http://192.168.204.204","serverCh":106,"serverAddr":178}}]}
+GET /devices Result             = elm.sim.hs.model.HomeServerResponse: {
+  "version": "1.0",
+  "total": 1,
+  "cached": true,
+  "success": true,
+  "error": 0,
+  "time": 1390400888,
+  "devices": [
+    {
+      "id": "A001FFFF8A",
+      "rssi": -19,
+      "lqi": 5,
+      "connected": true,
+      "info": {
+        "setpoint": 190,
+        "flags": 1,
+        "error": 0,
+        "access": 255,
+        "activity": 1390400883,
+        "serverCh": 106,
+        "serverAddr": 178
+      }
+    }
+  ]
+}
+
+GET /devices/status/A001FFFF8A Response status    = 200
+GET /devices/status/A001FFFF8A Response as String = {"version":"1.0","total":1,"cached":false,"success":true,"error":0,"time":1390400889,"devices":[{"id":"A001FFFF8A","rssi":-20,"lqi":6,"status":{"setpoint":190,"tIn":151,"tOut":242,"tP1":350,"tP2":0,"tP3":0,"tP4":450,"flow":0,"power":0,"powerMax":60,"flags":1,"error":0}}]}
+GET /devices/status/A001FFFF8A Result             = elm.sim.hs.model.HomeServerResponse: {
+  "version": "1.0",
+  "total": 1,
+  "cached": false,
+  "success": true,
+  "error": 0,
+  "time": 1390400889,
+  "devices": [
+    {
+      "id": "A001FFFF8A",
+      "rssi": -20,
+      "lqi": 6,
+      "connected": false,
+      "status": {
+        "setpoint": 190,
+        "tIn": 151,
+        "tOut": 242,
+        "tP1": 350,
+        "tP2": 0,
+        "tP3": 0,
+        "tP4": 450,
+        "flow": 0,
+        "power": 0,
+        "powerMax": 60,
+        "flags": 1,
+        "error": 0
+      }
+    }
+  ]
+}
+
+POST /devices/setpoint/A001FFFF8A (data=190) Response status    = 200
+
+GET /devices/setpoint/A001FFFF8A Response status    = 200
+GET /devices/setpoint/A001FFFF8A Response as String = {"version":"1.0","total":1,"cached":true,"success":true,"error":0,"time":1390400889,"devices":[{"id":"A001FFFF8A","rssi":-20,"lqi":8,"status":{"setpoint":190,"tIn":151,"tOut":242,"tP1":350,"tP2":0,"tP3":0,"tP4":450,"flow":0,"power":0,"powerMax":60,"flags":1,"error":0}}]}
+GET /devices/setpoint/A001FFFF8A Result             = elm.sim.hs.model.HomeServerResponse: {
+  "version": "1.0",
+  "total": 1,
+  "cached": true,
+  "success": true,
+  "error": 0,
+  "time": 1390400889,
+  "devices": [
+    {
+      "id": "A001FFFF8A",
+      "rssi": -20,
+      "lqi": 8,
+      "connected": false,
+      "status": {
+        "setpoint": 190,
+        "tIn": 151,
+        "tOut": 242,
+        "tP1": 350,
+        "tP2": 0,
+        "tP3": 0,
+        "tP4": 450,
+        "flow": 0,
+        "power": 0,
+        "powerMax": 60,
+        "flags": 1,
+        "error": 0
+      }
+    }
+  ]
+}
+Demand temp = 190
