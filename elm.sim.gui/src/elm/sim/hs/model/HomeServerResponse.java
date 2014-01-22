@@ -18,6 +18,7 @@ public class HomeServerResponse implements HomeServerObject {
 	public List<Device> devices;
 	public List<Service> services;
 	public Server server;
+	public Response response;
 
 	public boolean isDeviceAlive(String deviceID) {
 		assert deviceID != null & ! deviceID.isEmpty();

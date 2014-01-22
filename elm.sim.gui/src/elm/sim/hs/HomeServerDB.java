@@ -8,12 +8,11 @@ import com.google.gson.GsonBuilder;
 
 import elm.sim.hs.model.Device;
 import elm.sim.hs.model.HomeServerFieldNamingStrategy;
+import elm.sim.hs.model.HomeServerResponse;
 import elm.sim.hs.model.Info;
 import elm.sim.hs.model.Log;
 import elm.sim.hs.model.Server;
-import elm.sim.hs.model.HomeServerResponse;
 import elm.sim.hs.model.Service;
-import elm.sim.hs.model.Setup;
 import elm.sim.hs.model.Status;
 
 public class HomeServerDB {
@@ -55,28 +54,28 @@ public class HomeServerDB {
 		status.error = 0;
 		status.time = 1390317089;
 		status.services = new ArrayList<Service>();
-		
+
 		// Services
 		Service s = new Service();
 		s.deviceList = Service.DEVICES_PATH;
 		status.services.add(s);
-		
+
 		s = new Service();
 		s.deviceStatus = Service.STATUS_PATH;
 		status.services.add(s);
-		
+
 		s = new Service();
 		s.deviceSetpoint = Service.SETPOINT_PATH;
 		status.services.add(s);
-		
+
 		s = new Service();
 		s.deviceLogs = Service.LOGS_PATH;
 		status.services.add(s);
-		
+
 		s = new Service();
 		s.fileList = Service.FILES_PATH;
 		status.services.add(s);
-		
+
 		s = new Service();
 		s.timerList = Service.TIMERS_PATH;
 		status.services.add(s);
@@ -86,7 +85,6 @@ public class HomeServerDB {
 		status.server.channel = 106;
 		status.server.address = 178;
 
-		
 		// Devices
 		Device dev = new Device();
 		dev.id = "A001010214";
@@ -120,22 +118,23 @@ public class HomeServerDB {
 		dev.status.flags = 0;
 		dev.status.error = 0;
 
-		dev.setup = new Setup();
-		dev.setup.swVersion = "1.4.1";
-		dev.setup.serialDevice = "<serial>";
-		dev.setup.serialPowerUnit = "<serial>";
-		dev.setup.flowMax = 254;
-		dev.setup.loadShedding = 0;
-		dev.setup.scaldProtection = 65535;
-		dev.setup.fcpAddr = 80;
-		dev.setup.powerCosts = 0;
-		dev.setup.powerMax = 140;
-		dev.setup.calValue = 0;
-		dev.setup.timerPowerOn = 300;
-		dev.setup.timerLifetime = 172800;
-		dev.setup.timerStandby = 2400;
-		dev.setup.totalPowerConsumption = 0;
-		dev.setup.totalWaterConsumption = 0;
+		// Not supported in API v1.0
+		// dev.setup = new Setup();
+		// dev.setup.swVersion = "1.4.1";
+		// dev.setup.serialDevice = "<serial>";
+		// dev.setup.serialPowerUnit = "<serial>";
+		// dev.setup.flowMax = 254;
+		// dev.setup.loadShedding = 0;
+		// dev.setup.scaldProtection = 65535;
+		// dev.setup.fcpAddr = 80;
+		// dev.setup.powerCosts = 0;
+		// dev.setup.powerMax = 140;
+		// dev.setup.calValue = 0;
+		// dev.setup.timerPowerOn = 300;
+		// dev.setup.timerLifetime = 172800;
+		// dev.setup.timerStandby = 2400;
+		// dev.setup.totalPowerConsumption = 0;
+		// dev.setup.totalWaterConsumption = 0;
 
 		dev.logs = new ArrayList<Log>();
 		Log log1 = new Log();
