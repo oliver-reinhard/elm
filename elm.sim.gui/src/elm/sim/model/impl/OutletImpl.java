@@ -9,7 +9,6 @@ import java.util.logging.Logger;
 
 import elm.sim.metamodel.AbstractSimObject;
 import elm.sim.metamodel.SimAttribute;
-import elm.sim.model.DemandEnablement;
 import elm.sim.model.Flow;
 import elm.sim.model.Outlet;
 import elm.sim.model.Status;
@@ -26,13 +25,19 @@ public class OutletImpl extends AbstractSimObject implements Outlet {
 	private final String name;
 
 	/** Flow as requested by user. */
-	private Flow demandFlow = Flow.NONE; // new outlets typically are not running when they're installed
+	private Flow referenceFlow = Flow.NONE; // new outlets typically are not running when they're installed
+
+	/** Flow as granted by scheduler. */
+	private Flow actualFlow = Flow.NONE; // new outlets typically are not running when they're installed
 
 	/** Temperature as requested by user. */
-	private Temperature demandTemperature;
+	private Temperature referenceTemperature;
 
-	/** How the user can change the demand parameters at the moment. */
-	private DemandEnablement demandEnablement = DemandEnablement.OFF;
+	/** Temperature as constrained by the scheduler. */
+	private Temperature scaldTemperature = Temperature.TEMP_MAX; // = no limit
+
+	/** Temperature as granted by scheduler. */
+	private Temperature actualTemperature = Temperature.TEMP_MIN; // = cold water
 
 	/** The status of the outlet. */
 	private Status status = OFF;
@@ -43,13 +48,10 @@ public class OutletImpl extends AbstractSimObject implements Outlet {
 	/** Mirror of the scheduler's status. */
 	private Status schedulerStatus = OFF;
 
-	/** Flow as granted by scheduler. */
-	private Flow actualFlow = Flow.NONE; // new outlets typically are not running when they're installed
-
-	public OutletImpl(String name, Temperature demandTemperature) {
+	public OutletImpl(String name, Temperature referenceTemperature) {
 		assert name != null && !name.isEmpty();
 		this.name = name;
-		this.demandTemperature = demandTemperature;
+		this.referenceTemperature = referenceTemperature;
 	}
 
 	/**
@@ -71,56 +73,80 @@ public class OutletImpl extends AbstractSimObject implements Outlet {
 	}
 
 	@Override
-	public void setDemandFlow(Flow newValue) {
+	public synchronized void setReferenceFlow(Flow newValue) {
 		assert newValue != null;
-		assert getDemandEnablement() != DemandEnablement.OFF;
-		Flow oldValue = demandFlow;
+		Flow oldValue = referenceFlow;
 		if (oldValue != newValue) {
-			demandFlow = newValue;
-			fireModelChanged(Attribute.DEMAND_FLOW, oldValue, newValue);
+			referenceFlow = newValue;
+			fireModelChanged(Attribute.REFERENCE_FLOW, oldValue, newValue);
 			updateDerived();
 		}
 	}
 
 	@Override
-	public Flow getDemandFlow() {
-		return demandFlow;
+	public synchronized Flow getReferenceFlow() {
+		return referenceFlow;
 	}
 
 	@Override
-	public void setDemandTemperature(Temperature newValue) {
+	public synchronized void setActualFlow(Flow newValue) {
 		assert newValue != null;
-		assert getDemandEnablement() != DemandEnablement.OFF;
-		Temperature oldValue = demandTemperature;
+		Flow oldValue = actualFlow;
 		if (oldValue != newValue) {
-			demandTemperature = newValue;
-			fireModelChanged(Attribute.DEMAND_TEMPERATURE, oldValue, newValue);
+			actualFlow = newValue;
+			fireModelChanged(Attribute.ACTUAL_FLOW, oldValue, newValue);
+		}
+	}
+
+	@Override
+	public synchronized Flow getActualFlow() {
+		return actualFlow;
+	}
+
+	@Override
+	public synchronized void setReferenceTemperature(Temperature newValue) {
+		assert newValue != null;
+		Temperature oldValue = referenceTemperature;
+		if (oldValue != newValue) {
+			referenceTemperature = newValue;
+			fireModelChanged(Attribute.REFERENCE_TEMPERATURE, oldValue, newValue);
 			updateDerived();
 		}
 	}
 
 	@Override
-	public Temperature getDemandTemperature() {
-		return demandTemperature;
+	public synchronized Temperature getReferenceTemperature() {
+		return referenceTemperature;
 	}
 
-	/**
-	 * This method should not be called from outside this class.
-	 * 
-	 * @param newValue
-	 *            cannot be {@code null}
-	 */
-	protected void setDemandEnabled(DemandEnablement newValue) {
+	@Override
+	public synchronized void setActualTemperature(Temperature newValue) {
 		assert newValue != null;
-		DemandEnablement oldValue = demandEnablement;
-		if (oldValue != newValue || newValue == DemandEnablement.DOWN) { // on "down" the upper limit of demand flow is lowered (again)
-			demandEnablement = newValue;
-			fireModelChanged(Attribute.DEMAND_ENABLEMENT, oldValue, newValue);
+		Temperature oldValue = actualTemperature;
+		if (oldValue != newValue) {
+			actualTemperature = newValue;
+			fireModelChanged(Attribute.ACTUAL_TEMPERATURE, oldValue, newValue);
+			updateDerived();
 		}
 	}
 
-	public DemandEnablement getDemandEnablement() {
-		return demandEnablement;
+	@Override
+	public synchronized Temperature getActualTemperature() {
+		return actualTemperature;
+	}
+
+	private void setScaldTemperature(Temperature newValue) {
+		assert newValue != null;
+		Temperature oldValue = scaldTemperature;
+		if (oldValue != newValue) {
+			scaldTemperature = newValue;
+			fireModelChanged(Attribute.SCALD_TEMPERATURE, oldValue, newValue);
+		}
+	}
+
+	@Override
+	public synchronized Temperature getScaldTemperature() {
+		return scaldTemperature;
 	}
 
 	/**
@@ -139,12 +165,12 @@ public class OutletImpl extends AbstractSimObject implements Outlet {
 	}
 
 	@Override
-	public Status getStatus() {
+	public synchronized Status getStatus() {
 		return status;
 	}
 
 	@Override
-	public void setSchedulerStatus(Status schedulerStatus) {
+	public synchronized void setSchedulerStatus(Status schedulerStatus) {
 		assert schedulerStatus != null;
 		// remember the scheduler status
 		this.schedulerStatus = schedulerStatus;
@@ -156,64 +182,55 @@ public class OutletImpl extends AbstractSimObject implements Outlet {
 	 * <ul>
 	 * <li>status</li>
 	 * <li>actualFlow</li>
-	 * <li>demandEnabled</li>
+	 * <li>referenceEnabled</li>
 	 * </ul>
 	 * on the basis of these values
 	 * <ul>
 	 * <li>schedulerStatus</li>
-	 * <li>demandFlowFlow</li>
-	 * <li>demandTemperature</li>
+	 * <li>referenceFlow</li>
+	 * <li>referenceTemperature</li>
+	 * <li>scaldTemperature</li>
 	 * </ul>
 	 */
 	protected void updateDerived() {
+		// currently, the actual flow is unconstrained and always follows the reference flow
+		setActualFlow(referenceFlow);
+
 		// Are we in the middle of an actual flow?
 		if (actualFlow.isOn()) {
-			if (schedulerStatus.in(ON, SATURATION, OVERLOAD)) {
-				if (demandFlow.isOn()) {
-					setStatus(ON);
-					// allow to increase or decrease the demand
-					setDemandEnabled(DemandEnablement.UP_DOWN);
-					LOG.info("A1 — change current flow, but don't turn it off");
-				} else if (schedulerStatus == OVERLOAD) { // demand := off
-					setStatus(schedulerStatus);
-					setDemandEnabled(DemandEnablement.OFF);
-					LOG.info("A2 - turn current flow off in Overload");
-				} else {
-					setStatus(schedulerStatus);
-					// allow to increase or decrease the demand
-					setDemandEnabled(DemandEnablement.UP_DOWN);
-					LOG.info("A3 - turn current flow off");
-				}
-				setActualFlow(demandFlow);
+			// Yes => interfere as little as possible with the user's reference temperature;
+			if (schedulerStatus.in(ON, SATURATION)) {
+				setStatus(ON);
+				// allow to increase or decrease the reference temperature:
+				LOG.info("A1 — user can freely change temperature");
+				setScaldTemperature(Temperature.TEMP_MAX);
+
+			} else if (schedulerStatus == OVERLOAD && scaldTemperature != Temperature.TEMP_MIN) {
+				setStatus(ON);
+				// allow to increase or decrease the reference temperature:
+				LOG.info("A2 — user can freely change temperature");
 
 			} else { // schedulerStatus.in(OFF, ERROR)
-				setStatus(schedulerStatus);  // user can see why demand-flow increase is disabled
-				// allow to decrease the demand:
-				setDemandEnabled(DemandEnablement.DOWN);
-				if (demandFlow.lessThan(actualFlow)) {
-					setActualFlow(demandFlow);
-					LOG.info("A4 - turn current flow down");
-				} else {
-					LOG.info("A5 - no change of current flow");
-				}
+				setStatus(schedulerStatus); // user can see why reference-flow increase is disabled
+				// allow only to decrease the reference:
+				LOG.info("A3 — user can only reduce temperature");
+				setScaldTemperature(actualTemperature);
 			}
+			setActualTemperature(referenceTemperature);
 
 		} else if (schedulerStatus.in(ON, SATURATION)) {
-			if (demandFlow.isOn()) {
-				setStatus(ON);
-				LOG.info("B1 - turn current flow on");
-			} else {
-				setStatus(schedulerStatus);
-				LOG.info("B2 - enable demand-flow change up or down");
-			}
-			// allow to increase or decrease the demand
-			setDemandEnabled(DemandEnablement.UP_DOWN);
-			setActualFlow(demandFlow);
+			// No, there is no actual flow:
+			setStatus(schedulerStatus);
+			LOG.info("B - enable reference temperature change up or down");
+			// allow to increase or decrease the reference
+			setScaldTemperature(Temperature.TEMP_MAX);
+			setActualTemperature(referenceTemperature);
 
 		} else { // schedulerStatus.in(OFF, OVERLOAD, ERROR)
 			setStatus(schedulerStatus);
-			setDemandEnabled(DemandEnablement.OFF);
-			LOG.info("C - disable demand-flow changes");
+			LOG.info("C - cold water only");
+			setScaldTemperature(Temperature.TEMP_MIN);
+			setActualTemperature(Temperature.TEMP_MIN);
 		}
 	}
 
@@ -233,20 +250,5 @@ public class OutletImpl extends AbstractSimObject implements Outlet {
 	@Override
 	public int getWaitingTimePercent() {
 		return waitingTimePercent;
-	}
-
-	@Override
-	public void setActualFlow(Flow newValue) {
-		assert newValue != null;
-		Flow oldValue = actualFlow;
-		if (oldValue != newValue) {
-			actualFlow = newValue;
-			fireModelChanged(Attribute.ACTUAL_FLOW, oldValue, newValue);
-		}
-	}
-
-	@Override
-	public Flow getActualFlow() {
-		return actualFlow;
 	}
 }

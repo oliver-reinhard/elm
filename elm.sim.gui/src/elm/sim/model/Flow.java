@@ -4,18 +4,20 @@ import elm.sim.metamodel.SimEnum;
 
 public enum Flow implements SimEnum {
 	
-	NONE(0, "aus"), LOW(4, "wenig"), MEDIUM(8, "mittel"), HIGH(12, "viel");
+	NONE(0, "Aus"),
+	MIN(4500, "Min."), // this is the technical minimum the outlet can actively limit the flow to.
+	MEDIUM(8000, "Mittel"), MAX(12000, "Max.");
 	
-	private final int litresPerMinute;
+	private final int millilitresPerMinute;
 	private final String label;
 	
-	Flow(int litresPerMinute, String label) {
-		this.litresPerMinute = litresPerMinute;
+	Flow(int millilitresPerMinute, String label) {
+		this.millilitresPerMinute = millilitresPerMinute;
 		this.label = label;
 	}
 
-	public int getLitresPerMinute() {
-		return litresPerMinute;
+	public int getMillilitresPerMinute() {
+		return millilitresPerMinute;
 	}
 
 	public String getLabel() {
@@ -27,10 +29,10 @@ public enum Flow implements SimEnum {
 	}
 	
 	public boolean greaterThan(Flow other) {
-		return this.getLitresPerMinute() > other.getLitresPerMinute();
+		return this.getMillilitresPerMinute() > other.getMillilitresPerMinute();
 	}
 	
 	public boolean lessThan(Flow other) {
-		return this.getLitresPerMinute() < other.getLitresPerMinute();
+		return this.getMillilitresPerMinute() < other.getMillilitresPerMinute();
 	}
 }

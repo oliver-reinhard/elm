@@ -18,6 +18,9 @@ public class SimulationUtil {
 
 	/** Cache for status icons. */
 	private static final WeakHashMap<Status, ImageIcon>	statusIcons	= new WeakHashMap<Status, ImageIcon>();
+	
+	/** Cache for icons specified by filename. */
+	private static final WeakHashMap<String, ImageIcon>	otherIcons	= new WeakHashMap<String, ImageIcon>();
 
 	public static ImageIcon getIcon(Status status) {
 		if (statusIcons.containsKey(status)) {
@@ -31,6 +34,24 @@ public class SimulationUtil {
 			return icon;
 		} catch (IOException ex) {
 			statusIcons.put(status, null);
+			return null;
+		}
+	}
+
+	public static ImageIcon getIcon(String name) {
+		assert name != null && ! name.isEmpty();
+		
+		if (otherIcons.containsKey(name)) {
+			return otherIcons.get(name); // can be null !
+		}
+		try {
+			String filename = "icons/" + name + ".png";
+			BufferedImage img = ImageIO.read(new File(filename));
+			ImageIcon icon = new ImageIcon(img);
+			otherIcons.put(name, icon);
+			return icon;
+		} catch (IOException ex) {
+			otherIcons.put(name, null);
 			return null;
 		}
 	}

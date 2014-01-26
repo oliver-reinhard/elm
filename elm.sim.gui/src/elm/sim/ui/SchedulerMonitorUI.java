@@ -33,7 +33,7 @@ public class SchedulerMonitorUI extends JPanel {
 		}
 
 		@Override
-		protected void selectionChanged(Status newValue) {
+		protected void referenceValueChanged(Status newValue) {
 			info("Status changed: " + newValue.getLabel());
 			model.setStatus(newValue);
 		}
@@ -61,7 +61,7 @@ public class SchedulerMonitorUI extends JPanel {
 				public void run() {
 					switch ((SchedulerImpl.Attribute) event.getAttribute()) {
 					case STATUS:
-						statusPanel.setSelection((Status) event.getNewValue());
+						statusPanel.setReference((Status) event.getNewValue());
 						break;
 					case WAITING_TIME_SECONDS:
 						waitingTimeSeconds.setText(Integer.toString((int) event.getNewValue()));
@@ -116,7 +116,7 @@ public class SchedulerMonitorUI extends JPanel {
 		add(waitingTimeLabel, gbc_waitingTimeLabel);
 
 		waitingTimeSeconds = new JTextField();
-		waitingTimeLabel.setEnabled(false);
+		waitingTimeSeconds.setEnabled(false);
 		GridBagConstraints gbc_waitingTimeSeconds = new GridBagConstraints();
 		gbc_waitingTimeSeconds.insets = new Insets(0, 0, 5, 0);
 		gbc_waitingTimeSeconds.fill = GridBagConstraints.HORIZONTAL;
@@ -146,7 +146,7 @@ public class SchedulerMonitorUI extends JPanel {
 	}
 
 	private void updateFromModel(Scheduler model) {
-		statusPanel.setSelection(model.getStatus());
+		statusPanel.setReference(model.getStatus());
 	}
 
 	public SchedulerImpl getModel() {

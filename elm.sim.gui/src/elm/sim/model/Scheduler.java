@@ -1,11 +1,10 @@
 package elm.sim.model;
 
 import elm.sim.metamodel.SimAttribute;
-import elm.sim.model.impl.SchedulerImpl;
 
 public interface Scheduler {
 
-	/** A simple metamodel of the {@link SchedulerImpl}. */
+	/** A simple metamodel of the {@link Scheduler}. */
 	public enum Attribute implements SimAttribute {
 		STATUS("Status"), WAITING_TIME_SECONDS("Wartezeit [s]");
 

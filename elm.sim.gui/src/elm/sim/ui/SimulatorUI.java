@@ -16,17 +16,18 @@ import elm.sim.model.Temperature;
 import elm.sim.model.impl.OutletImpl;
 import elm.sim.model.impl.SchedulerImpl;
 
+@SuppressWarnings("serial")
 public class SimulatorUI extends JFrame {
-
-	private static final long serialVersionUID = 1L;
 	
-	private OutletUI outlet_1;
-	private OutletUI outlet_2;
+	private SimOutletUI outlet_1;
+	private SimOutletUI outlet_2;
+	private RealOutletUI outlet_3;
+	private RealOutletUI outlet_4;
 	private SchedulerMonitorUI scheduler;
 
 	public SimulatorUI() {
 		setTitle("Dusche");
-		setSize(800, 320);
+		setSize(800, 600);
 		setLocationRelativeTo(null);
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
 		JPanel panel = new JPanel();
@@ -41,19 +42,33 @@ public class SimulatorUI extends JFrame {
 		gbc_scheduler.gridy = 0;
 		panel.add(scheduler, gbc_scheduler);
 
-		outlet_1 = new OutletUI(new OutletImpl("2 OG lk - Dusche", Temperature.TEMP_3));
+		outlet_1 = new SimOutletUI(new OutletImpl("2 OG lk - Dusche", Temperature.TEMP_2));
 		GridBagConstraints gbc_outlet_1 = new GridBagConstraints();
 		gbc_outlet_1.insets = new Insets(5, 5, 5, 5);
 		gbc_outlet_1.gridx = 1;
 		gbc_outlet_1.gridy = 0;
 		panel.add(outlet_1, gbc_outlet_1);
 		
-		outlet_2 = new OutletUI(new OutletImpl("2 OG lk - Küche", Temperature.TEMP_3));
+		outlet_2 = new SimOutletUI(new OutletImpl("2 OG lk - Küche", Temperature.TEMP_2));
 		GridBagConstraints gbc_outlet_2 = new GridBagConstraints();
 		gbc_outlet_2.insets = new Insets(5, 5, 5, 5);
 		gbc_outlet_2.gridx = 2;
 		gbc_outlet_2.gridy = 0;
 		panel.add(outlet_2, gbc_outlet_2);
+
+		outlet_3 = new RealOutletUI(new OutletImpl("1 OG lk - Dusche", Temperature.TEMP_2));
+		GridBagConstraints gbc_outlet_3 = new GridBagConstraints();
+		gbc_outlet_3.insets = new Insets(5, 5, 5, 5);
+		gbc_outlet_3.gridx = 1;
+		gbc_outlet_3.gridy = 1;
+		panel.add(outlet_3, gbc_outlet_3);
+
+		outlet_4 = new RealOutletUI(new OutletImpl("1 OG lk - Küche", Temperature.TEMP_2));
+		GridBagConstraints gbc_outlet_4 = new GridBagConstraints();
+		gbc_outlet_4.insets = new Insets(5, 5, 5, 5);
+		gbc_outlet_4.gridx = 2;
+		gbc_outlet_4.gridy = 1;
+		panel.add(outlet_4, gbc_outlet_4);
 		
 		getContentPane().add(panel);
 		
@@ -77,14 +92,18 @@ public class SimulatorUI extends JFrame {
 				if (e.getAttribute() == Scheduler.Attribute.STATUS) {
 					outlet_1.getModel().setSchedulerStatus((Status)e.getNewValue());
 					outlet_2.getModel().setSchedulerStatus((Status)e.getNewValue());
+					outlet_3.getModel().setSchedulerStatus((Status)e.getNewValue());
+					outlet_4.getModel().setSchedulerStatus((Status)e.getNewValue());
 //					if (Status.OVERLOAD == e.getNewValue()) {
 //						outlet_1.getModel().setWaitingTimePercent(25);
 //						outlet_2.getModel().setWaitingTimePercent(25);
 //					}
 				} else if (e.getAttribute() == Scheduler.Attribute.WAITING_TIME_SECONDS) {
-					int waitTimePercent = (int) e.getNewValue() * 100 / 6;
+					int waitTimePercent = (int) e.getNewValue() * 100 / SchedulerImpl.SIMULATED_WAITING_TIME_SECONDS;
 					outlet_1.getModel().setWaitingTimePercent(waitTimePercent);
 					outlet_2.getModel().setWaitingTimePercent(waitTimePercent); 
+					outlet_3.getModel().setWaitingTimePercent(waitTimePercent); 
+					outlet_4.getModel().setWaitingTimePercent(waitTimePercent);
 				}
 			}
 		});

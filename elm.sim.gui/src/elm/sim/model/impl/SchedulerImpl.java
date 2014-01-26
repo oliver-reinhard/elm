@@ -7,7 +7,7 @@ import elm.sim.model.Status;
 
 public class SchedulerImpl extends AbstractSimObject implements Scheduler {
 
-	private static final int SIMULATED_WAITING_TIME_SECONDS = 6;
+	public static final int SIMULATED_WAITING_TIME_SECONDS = 10;
 
 	private Status status = Status.OFF;
 

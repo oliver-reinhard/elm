@@ -1,15 +1,14 @@
 package elm.sim.model;
 
 import elm.sim.metamodel.SimAttribute;
-import elm.sim.model.impl.OutletImpl;
 
 public interface Outlet {
 
-	/** A simple metamodel of the {@link OutletImpl}. */
+	/** A simple metamodel of the {@link Outlet}. */
 	public enum Attribute implements SimAttribute {
 
-		NAME("Name"), DEMAND_FLOW("Soll-Menge"), DEMAND_TEMPERATURE("Soll-Temperatur"), DEMAND_ENABLEMENT("Soll möglich"), STATUS("Status"), WAITING_TIME_PERCENT(
-				"Wartezeit [%]"), ACTUAL_FLOW("Ist-Menge");
+		NAME("Name"), REFERENCE_FLOW("Soll-Menge"), ACTUAL_FLOW("Ist-Menge"), REFERENCE_TEMPERATURE("Soll-Temperatur"), ACTUAL_TEMPERATURE("Ist-Temperatur"), SCALD_TEMPERATURE("Verbrühschutztemperatur"), STATUS("Status"), WAITING_TIME_PERCENT(
+				"Wartezeit [%]"), ;
 
 		private final String label;
 
@@ -39,13 +38,23 @@ public interface Outlet {
 
 	SimAttribute[] getSimAttributes();
 
-	void setDemandFlow(Flow newValue);
+	void setReferenceFlow(Flow newValue);
 
-	Flow getDemandFlow();
+	Flow getReferenceFlow();
 
-	void setDemandTemperature(Temperature newValue);
+	void setActualFlow(Flow newValue);
 
-	Temperature getDemandTemperature();
+	Flow getActualFlow();
+
+	void setReferenceTemperature(Temperature newValue);
+
+	Temperature getReferenceTemperature();
+
+	void setActualTemperature(Temperature newValue);
+
+	Temperature getActualTemperature();
+
+	Temperature getScaldTemperature();
 
 	Status getStatus();
 
@@ -54,9 +63,5 @@ public interface Outlet {
 	void setWaitingTimePercent(int newValue);
 
 	int getWaitingTimePercent();
-
-	void setActualFlow(Flow newValue);
-
-	Flow getActualFlow();
 
 }
