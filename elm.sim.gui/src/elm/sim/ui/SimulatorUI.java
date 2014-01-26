@@ -19,10 +19,10 @@ import elm.sim.model.impl.SchedulerImpl;
 @SuppressWarnings("serial")
 public class SimulatorUI extends JFrame {
 	
-	private SimOutletUI outlet_1;
-	private SimOutletUI outlet_2;
-	private RealOutletUI outlet_3;
-	private RealOutletUI outlet_4;
+	private AbstractOutletUI outlet_1;
+	private AbstractOutletUI outlet_2;
+	private AbstractOutletUI outlet_3;
+	private AbstractOutletUI outlet_4;
 	private SchedulerMonitorUI scheduler;
 
 	public SimulatorUI() {
@@ -38,37 +38,22 @@ public class SimulatorUI extends JFrame {
 		scheduler = new SchedulerMonitorUI(new SchedulerImpl());
 		GridBagConstraints gbc_scheduler = new GridBagConstraints();
 		gbc_scheduler.insets = new Insets(5, 5, 5, 5);
+		gbc_scheduler.gridheight = 2;
 		gbc_scheduler.gridx = 0;
 		gbc_scheduler.gridy = 0;
 		panel.add(scheduler, gbc_scheduler);
 
-		outlet_1 = new SimOutletUI(new OutletImpl("2 OG lk - Dusche", Temperature.TEMP_2));
-		GridBagConstraints gbc_outlet_1 = new GridBagConstraints();
-		gbc_outlet_1.insets = new Insets(5, 5, 5, 5);
-		gbc_outlet_1.gridx = 1;
-		gbc_outlet_1.gridy = 0;
-		panel.add(outlet_1, gbc_outlet_1);
+		outlet_1 = new RealOutletUI(new OutletImpl("2 OG lk - Dusche", Temperature.TEMP_2));
+		panel.add(outlet_1, createOutletConstraints(1,0));
 		
 		outlet_2 = new SimOutletUI(new OutletImpl("2 OG lk - Küche", Temperature.TEMP_2));
-		GridBagConstraints gbc_outlet_2 = new GridBagConstraints();
-		gbc_outlet_2.insets = new Insets(5, 5, 5, 5);
-		gbc_outlet_2.gridx = 2;
-		gbc_outlet_2.gridy = 0;
-		panel.add(outlet_2, gbc_outlet_2);
+		panel.add(outlet_2, createOutletConstraints(2,0));
 
-		outlet_3 = new RealOutletUI(new OutletImpl("1 OG lk - Dusche", Temperature.TEMP_2));
-		GridBagConstraints gbc_outlet_3 = new GridBagConstraints();
-		gbc_outlet_3.insets = new Insets(5, 5, 5, 5);
-		gbc_outlet_3.gridx = 1;
-		gbc_outlet_3.gridy = 1;
-		panel.add(outlet_3, gbc_outlet_3);
+		outlet_3 = new SimOutletUI(new OutletImpl("1 OG lk - Dusche", Temperature.TEMP_2));
+		panel.add(outlet_3, createOutletConstraints(1,1));
 
-		outlet_4 = new RealOutletUI(new OutletImpl("1 OG lk - Küche", Temperature.TEMP_2));
-		GridBagConstraints gbc_outlet_4 = new GridBagConstraints();
-		gbc_outlet_4.insets = new Insets(5, 5, 5, 5);
-		gbc_outlet_4.gridx = 2;
-		gbc_outlet_4.gridy = 1;
-		panel.add(outlet_4, gbc_outlet_4);
+		outlet_4 = new SimOutletUI(new OutletImpl("1 OG lk - Küche", Temperature.TEMP_2));
+		panel.add(outlet_4, createOutletConstraints(2,1));
 		
 		getContentPane().add(panel);
 		
@@ -107,6 +92,15 @@ public class SimulatorUI extends JFrame {
 				}
 			}
 		});
+	}
+
+	private GridBagConstraints createOutletConstraints(int x, int y) {
+		GridBagConstraints gbc_outlet_1 = new GridBagConstraints();
+		gbc_outlet_1.insets = new Insets(5, 5, 5, 5);
+		gbc_outlet_1.fill = GridBagConstraints.BOTH;
+		gbc_outlet_1.gridx = x;
+		gbc_outlet_1.gridy = y;
+		return gbc_outlet_1;
 	}
 
 	public static void main(String[] args) {

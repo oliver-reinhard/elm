@@ -67,11 +67,12 @@ public class RealOutletUI extends AbstractOutletUI {
 	protected void addPanelContent() {
 		ImageIcon deviceIcon = SimulationUtil.getIcon("clage-dlx");
 		assert deviceIcon != null;
-		
+
 		JLabel label = new JLabel(deviceIcon);
 		GridBagConstraints gbc = new GridBagConstraints();
 		gbc.anchor = GridBagConstraints.NORTH;
 		gbc.insets = new Insets(5, 5, 5, 5);
+		gbc.gridwidth = 2;
 		gbc.gridx = 0;
 		gbc.gridy = 1;
 		add(label, gbc);

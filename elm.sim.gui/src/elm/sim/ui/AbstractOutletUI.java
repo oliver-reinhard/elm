@@ -16,7 +16,7 @@ import elm.sim.model.Outlet;
 import elm.sim.model.Status;
 
 @SuppressWarnings("serial")
-public class AbstractOutletUI extends JPanel {
+public abstract class AbstractOutletUI extends JPanel {
 
 	/** A blinker instance shared between all outlets. */
 	protected static final LabelIconBlinker BLINKER = new LabelIconBlinker(SimulationUtil.getIcon(Status.ERROR), SimulationUtil.getIcon(Status.OFF));
@@ -31,12 +31,7 @@ public class AbstractOutletUI extends JPanel {
 		this.setName(model.getLabel());
 
 		setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
-		GridBagLayout gbl = new GridBagLayout();
-		gbl.columnWidths = new int[] { 0, 0 };
-		gbl.columnWeights = new double[] { 0.0, Double.MIN_VALUE };
-		gbl.rowHeights = new int[] { 0, 0, 0, 0 };
-		gbl.rowWeights = new double[] { 0.0, 0.0, 0.0, Double.MIN_VALUE };
-		setLayout(gbl);
+		setLayout(createLayout());
 
 		// Title
 		JLabel title = new JLabel(model.getLabel());
@@ -53,6 +48,15 @@ public class AbstractOutletUI extends JPanel {
 		addPanelContent();
 		addStatusPanel(0, 2);
 		updateFromModel(model);
+	}
+	
+	protected GridBagLayout createLayout() {
+		GridBagLayout gbl = new GridBagLayout();
+		gbl.columnWidths = new int[] { 0, 0 };
+		gbl.columnWeights = new double[] { 0.0, Double.MIN_VALUE };
+		gbl.rowHeights = new int[] { 0, 0, 0 };
+		gbl.rowWeights = new double[] { 0.0, 0.0, Double.MIN_VALUE };
+		return gbl;
 	}
 
 	protected void addPanelContent() {
