@@ -23,11 +23,17 @@ public enum Temperature implements SimEnum {
 		return this == TEMP_MIN ? "Kalt" : (Integer.toString(degreesCelsius) + "°C");
 	}
 	
-	public boolean greaterThan(Temperature other) {
-		return this.getDegreesCelsius() > other.getDegreesCelsius();
-	}
-	
 	public boolean lessThan(Temperature other) {
 		return this.getDegreesCelsius() < other.getDegreesCelsius();
+	}
+	
+	public boolean lessOrEqualThan(Temperature other) {
+		return this.getDegreesCelsius() <= other.getDegreesCelsius();
+	}
+	
+	public static Temperature min(Temperature a, Temperature b) {
+		assert a != null;
+		assert b != null;
+		return (a.lessThan(b)) ? a : b;
 	}
 }

@@ -5,6 +5,7 @@ import static elm.sim.model.Status.ON;
 import static elm.sim.model.Status.OVERLOAD;
 import static elm.sim.model.Status.SATURATION;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import elm.sim.metamodel.AbstractSimObject;
@@ -20,6 +21,10 @@ import elm.sim.model.Temperature;
 public class OutletImpl extends AbstractSimObject implements Outlet {
 
 	private static final Logger LOG = Logger.getLogger(OutletImpl.class.getName());
+
+	{
+		LOG.setLevel(Level.WARNING);
+	}
 
 	/** Outlet identification within group. */
 	private final String name;
@@ -122,11 +127,15 @@ public class OutletImpl extends AbstractSimObject implements Outlet {
 	@Override
 	public synchronized void setActualTemperature(Temperature newValue) {
 		assert newValue != null;
-		Temperature oldValue = actualTemperature;
-		if (oldValue != newValue) {
-			actualTemperature = newValue;
-			fireModelChanged(Attribute.ACTUAL_TEMPERATURE, oldValue, newValue);
-			updateDerived();
+		if (newValue.lessOrEqualThan(getScaldTemperature())) {
+			Temperature oldValue = actualTemperature;
+			if (oldValue != newValue) {
+				actualTemperature = newValue;
+				fireModelChanged(Attribute.ACTUAL_TEMPERATURE, oldValue, newValue);
+				updateDerived();
+			}
+		} else {
+			LOG.warning("actual temperature cannot exceed scald temperature");
 		}
 	}
 
@@ -204,19 +213,21 @@ public class OutletImpl extends AbstractSimObject implements Outlet {
 				// allow to increase or decrease the reference temperature:
 				LOG.info("A1 — user can freely change temperature");
 				setScaldTemperature(Temperature.TEMP_MAX);
+				setActualTemperature(referenceTemperature);
 
 			} else if (schedulerStatus == OVERLOAD && scaldTemperature != Temperature.TEMP_MIN) {
 				setStatus(ON);
 				// allow to increase or decrease the reference temperature:
 				LOG.info("A2 — user can freely change temperature");
+				setActualTemperature(referenceTemperature);
 
 			} else { // schedulerStatus.in(OFF, ERROR)
 				setStatus(schedulerStatus); // user can see why reference-flow increase is disabled
 				// allow only to decrease the reference:
 				LOG.info("A3 — user can only reduce temperature");
 				setScaldTemperature(actualTemperature);
+				setActualTemperature(Temperature.min(referenceTemperature, scaldTemperature));
 			}
-			setActualTemperature(referenceTemperature);
 
 		} else if (schedulerStatus.in(ON, SATURATION)) {
 			// No, there is no actual flow:

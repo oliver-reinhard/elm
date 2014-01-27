@@ -67,12 +67,14 @@ public class SimOutletUI extends AbstractOutletUI {
 					switch ((OutletImpl.Attribute) event.getAttribute()) {
 					case REFERENCE_FLOW:
 						flow.setReference((Flow) event.getNewValue());
+						updateReferenceTemperatureEnablement();
 						break;
 					case ACTUAL_FLOW:
 						flow.setActual((Flow) event.getNewValue());
 						break;
 					case REFERENCE_TEMPERATURE:
 						temperature.setReference((Temperature) event.getNewValue());
+						updateReferenceTemperatureEnablement();
 						break;
 					case ACTUAL_TEMPERATURE:
 						temperature.setActual((Temperature) event.getNewValue());
@@ -141,11 +143,13 @@ public class SimOutletUI extends AbstractOutletUI {
 
 	private void updateReferenceTemperatureEnablement() {
 		temperature.setEnabled(false); // disable all
-		// enable only those lower than the current reference:
 		List<Temperature> toEnable = new ArrayList<Temperature>();
-		for (Temperature literal : temperature.getLiterals()) {
-			if (literal.getDegreesCelsius() <= model.getScaldTemperature().getDegreesCelsius()) {
-				toEnable.add(literal);
+		if (Temperature.TEMP_MIN.lessThan(model.getScaldTemperature())) {
+			// enable only those lower than the current reference:
+			for (Temperature literal : temperature.getLiterals()) {
+				if (literal.getDegreesCelsius() <= model.getScaldTemperature().getDegreesCelsius()) {
+					toEnable.add(literal);
+				}
 			}
 		}
 		temperature.setEnabled(true, toEnable.toArray(new Temperature[] {})); // enable all
