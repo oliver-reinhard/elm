@@ -1,9 +1,10 @@
-package elm.sim.hs;
+package elm.sim.hs.client;
 
 import java.net.URISyntaxException;
 import java.util.logging.Level;
 
 import org.eclipse.jetty.client.api.ContentResponse;
+import org.eclipse.jetty.http.HttpStatus;
 
 import elm.sim.hs.model.HomeServerResponse;
 
@@ -53,12 +54,12 @@ public class HomeServerInternalApiClient extends AbstractHomeServerClient {
 		assert newTemp >= 0;
 		assert deviceID != null && !deviceID.isEmpty();
 
-		if (!publicClient.setDemandTemperature(deviceID, newTemp)) {
+		if (!publicClient.setReferenceTemperature(deviceID, newTemp)) {
 			return null;
 		}
-		doPost("/cmd/VF/" + deviceID, "data=1", new int[] { HTTP_OK });
+		doPost("/cmd/VF/" + deviceID, "data=1", new int[] { HttpStatus.OK_200 });
 		// scald protection value is in FULL DEGREES Celcius!
-		ContentResponse response = doPost("/cmd/Vv/" + deviceID, "data=" + (newTemp / 10), new int[] { HTTP_OK });
+		ContentResponse response = doPost("/cmd/Vv/" + deviceID, "data=" + (newTemp / 10), new int[] { HttpStatus.OK_200 });
 		if (response != null) {
 			final HomeServerResponse result = getGson().fromJson(response.getContentAsString(), HomeServerResponse.class);
 			if (result.response == null || result.response.data == null) {
@@ -77,9 +78,9 @@ public class HomeServerInternalApiClient extends AbstractHomeServerClient {
 		assert previousTemp >= 0;
 		assert deviceID != null && !deviceID.isEmpty();
 
-		if (doPost("/cmd/VF/" + deviceID, "data=0", new int[] { HTTP_OK }) == null) {
+		if (doPost("/cmd/VF/" + deviceID, "data=0", new int[] { HttpStatus.OK_200 }) == null) {
 			return false;
 		}
-		return publicClient.setDemandTemperature(deviceID, previousTemp);
+		return publicClient.setReferenceTemperature(deviceID, previousTemp);
 	}
 }

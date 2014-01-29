@@ -1,4 +1,4 @@
-package elm.sim.hs;
+package elm.sim.hs.client;
 
 import java.net.URISyntaxException;
 import java.util.logging.Logger;
@@ -15,10 +15,12 @@ public class HomeServerDemoClient {
 
 	private static void initSslContextFactory(HttpClient client) {
 		SslContextFactory factory = client.getSslContextFactory();
-		// factory.setKeyStorePath("/Users/oli/Temp/keystore");
-		// factory.setKeyStorePassword(AbstractHomeServerClient.HOME_SERVER_DEFAULT_PASSWORD);
-		// factory.setCertAlias("jetty");
-		factory.setTrustAll(true);
+		if (factory != null) {
+			// factory.setKeyStorePath("/Users/oli/Temp/keystore");
+			// factory.setKeyStorePassword(AbstractHomeServerClient.HOME_SERVER_DEFAULT_PASSWORD);
+			// factory.setCertAlias("jetty");
+			factory.setTrustAll(true);
+		}
 	}
 
 	public static void main(String[] args) throws URISyntaxException {
@@ -61,7 +63,6 @@ public class HomeServerDemoClient {
 		try {
 			publicClient.start();
 
-			// ContentResponse response = client.GET("http://localhost:8080/hs?action");
 			HomeServerResponse response = publicClient.getServerStatus();
 			if (verbose) {
 				print(publicClient, response);
@@ -80,23 +81,23 @@ public class HomeServerDemoClient {
 				if (verbose) {
 					print(publicClient, response);
 				}
-			}
 
-			if (deviceID != null && response._isDeviceAlive(deviceID)) {
-				response = publicClient.getDeviceStatus(deviceID);
-				if (verbose) {
-					print(publicClient, response);
-				}
+				if (deviceID != null && response._isDeviceAlive(deviceID)) {
+					response = publicClient.getDeviceStatus(deviceID);
+					if (verbose) {
+						print(publicClient, response);
+					}
 
-				// Change demand temperature:
-				publicClient.setDemandTemperature(deviceID, 190);
+					// Change demand temperature:
+					publicClient.setReferenceTemperature(deviceID, 190);
 
-				Short demandTemp = publicClient.getDemandTemperature(deviceID);
-				System.out.println("Reference temp (setpoint) = " + demandTemp);
+					Short demandTemp = publicClient.getReferenceTemperature(deviceID);
+					System.out.println("Reference temp (setpoint) = " + demandTemp);
 
-				if (useInternalClient) {
-					internalClient.start();
-					internalClient.setScaldProtectionTemperature(deviceID, 310);
+					if (useInternalClient) {
+						internalClient.start();
+						internalClient.setScaldProtectionTemperature(deviceID, 310);
+					}
 				}
 			}
 

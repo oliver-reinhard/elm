@@ -1,6 +1,8 @@
-package elm.sim.hs;
+package elm.sim.hs.client;
 
 import java.net.URISyntaxException;
+
+import org.eclipse.jetty.http.HttpStatus;
 
 import elm.sim.hs.model.HomeServerResponse;
 
@@ -39,7 +41,7 @@ public class HomeServerPublicApiClient extends AbstractHomeServerClient {
 	}
 
 	/**
-	 * Returns those devices not registered at this Home Server, regardless of whether they are currently turned on or off.
+	 * Returns all devices registered at this Home Server, regardless of whether they are currently turned on or off.
 	 * 
 	 * @return {@code null} on errors
 	 */
@@ -78,10 +80,10 @@ public class HomeServerPublicApiClient extends AbstractHomeServerClient {
 	 * @return {@code false} if the operation ended in a status {@code != 200} or if it threw an exception, else {@code true}
 	 */
 	public boolean discoverDevices() {
-		return doPost("/devices", "autoConnect=false", new int[] { HTTP_ACCEPTED }) != null;
+		return doPost("/devices", "autoConnect=false", new int[] { HttpStatus.ACCEPTED_202 }) != null;
 	}
 
-	public Short getDemandTemperature(String deviceID) {
+	public Short getReferenceTemperature(String deviceID) {
 		assert deviceID != null && !deviceID.isEmpty();
 		HomeServerResponse result = doGet("/devices/setpoint/" + deviceID, HomeServerResponse.class);
 		if (result != null) {
@@ -99,10 +101,10 @@ public class HomeServerPublicApiClient extends AbstractHomeServerClient {
 	 *            cannot be {@code null} or empty
 	 * @return {@code false} if the operation ended in a status {@code != 200} or if it threw an exception, else {@code true}
 	 */
-	public boolean setDemandTemperature(String deviceID, int newTemp) {
+	public boolean setReferenceTemperature(String deviceID, int newTemp) {
 		assert newTemp >= 0;
 		assert deviceID != null && !deviceID.isEmpty();
 
-		return doPost("/devices/setpoint/" + deviceID, "data=" + newTemp, new int[] { HTTP_OK }) != null;
+		return doPost("/devices/setpoint/" + deviceID, "data=" + newTemp, new int[] { HttpStatus.OK_200 }) != null;
 	}
 }

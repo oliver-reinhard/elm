@@ -1,4 +1,4 @@
-package elm.sim.hs;
+package elm.sim.hs.client;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -14,6 +14,7 @@ import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.util.BasicAuthentication;
 import org.eclipse.jetty.client.util.StringContentProvider;
 import org.eclipse.jetty.http.HttpMethod;
+import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import com.google.gson.Gson;
@@ -22,9 +23,6 @@ import com.google.gson.GsonBuilder;
 import elm.sim.hs.model.HomeServerObject;
 
 public abstract class AbstractHomeServerClient {
-
-	public static final int HTTP_OK = 200;
-	public static final int HTTP_ACCEPTED = 202;
 
 	/** The Home Server administration user according to API v1.0 documentation. */
 	public static final String HOME_SERVER_ADMIN_USER = "admin";
@@ -90,7 +88,7 @@ public abstract class AbstractHomeServerClient {
 	 * @return {@code null} if not-OK return status or an exception
 	 */
 	protected <T extends HomeServerObject> T doGet(String resourcePath, Class<T> resultClass) {
-		return doGet(resourcePath, resultClass, new int[] { HTTP_OK });
+		return doGet(resourcePath, resultClass, new int[] { HttpStatus.OK_200 });
 	}
 
 	/**
@@ -112,8 +110,8 @@ public abstract class AbstractHomeServerClient {
 			ContentResponse response = client.GET(getBaseUri() + resourcePath);
 			final String responseAsString = response.getContentAsString();
 			int status = response.getStatus();
-			if (!isSuccess(httpSuccessStatuses, status)) {
-				LOG.log(Level.SEVERE, "Querying resource path failed: " + resourcePath + ", Status: " + status);
+			if (! isSuccess(httpSuccessStatuses, status)) {
+				LOG.log(Level.SEVERE, "Querying resource path failed: " + (resourcePath.isEmpty() ? "\"\"" : resourcePath) + ", Status: " + status);
 				if (LOG.getLevel() == Level.INFO) {
 					final String desc = "GET " + resourcePath + " Response";
 					System.out.println(desc + " status    = " + status);
