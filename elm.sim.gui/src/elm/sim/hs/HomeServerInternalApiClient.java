@@ -9,7 +9,8 @@ import elm.sim.hs.model.HomeServerResponse;
 
 public class HomeServerInternalApiClient extends AbstractHomeServerClient {
 
-	public static final String INTERNLALS_HOME_SERVER_URI = "http://192.168.204.204:8080";
+	/** The default port for internal Home Server access according to API v1.0 documentation. */
+	private static final String HOME_SERVER_INTERNAL_API_PORT_SUFFIX = ":8080";
 
 	protected final HomeServerPublicApiClient publicClient;
 
@@ -21,11 +22,11 @@ public class HomeServerInternalApiClient extends AbstractHomeServerClient {
 	 * @throws URISyntaxException
 	 */
 	public HomeServerInternalApiClient(String pass, HomeServerPublicApiClient publicClient) throws URISyntaxException {
-		this(INTERNLALS_HOME_SERVER_URI, HOME_SERVER_ADMIN_USER, pass, publicClient);
+		this(HomeServerPublicApiClient.DEFAULT_HOME_SERVER_URI + HOME_SERVER_INTERNAL_API_PORT_SUFFIX, HOME_SERVER_ADMIN_USER, pass, publicClient);
 	}
 
 	/**
-	 * @param baseUri
+	 * @param baseUri base URI <em>without</em> the port number, cannot be {@code null}
 	 * @param user
 	 * @param pass
 	 *            cannot be {@code null}
@@ -33,8 +34,9 @@ public class HomeServerInternalApiClient extends AbstractHomeServerClient {
 	 *            cannot be {@code null} and is assumed to be started when the first invocation of {@link HomeServerInternalApiClient} method is made.
 	 * @throws URISyntaxException
 	 */
-	public HomeServerInternalApiClient(String baseUri, String user, String pass, HomeServerPublicApiClient publicClient) throws URISyntaxException {
-		super(baseUri, user, pass);
+	public HomeServerInternalApiClient(String baseUri, String user, String pass, HomeServerPublicApiClient publicClient)
+			throws URISyntaxException {
+		super(baseUri + HOME_SERVER_INTERNAL_API_PORT_SUFFIX, user, pass);
 		assert publicClient != null;
 		this.publicClient = publicClient;
 	}

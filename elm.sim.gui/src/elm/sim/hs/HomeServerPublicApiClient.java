@@ -6,12 +6,30 @@ import elm.sim.hs.model.HomeServerResponse;
 
 public class HomeServerPublicApiClient extends AbstractHomeServerClient {
 
+	/** The default URI according to API v1.0 documentation. */
 	public static final String DEFAULT_HOME_SERVER_URI = "http://192.168.204.204";
 
+	/**
+	 * Use the default server URI and administration user.
+	 * 
+	 * @param pass
+	 *            cannot be {@code null}
+	 * @throws URISyntaxException
+	 */
 	public HomeServerPublicApiClient(String pass) throws URISyntaxException {
 		super(DEFAULT_HOME_SERVER_URI, pass);
 	}
-	
+
+	/**
+	 * 
+	 * @param baseUri
+	 *            the server URI including an optional port argument, but without any resource path elements
+	 * @param user
+	 *            cannot be {@code null}
+	 * @param pass
+	 *            cannot be {@code null}
+	 * @throws URISyntaxException
+	 */
 	public HomeServerPublicApiClient(String baseUri, String user, String pass) throws URISyntaxException {
 		super(baseUri, user, pass);
 	}

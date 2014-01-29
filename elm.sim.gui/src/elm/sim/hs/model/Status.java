@@ -20,4 +20,7 @@ public class Status implements HomeServerObject {
 	public short flags;
 	public short error;
 
+	public Error _getError() {
+		return Error.fromCode(error);
+	}
 }

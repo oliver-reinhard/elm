@@ -9,26 +9,6 @@ import java.util.List;
  */
 public class Device implements HomeServerObject {
 
-	/** See Home Server API documentation for error numbers. */
-	public enum Error {
-
-		DEVICE_OK(0), DEVICE_NOT_REGISTERED(-1), DEVICE_NOT_RESPONDING(-3);
-
-		final short nr;
-
-		private Error(int nr) {
-			this.nr = (short) nr;
-		}
-
-		public short getNumber() {
-			return nr;
-		}
-
-		public boolean equals(short errorNr) {
-			return errorNr == nr;
-		}
-	}
-
 	public String id;
 	public short rssi;
 	public short lqi;
@@ -40,13 +20,21 @@ public class Device implements HomeServerObject {
 
 	// public List<Error> errors; // not supported yet, see API documentation
 
-	public boolean isAlive() {
+	public Error _getError() {
 		if (info != null) {
-			return Error.DEVICE_OK.equals(info.error);
+			return info._getError();
 		}
 		if (status != null) {
-			return Error.DEVICE_OK.equals(status.error);
+			return status._getError();
 		}
-		return false;
+		return Error.UNKNOWN_ERROR;
+	}
+
+	public boolean _isAlive() {
+		return _getError().getCode() >= Error.OK.getCode();
+	}
+
+	public boolean _isOk() {
+		return _getError() == Error.OK;
 	}
 }

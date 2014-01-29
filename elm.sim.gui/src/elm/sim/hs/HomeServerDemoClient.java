@@ -3,47 +3,101 @@ package elm.sim.hs;
 import java.net.URISyntaxException;
 import java.util.logging.Logger;
 
+import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
+
 import elm.sim.hs.model.Device;
 import elm.sim.hs.model.HomeServerResponse;
-import static elm.sim.hs.AbstractHomeServerClient.HOME_SERVER_DEFAULT_PASSWORD;
 
 public class HomeServerDemoClient {
 
 	private static final Logger LOG = Logger.getLogger(HomeServerDemoClient.class.getName());
 
-	public static void main(String[] args) throws URISyntaxException {
+	private static void initSslContextFactory(HttpClient client) {
+		SslContextFactory factory = client.getSslContextFactory();
+		// factory.setKeyStorePath("/Users/oli/Temp/keystore");
+		// factory.setKeyStorePassword(AbstractHomeServerClient.HOME_SERVER_DEFAULT_PASSWORD);
+		// factory.setCertAlias("jetty");
+		factory.setTrustAll(true);
+	}
 
-		HomeServerPublicApiClient publicClient = new HomeServerPublicApiClient(HOME_SERVER_DEFAULT_PASSWORD);
-		HomeServerInternalApiClient internalClient = new HomeServerInternalApiClient(HOME_SERVER_DEFAULT_PASSWORD, publicClient);
+	public static void main(String[] args) throws URISyntaxException {
+		String user = HomeServerPublicApiClient.HOME_SERVER_ADMIN_USER;
+		String password = HomeServerPublicApiClient.HOME_SERVER_DEFAULT_PASSWORD;
+		String baseUri = HomeServerPublicApiClient.DEFAULT_HOME_SERVER_URI;
+		String deviceID = null;
+		boolean useInternalClient = true;
+		boolean verbose = false;
+
+		try {
+			int i = 0;
+			while (i < args.length) {
+				String flag = args[i++];
+				if ("-pass".equals(flag)) {
+					password = getArgument(args, i++);
+				} else if ("-uri".equals(flag)) {
+					baseUri = getArgument(args, i++);
+				} else if ("-device".equals(flag)) {
+					deviceID = getArgument(args, i++);
+				} else if ("-nointernal".equals(flag)) {
+					useInternalClient = false;
+				} else if ("-verbose".equals(flag)) {
+					verbose = true;
+				}
+			}
+		} catch (IllegalArgumentException ex) {
+			System.err.println("Usage: " + HomeServerDemoClient.class.getName() + " [-pass password] [-uri <baseURI>] [-device ID] [-nointernal] [-verbose]");
+			System.exit(1);
+		}
+
+		HomeServerPublicApiClient publicClient = new HomeServerPublicApiClient(baseUri, user, password);
+		initSslContextFactory(publicClient.getClient());
+
+		HomeServerInternalApiClient internalClient = null;
+		if (useInternalClient) {
+			internalClient = new HomeServerInternalApiClient(baseUri, user, password, publicClient);
+		}
 
 		try {
 			publicClient.start();
 
 			// ContentResponse response = client.GET("http://localhost:8080/hs?action");
-			publicClient.getServerStatus();
+			HomeServerResponse response = publicClient.getServerStatus();
+			if (verbose) {
+				print(publicClient, response);
+			}
 
-			HomeServerResponse response = publicClient.getRegisteredDevices();
+			response = publicClient.getRegisteredDevices();
 			if (response != null) {
 				for (Device dev : response.devices) {
-					if (!dev.isAlive()) {
-						LOG.warning("Registered Device " + dev.id + " is not connected.");
+					if (!dev._isAlive()) {
+						LOG.warning("Registered Device " + dev.id + ": " + dev._getError().name());
 						// Do not send request with this device ID.
+					} else if (!dev._isOk()) {
+						LOG.warning("Registered Device " + dev.id + ": " + dev._getError());
 					}
+				}
+				if (verbose) {
+					print(publicClient, response);
 				}
 			}
 
-			String deviceID = "A001FFFF8A";
-			if (response.isDeviceAlive(deviceID)) {
-				publicClient.getDeviceStatus(deviceID);
+			if (deviceID != null && response._isDeviceAlive(deviceID)) {
+				response = publicClient.getDeviceStatus(deviceID);
+				if (verbose) {
+					print(publicClient, response);
+				}
 
 				// Change demand temperature:
 				publicClient.setDemandTemperature(deviceID, 190);
 
 				Short demandTemp = publicClient.getDemandTemperature(deviceID);
-				System.out.println("Demand temp = " + demandTemp);
+				System.out.println("Reference temp (setpoint) = " + demandTemp);
 
-				internalClient.start();
-				internalClient.setScaldProtectionTemperature(deviceID, 310);
+				if (useInternalClient) {
+					internalClient.start();
+					internalClient.setScaldProtectionTemperature(deviceID, 310);
+				}
 			}
 
 		} catch (Exception e) {
@@ -60,5 +114,17 @@ public class HomeServerDemoClient {
 				e.printStackTrace();
 			}
 		}
+	}
+
+	protected static void print(HomeServerPublicApiClient publicClient, HomeServerResponse response) {
+		System.out.println("\n----");
+		System.out.println(publicClient.getGson().toJson(response));
+	}
+
+	protected static String getArgument(String[] args, int i) {
+		if (i < args.length) {
+			return args[i];
+		}
+		throw new IllegalArgumentException();
 	}
 }

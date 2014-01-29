@@ -20,7 +20,7 @@ public class HomeServerResponse implements HomeServerObject {
 	public Server server;
 	public Response response;
 
-	public boolean isDeviceAlive(String deviceID) {
+	public boolean _isDeviceAlive(String deviceID) {
 		assert deviceID != null & ! deviceID.isEmpty();
 		
 		if (devices == null) {
@@ -28,7 +28,7 @@ public class HomeServerResponse implements HomeServerObject {
 		}
 		for (Device device : devices) {
 			if (deviceID.equals(device.id)) {
-				return device.isAlive();
+				return device._isAlive();
 			}
 		}
 		return false;

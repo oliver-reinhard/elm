@@ -16,4 +16,8 @@ public class Info implements HomeServerObject {
 	public String url;
 	public short serverCh;
 	public short serverAddr;
+	
+	public Error _getError() {
+		return Error.fromCode(error);
+	}
 }

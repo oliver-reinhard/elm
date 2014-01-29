@@ -14,6 +14,7 @@ import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.util.BasicAuthentication;
 import org.eclipse.jetty.client.util.StringContentProvider;
 import org.eclipse.jetty.http.HttpMethod;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -24,12 +25,14 @@ public abstract class AbstractHomeServerClient {
 
 	public static final int HTTP_OK = 200;
 	public static final int HTTP_ACCEPTED = 202;
-	
+
+	/** The Home Server administration user according to API v1.0 documentation. */
 	public static final String HOME_SERVER_ADMIN_USER = "admin";
+	/** The Home Server administration user password according to API v1.0 documentation. */
 	public static final String HOME_SERVER_DEFAULT_PASSWORD = "geheim";
-	
+
 	protected final Logger LOG = Logger.getLogger(getClass().getName());
-	
+
 	private final String baseUri;
 	private final HttpClient client;
 	private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -37,15 +40,18 @@ public abstract class AbstractHomeServerClient {
 	public AbstractHomeServerClient(String baseUri, String pass) throws URISyntaxException {
 		this(baseUri, HOME_SERVER_ADMIN_USER, pass);
 	}
-	
+
 	public AbstractHomeServerClient(String baseUri, String user, String pass) throws URISyntaxException {
+		assert baseUri != null && ! baseUri.isEmpty();
 		this.baseUri = baseUri;
+		boolean https = baseUri.toLowerCase().startsWith("https");
+		SslContextFactory sslContextFactory = https ? new SslContextFactory() : null;
 		//
 		// BUG (jetty 9.0.6): the HttpClient simply FORGETS to put the authentication header into the request.
 		//
 		// Replace AuthenticationHttpClient by HttpClient once the bug has been fixed and the header is correct
 		//
-		client = new AuthenticatingHttpClient(user, pass);
+		client = new AuthenticatingHttpClient(user, pass, sslContextFactory);
 
 		// The following lines are without effect due to the above-mentioned BUG:
 		URI uri = new URI(baseUri);
@@ -101,7 +107,7 @@ public abstract class AbstractHomeServerClient {
 	private <T extends HomeServerObject> T doGet(String resourcePath, Class<T> resultClass, int[] httpSuccessStatuses) {
 		assert resourcePath != null;
 		assert resultClass != null;
-	
+
 		try {
 			ContentResponse response = client.GET(getBaseUri() + resourcePath);
 			final String responseAsString = response.getContentAsString();
@@ -115,9 +121,9 @@ public abstract class AbstractHomeServerClient {
 				}
 				return null;
 			}
-	
+
 			final T result = getGson().fromJson(responseAsString, resultClass);
-	
+
 			if (LOG.getLevel() == Level.INFO) {
 				final String desc = "GET " + resourcePath;
 				System.out.println();
@@ -126,7 +132,7 @@ public abstract class AbstractHomeServerClient {
 				System.out.println(desc + " Result             = " + result.getClass().getName() + ": " + getGson().toJson(result));
 			}
 			return result;
-	
+
 		} catch (InterruptedException | ExecutionException | TimeoutException e) {
 			LOG.log(Level.SEVERE, "Querying resource path failed: " + resourcePath, e);
 			return null;
@@ -153,7 +159,7 @@ public abstract class AbstractHomeServerClient {
 			}
 			ContentResponse response = postRequest.send();
 			int status = response.getStatus();
-	
+
 			final String desc = "POST " + resourcePath + " (" + content + ") Response";
 			if (!isSuccess(httpSuccessStatuses, status)) {
 				LOG.log(Level.SEVERE, "Posting resource path failed: " + resourcePath + ", Status: " + status);
@@ -173,13 +179,14 @@ public abstract class AbstractHomeServerClient {
 	}
 
 	/**
-	 * @param httpSuccessStatuses cannot be {@code null}
+	 * @param httpSuccessStatuses
+	 *            cannot be {@code null}
 	 * @param status
 	 * @return {@code true} if the given status is contained in the list of success statuses.
 	 */
 	protected boolean isSuccess(int[] httpSuccessStatuses, int status) {
 		assert httpSuccessStatuses != null;
-		
+
 		for (int s : httpSuccessStatuses) {
 			if (status == s) return true;
 		}
