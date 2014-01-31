@@ -19,7 +19,7 @@ import elm.sim.hs.model.HomeServerResponse;
 @SuppressWarnings("serial")
 public abstract class AbstractHomeServerServlet extends HttpServlet {
 
-	protected static final Logger LOG = Log.getLogger(AbstractHomeServerServlet.class);
+	protected final Logger LOG = Log.getLogger(AbstractHomeServerServlet.class);
 
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {

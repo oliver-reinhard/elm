@@ -1,133 +1,144 @@
 package elm.sim.hs.client;
 
-import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import java.util.logging.Logger;
 
+import org.apache.commons.cli.BasicParser;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
-import elm.sim.hs.model.Device;
-import elm.sim.hs.model.HomeServerResponse;
-
 public abstract class AbstractCommandLineClient {
 
-	private static final Logger LOG = Logger.getLogger(AbstractCommandLineClient.class.getName());
+	protected static final String OPT_PASSWD = "p";
+	protected static final String OPT_URL = "uri";
+	protected static final String OPT_DEVICE = "d";
+	protected static final String OPT_NO_INTERNAL = "noint";
+	protected static final String OPT_VERBOSE = "v";
 
-	private static void initSslContextFactory(HttpClient client) {
+	protected final Logger LOG = Logger.getLogger(getClass().getName());
+
+	protected String user = HomeServerPublicApiClient.HOME_SERVER_ADMIN_USER;
+	protected String password = HomeServerPublicApiClient.HOME_SERVER_DEFAULT_PASSWORD;
+	protected String baseUri = HomeServerPublicApiClient.DEFAULT_HOME_SERVER_URI;
+	protected String deviceID;
+	protected boolean useInternalClient;
+	protected boolean verbose;
+
+	/**
+	 * Command-line options, see <a href="http://commons.apache.org/proper/commons-cli/usage.html">Apache Commons CLI</a>.
+	 * 
+	 * @param options
+	 *            cannot be {@code null}
+	 */
+	protected void addCommandLineOptions(Options options) {
+		assert options != null;
+		options.addOption(OPT_PASSWD, "password", true, null);
+		options.addOption(OPT_URL, "server_base_uri", true, "the server's base URI");
+		options.addOption(OPT_DEVICE, "device", true, "the device ID");
+		options.addOption(OPT_NO_INTERNAL, "no_internal", false, "do not use the internal server API");
+		options.addOption(OPT_VERBOSE, "verbose", false, null);
+	}
+
+	/**
+	 * @param line
+	 *            cannot be {@code null}
+	 */
+	protected void processOptions(CommandLine line) {
+		assert line != null;
+		if (line.hasOption(OPT_PASSWD)) {
+			password = line.getOptionValue(OPT_PASSWD);
+		}
+		if (line.hasOption(OPT_URL)) {
+			baseUri = line.getOptionValue(OPT_URL);
+		}
+		if (line.hasOption(OPT_DEVICE)) {
+			deviceID = line.getOptionValue(OPT_DEVICE);
+		}
+		useInternalClient = !line.hasOption(OPT_NO_INTERNAL);
+		verbose = line.hasOption(OPT_VERBOSE);
+	}
+
+	/**
+	 * Command-line options, see <a href="http://commons.apache.org/proper/commons-cli/usage.html">Apache Commons CLI</a>.
+	 * 
+	 * @param args
+	 *            cannot be {@code null}
+	 */
+	protected void parseCommandLine(String[] args) {
+		assert args != null;
+		Options options = new Options();
+		addCommandLineOptions(options);
+		try {
+			CommandLine line = new BasicParser().parse(options, args);
+			processOptions(line);
+		} catch (ParseException e) {
+			HelpFormatter formatter = new HelpFormatter();
+			formatter.printHelp(getCommandLineSyntax(options), options);
+			System.exit(1);
+		}
+	}
+
+	/**
+	 * Returns a human-readable command line syntax description. This should really be part of the use CLI framework.
+	 * 
+	 * @param options
+	 *            cannot be {@code null}
+	 * @return never {@code null}
+	 */
+	protected String getCommandLineSyntax(Options options) {
+		StringBuilder b = new StringBuilder();
+		@SuppressWarnings("unchecked")
+		List<Option> list = new ArrayList<Option>(options.getOptions());
+		// sort required first, then sort alphabetically:
+		Collections.sort(list, new Comparator<Option>() {
+
+			@Override
+			public int compare(Option o1, Option o2) {
+				if (o1.isRequired() == o2.isRequired()) {
+					return o1.getOpt().compareTo(o2.getOpt());
+				}
+				if (o1.isRequired()) {
+					return -1;
+				}
+				return 1;
+			}
+		});
+		for (Option opt : list) {
+			addOption(b, opt);
+		}
+		return b.toString();
+	}
+
+	protected void addOption(StringBuilder b, Option opt) {
+		if (!opt.isRequired()) {
+			b.append("[");
+		}
+		b.append("-");
+		b.append(opt.getOpt());
+		if (opt.hasArg()) {
+			b.append(" arg");
+			if (opt.hasArgs()) {
+				b.append("...");
+			}
+		}
+		if (!opt.isRequired()) {
+			b.append("]");
+		}
+		b.append(" ");
+	}
+
+	protected static void initSslContextFactory(HttpClient client) {
 		SslContextFactory factory = client.getSslContextFactory();
 		if (factory != null) {
 			factory.setTrustAll(true);
 		}
-	}
-
-	public static void main(String[] args) throws URISyntaxException {
-		String user = HomeServerPublicApiClient.HOME_SERVER_ADMIN_USER;
-		String password = HomeServerPublicApiClient.HOME_SERVER_DEFAULT_PASSWORD;
-		String baseUri = HomeServerPublicApiClient.DEFAULT_HOME_SERVER_URI;
-		String deviceID = null;
-		boolean useInternalClient = true;
-		boolean verbose = false;
-
-		try {
-			int i = 0;
-			while (i < args.length) {
-				String flag = args[i++];
-				if ("-pass".equals(flag)) {
-					password = getArgument(flag, args, i++);
-				} else if ("-uri".equals(flag)) {
-					baseUri = getArgument(flag, args, i++);
-				} else if ("-device".equals(flag)) {
-					deviceID = getArgument(flag, args, i++);
-				} else if ("-nointernal".equals(flag)) {
-					useInternalClient = false;
-				} else if ("-verbose".equals(flag)) {
-					verbose = true;
-				} else if (flag.startsWith("-")){
-					throw new IllegalArgumentException("Unknown flag '" + flag + "'");
-				} else {
-					throw new IllegalArgumentException("Unexpected argument '" + flag + "'");
-				}
-			}
-		} catch (IllegalArgumentException ex) {
-			System.err.println("Usage: " + AbstractCommandLineClient.class.getName() + " [-pass password] [-uri <baseURI>] [-device ID] [-nointernal] [-verbose]");
-			System.err.println("       (" + ex.getMessage() + ")");
-			System.exit(1);
-		}
-
-		HomeServerPublicApiClient publicClient = new HomeServerPublicApiClient(baseUri, user, password);
-		initSslContextFactory(publicClient.getClient());
-
-		HomeServerInternalApiClient internalClient = null;
-		if (useInternalClient) {
-			internalClient = new HomeServerInternalApiClient(baseUri, user, password, publicClient);
-		}
-
-		try {
-			publicClient.start();
-
-			HomeServerResponse response = publicClient.getServerStatus();
-			if (verbose) {
-				print(publicClient, response);
-			}
-
-			response = publicClient.getRegisteredDevices();
-			if (response != null) {
-				for (Device dev : response.devices) {
-					if (!dev._isAlive()) {
-						LOG.warning("Registered Device " + dev.id + ": " + dev._getError().name());
-						// Do not send request with this device ID.
-					} else if (!dev._isOk()) {
-						LOG.warning("Registered Device " + dev.id + ": " + dev._getError());
-					}
-				}
-				if (verbose) {
-					print(publicClient, response);
-				}
-
-				if (deviceID != null && response._isDeviceAlive(deviceID)) {
-					response = publicClient.getDeviceStatus(deviceID);
-					if (verbose) {
-						print(publicClient, response);
-					}
-
-					// Change demand temperature:
-					publicClient.setReferenceTemperature(deviceID, 190);
-
-					Short demandTemp = publicClient.getReferenceTemperature(deviceID);
-					System.out.println("Reference temp (setpoint) = " + demandTemp);
-
-					if (useInternalClient) {
-						internalClient.start();
-						internalClient.setScaldProtectionTemperature(deviceID, 310);
-					}
-				}
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		} finally {
-			try {
-				if (publicClient != null) {
-					publicClient.stop();
-				}
-				if (internalClient != null) {
-					internalClient.stop();
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-	}
-
-	protected static void print(HomeServerPublicApiClient publicClient, HomeServerResponse response) {
-		System.out.println("\n----");
-		System.out.println(publicClient.getGson().toJson(response));
-	}
-
-	protected static String getArgument(String flag, String[] args, int i) {
-		if (i < args.length) {
-			return args[i];
-		}
-		throw new IllegalArgumentException("Missing argument(s) for flag '" + flag + "'");
 	}
 }
