@@ -12,8 +12,6 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.eclipse.jetty.client.HttpClient;
-import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 public abstract class AbstractCommandLineClient {
 
@@ -87,7 +85,7 @@ public abstract class AbstractCommandLineClient {
 	}
 
 	/**
-	 * Returns a human-readable command line syntax description. This should really be part of the use CLI framework.
+	 * Returns a human-readable command-line syntax description. This should really be part of the used Apache CLI framework.
 	 * 
 	 * @param options
 	 *            cannot be {@code null}
@@ -133,12 +131,5 @@ public abstract class AbstractCommandLineClient {
 			b.append("]");
 		}
 		b.append(" ");
-	}
-
-	protected static void initSslContextFactory(HttpClient client) {
-		SslContextFactory factory = client.getSslContextFactory();
-		if (factory != null) {
-			factory.setTrustAll(true);
-		}
 	}
 }

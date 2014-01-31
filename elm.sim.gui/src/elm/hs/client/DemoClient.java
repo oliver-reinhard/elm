@@ -17,7 +17,7 @@ public class DemoClient extends AbstractCommandLineClient {
 	}
 	protected void run() throws URISyntaxException {
 		HomeServerPublicApiClient publicClient = new HomeServerPublicApiClient(baseUri, user, password);
-		initSslContextFactory(publicClient.getClient());
+		ClientUtil.initSslContextFactory(publicClient.getClient());
 
 		HomeServerInternalApiClient internalClient = null;
 		if (useInternalClient) {
