@@ -1,4 +1,4 @@
-package elm.sim.hs.model;
+package elm.hs.model;
 
 import java.util.List;
 

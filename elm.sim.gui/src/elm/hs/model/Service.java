@@ -1,4 +1,4 @@
-package elm.sim.hs.model;
+package elm.hs.model;
 
 /**
  * This class models the {@code service} object of the CLAGE Home Server.

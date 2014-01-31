@@ -1,4 +1,4 @@
-package elm.sim.hs.model;
+package elm.hs.model;
 
 /** See Home Server API documentation for error numbers. */
 public enum Error {

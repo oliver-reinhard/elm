@@ -1,11 +1,11 @@
-package elm.sim.hs.client;
+package elm.hs.client;
 
 import java.net.URISyntaxException;
 
 import org.apache.commons.cli.Options;
 
-import elm.sim.hs.model.Device;
-import elm.sim.hs.model.HomeServerResponse;
+import elm.hs.model.Device;
+import elm.hs.model.HomeServerResponse;
 
 public class DemoClient extends AbstractCommandLineClient {
 

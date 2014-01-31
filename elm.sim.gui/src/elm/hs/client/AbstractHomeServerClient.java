@@ -1,4 +1,4 @@
-package elm.sim.hs.client;
+package elm.hs.client;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -20,7 +20,7 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import elm.sim.hs.model.HomeServerObject;
+import elm.hs.model.HomeServerObject;
 
 public abstract class AbstractHomeServerClient {
 

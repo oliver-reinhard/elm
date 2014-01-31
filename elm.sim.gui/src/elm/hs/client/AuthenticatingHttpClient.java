@@ -1,4 +1,4 @@
-package elm.sim.hs.client;
+package elm.hs.client;
 
 import java.net.URI;
 

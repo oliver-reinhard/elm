@@ -14,7 +14,7 @@ import org.eclipse.jetty.util.log.Logger;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import elm.sim.hs.model.HomeServerResponse;
+import elm.hs.model.HomeServerResponse;
 
 @SuppressWarnings("serial")
 public abstract class AbstractHomeServerServlet extends HttpServlet {

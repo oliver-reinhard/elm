@@ -6,14 +6,14 @@ import java.util.List;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import elm.sim.hs.model.Device;
-import elm.sim.hs.model.HomeServerFieldNamingStrategy;
-import elm.sim.hs.model.HomeServerResponse;
-import elm.sim.hs.model.Info;
-import elm.sim.hs.model.Log;
-import elm.sim.hs.model.Server;
-import elm.sim.hs.model.Service;
-import elm.sim.hs.model.Status;
+import elm.hs.model.Device;
+import elm.hs.model.HomeServerFieldNamingStrategy;
+import elm.hs.model.HomeServerResponse;
+import elm.hs.model.Info;
+import elm.hs.model.Log;
+import elm.hs.model.Server;
+import elm.hs.model.Service;
+import elm.hs.model.Status;
 
 public class HomeServerDB {
 

@@ -13,7 +13,7 @@ import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 
-import elm.sim.hs.model.HomeServerResponse;
+import elm.hs.model.HomeServerResponse;
 
 public class HomeServerSimulation {
 

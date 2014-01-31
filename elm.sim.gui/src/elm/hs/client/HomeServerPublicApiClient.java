@@ -1,10 +1,10 @@
-package elm.sim.hs.client;
+package elm.hs.client;
 
 import java.net.URISyntaxException;
 
 import org.eclipse.jetty.http.HttpStatus;
 
-import elm.sim.hs.model.HomeServerResponse;
+import elm.hs.model.HomeServerResponse;
 
 public class HomeServerPublicApiClient extends AbstractHomeServerClient {
 

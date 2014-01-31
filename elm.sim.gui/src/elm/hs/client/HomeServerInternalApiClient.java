@@ -1,4 +1,4 @@
-package elm.sim.hs.client;
+package elm.hs.client;
 
 import java.net.URISyntaxException;
 import java.util.logging.Level;
@@ -6,7 +6,7 @@ import java.util.logging.Level;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.http.HttpStatus;
 
-import elm.sim.hs.model.HomeServerResponse;
+import elm.hs.model.HomeServerResponse;
 
 public class HomeServerInternalApiClient extends AbstractHomeServerClient {
 
