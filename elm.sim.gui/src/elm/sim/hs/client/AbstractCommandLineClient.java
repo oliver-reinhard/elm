@@ -9,16 +9,13 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 import elm.sim.hs.model.Device;
 import elm.sim.hs.model.HomeServerResponse;
 
-public class HomeServerDemoClient {
+public abstract class AbstractCommandLineClient {
 
-	private static final Logger LOG = Logger.getLogger(HomeServerDemoClient.class.getName());
+	private static final Logger LOG = Logger.getLogger(AbstractCommandLineClient.class.getName());
 
 	private static void initSslContextFactory(HttpClient client) {
 		SslContextFactory factory = client.getSslContextFactory();
 		if (factory != null) {
-			// factory.setKeyStorePath("/Users/oli/Temp/keystore");
-			// factory.setKeyStorePassword(AbstractHomeServerClient.HOME_SERVER_DEFAULT_PASSWORD);
-			// factory.setCertAlias("jetty");
 			factory.setTrustAll(true);
 		}
 	}
@@ -36,19 +33,24 @@ public class HomeServerDemoClient {
 			while (i < args.length) {
 				String flag = args[i++];
 				if ("-pass".equals(flag)) {
-					password = getArgument(args, i++);
+					password = getArgument(flag, args, i++);
 				} else if ("-uri".equals(flag)) {
-					baseUri = getArgument(args, i++);
+					baseUri = getArgument(flag, args, i++);
 				} else if ("-device".equals(flag)) {
-					deviceID = getArgument(args, i++);
+					deviceID = getArgument(flag, args, i++);
 				} else if ("-nointernal".equals(flag)) {
 					useInternalClient = false;
 				} else if ("-verbose".equals(flag)) {
 					verbose = true;
+				} else if (flag.startsWith("-")){
+					throw new IllegalArgumentException("Unknown flag '" + flag + "'");
+				} else {
+					throw new IllegalArgumentException("Unexpected argument '" + flag + "'");
 				}
 			}
 		} catch (IllegalArgumentException ex) {
-			System.err.println("Usage: " + HomeServerDemoClient.class.getName() + " [-pass password] [-uri <baseURI>] [-device ID] [-nointernal] [-verbose]");
+			System.err.println("Usage: " + AbstractCommandLineClient.class.getName() + " [-pass password] [-uri <baseURI>] [-device ID] [-nointernal] [-verbose]");
+			System.err.println("       (" + ex.getMessage() + ")");
 			System.exit(1);
 		}
 
@@ -122,10 +124,10 @@ public class HomeServerDemoClient {
 		System.out.println(publicClient.getGson().toJson(response));
 	}
 
-	protected static String getArgument(String[] args, int i) {
+	protected static String getArgument(String flag, String[] args, int i) {
 		if (i < args.length) {
 			return args[i];
 		}
-		throw new IllegalArgumentException();
+		throw new IllegalArgumentException("Missing argument(s) for flag '" + flag + "'");
 	}
 }
