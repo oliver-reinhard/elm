@@ -7,22 +7,22 @@ import org.junit.Test;
 
 import elm.sim.model.Flow;
 import static elm.sim.model.Flow.*;
-import elm.sim.model.Outlet;
+import elm.sim.model.TapPoint;
 import elm.sim.model.Status;
 import static elm.sim.model.Status.*;
 import elm.sim.model.Temperature;
 import static elm.sim.model.Temperature.*;
-import elm.sim.model.impl.OutletImpl;
+import elm.sim.model.impl.TapPointImpl;
 
 public class OutletImplTest {
 
 	private static final Temperature INITIAL_REFERENCE_TEMP = TEMP_3;
 
-	private Outlet o;
+	private TapPoint o;
 
 	@Before
 	public void setup() {
-		o = new OutletImpl("Name", INITIAL_REFERENCE_TEMP);
+		o = new TapPointImpl("Name", INITIAL_REFERENCE_TEMP);
 
 	}
 

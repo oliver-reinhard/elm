@@ -13,16 +13,16 @@ import elm.sim.metamodel.SimModelListener;
 import elm.sim.model.Scheduler;
 import elm.sim.model.Status;
 import elm.sim.model.Temperature;
-import elm.sim.model.impl.OutletImpl;
+import elm.sim.model.impl.TapPointImpl;
 import elm.sim.model.impl.SchedulerImpl;
 
 @SuppressWarnings("serial")
 public class SimulatorUI extends JFrame {
 	
-	private AbstractOutletUI outlet_1;
-	private AbstractOutletUI outlet_2;
-	private AbstractOutletUI outlet_3;
-	private AbstractOutletUI outlet_4;
+	private AbstractTapPointUI tapPoint_1;
+	private AbstractTapPointUI tapPoint_2;
+	private AbstractTapPointUI tapPoint_3;
+	private AbstractTapPointUI tapPoint_4;
 	private SchedulerMonitorUI scheduler;
 
 	public SimulatorUI() {
@@ -43,17 +43,17 @@ public class SimulatorUI extends JFrame {
 		gbc_scheduler.gridy = 0;
 		panel.add(scheduler, gbc_scheduler);
 
-		outlet_1 = new RealOutletUI(new OutletImpl("2 OG lk - Dusche", Temperature.TEMP_2));
-		panel.add(outlet_1, createOutletConstraints(1,0));
+		tapPoint_1 = new RealTapPointUI(new TapPointImpl("2 OG lk - Dusche", Temperature.TEMP_2));
+		panel.add(tapPoint_1, createOutletConstraints(1,0));
 		
-		outlet_2 = new SimOutletUI(new OutletImpl("2 OG lk - Küche", Temperature.TEMP_2));
-		panel.add(outlet_2, createOutletConstraints(2,0));
+		tapPoint_2 = new SimTapPointUI(new TapPointImpl("2 OG lk - Küche", Temperature.TEMP_2));
+		panel.add(tapPoint_2, createOutletConstraints(2,0));
 
-		outlet_3 = new SimOutletUI(new OutletImpl("1 OG lk - Dusche", Temperature.TEMP_2));
-		panel.add(outlet_3, createOutletConstraints(1,1));
+		tapPoint_3 = new SimTapPointUI(new TapPointImpl("1 OG lk - Dusche", Temperature.TEMP_2));
+		panel.add(tapPoint_3, createOutletConstraints(1,1));
 
-		outlet_4 = new SimOutletUI(new OutletImpl("1 OG lk - Küche", Temperature.TEMP_2));
-		panel.add(outlet_4, createOutletConstraints(2,1));
+		tapPoint_4 = new SimTapPointUI(new TapPointImpl("1 OG lk - Küche", Temperature.TEMP_2));
+		panel.add(tapPoint_4, createOutletConstraints(2,1));
 		
 		getContentPane().add(panel);
 		
@@ -75,20 +75,20 @@ public class SimulatorUI extends JFrame {
 //				System.out.println("PCL: value = " + e.getAttribute().id() + ": " + e.getOldValue() + " --> " + e.getNewValue());
 				
 				if (e.getAttribute() == Scheduler.Attribute.STATUS) {
-					outlet_1.getModel().setSchedulerStatus((Status)e.getNewValue());
-					outlet_2.getModel().setSchedulerStatus((Status)e.getNewValue());
-					outlet_3.getModel().setSchedulerStatus((Status)e.getNewValue());
-					outlet_4.getModel().setSchedulerStatus((Status)e.getNewValue());
+					tapPoint_1.getModel().setSchedulerStatus((Status)e.getNewValue());
+					tapPoint_2.getModel().setSchedulerStatus((Status)e.getNewValue());
+					tapPoint_3.getModel().setSchedulerStatus((Status)e.getNewValue());
+					tapPoint_4.getModel().setSchedulerStatus((Status)e.getNewValue());
 //					if (Status.OVERLOAD == e.getNewValue()) {
 //						outlet_1.getModel().setWaitingTimePercent(25);
 //						outlet_2.getModel().setWaitingTimePercent(25);
 //					}
 				} else if (e.getAttribute() == Scheduler.Attribute.WAITING_TIME_SECONDS) {
 					int waitTimePercent = (int) e.getNewValue() * 100 / SchedulerImpl.SIMULATED_WAITING_TIME_SECONDS;
-					outlet_1.getModel().setWaitingTimePercent(waitTimePercent);
-					outlet_2.getModel().setWaitingTimePercent(waitTimePercent); 
-					outlet_3.getModel().setWaitingTimePercent(waitTimePercent); 
-					outlet_4.getModel().setWaitingTimePercent(waitTimePercent);
+					tapPoint_1.getModel().setWaitingTimePercent(waitTimePercent);
+					tapPoint_2.getModel().setWaitingTimePercent(waitTimePercent); 
+					tapPoint_3.getModel().setWaitingTimePercent(waitTimePercent); 
+					tapPoint_4.getModel().setWaitingTimePercent(waitTimePercent);
 				}
 			}
 		});
