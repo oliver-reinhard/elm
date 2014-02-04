@@ -6,7 +6,7 @@ import java.util.List;
 
 import elm.hs.api.client.HomeServerInternalApiClient;
 import elm.hs.api.model.Device;
-import elm.scheduler.model.DeviceInfo.UpdateResult;
+import elm.scheduler.HomeServerChangeListener;
 
 public interface HomeServer {
 
@@ -19,9 +19,8 @@ public interface HomeServer {
 	 * 
 	 * @param devices
 	 *            cannot be {@code null}
-	 * @return never {@code null}
 	 */
-	UpdateResult updateDeviceInfos(List<Device> devices);
+	void updateDeviceInfos(List<Device> devices);
 
 	Collection<DeviceInfo> getDevicesInfos();
 
@@ -46,8 +45,8 @@ public interface HomeServer {
 	 *            cannot be {@code null}
 	 */
 	void putDeviceUpdate(DeviceUpdate update);
-
-	boolean hasPendingDeviceUpdates();
+	
+	void fireDeviceChangesPending();
 
 	/**
 	 * Executes pending updates.
@@ -57,4 +56,7 @@ public interface HomeServer {
 	 */
 	void executeDeviceUpdates(HomeServerInternalApiClient client);
 
+	void addChangeListener(HomeServerChangeListener listener);
+
+	void removeChangeListener(HomeServerChangeListener listener);
 }

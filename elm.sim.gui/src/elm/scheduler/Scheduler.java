@@ -14,8 +14,16 @@ import elm.scheduler.model.HomeServer;
 
 /**
  * This class implements the ELM scheduler as a robust, event-based scheduling algorithm.
+ * <p>
+ * The scheduler is <em>stateless</em> in that, each time it runs, it performs a full analysis of all known {@link HomeServer}s and their devices. It does thus
+ * not depend on a previous state from which it might never recover.
+ * </p>
+ * <p>
+ * The scheduler is a {@link HomeServerChangeListener listener} to critical changes of {@link HomeServer} {@link DeviceInfo} which trigger a new scheduling
+ * cycle.
+ * </p>
  */
-public class Scheduler implements Runnable, IScheduler {
+public class Scheduler implements Runnable, HomeServerChangeListener {
 
 	private static final int SCHEDULING_INTERVAL_MILLIS = 1000;
 	private static final int MAX_DEVICE_POWER_WATT = 27000;
@@ -25,17 +33,17 @@ public class Scheduler implements Runnable, IScheduler {
 		final int actualPowerLimitWatt;
 
 		public SetPowerLimit(DeviceInfo device, int actualPowerLimit) {
-			super(device);
+			super(device, true);
 			this.actualPowerLimitWatt = actualPowerLimit;
 		}
 
 		@Override
-		public void run(HomeServerInternalApiClient client) throws ClientException{
+		public void run(HomeServerInternalApiClient client) throws ClientException {
 			int actualValue = DeviceInfo.NO_POWER_LIMIT;
 			// TODO set power limit
 			// actualValue = client.setScaldProtectionTemperature(device.getId(), actualPowerLimitWatt);
-			device.setActualPowerWatt(actualValue);
-			log.info("Device " + device.getId() + ": set actual power limit to" + actualPowerLimitWatt + "[W]");
+			getDevice().setActualPowerWatt(actualValue);
+			log.info("Device " + getDevice().getId() + ": set actual power limit to" + actualPowerLimitWatt + "[W]");
 		}
 	}
 
@@ -58,28 +66,31 @@ public class Scheduler implements Runnable, IScheduler {
 		this.saturationPowerLimitWatt = Math.min(maxPowerWatt - MAX_DEVICE_POWER_WATT, (int) SATURATION_POWER_FACTOR * maxPowerWatt);
 	}
 
-	@Override
 	public synchronized void start() {
 		runner = new Thread(this, Scheduler.class.getSimpleName());
 		shouldStop = false;
 		runner.start();
 	}
 
-	@Override
 	public synchronized void stop() {
 		shouldStop = true;
 		this.notify(); // ends the "run()" loop
 	}
 
-	@Override
-	public synchronized void devicesUpdated(boolean urgent) {
-		devicesUpdated = true;
-		if (urgent) {
-			notify();
+	public synchronized void addHomeServer(HomeServer server) {
+		if (!homeServers.contains(server)) {
+			homeServers.add(server);
+			server.addChangeListener(this);
 		}
 	}
 
-	@Override
+	public synchronized void removeHomeServer(HomeServer server) {
+		if (homeServers.remove(server)) {
+			server.removeChangeListener(this);
+		}
+
+	}
+
 	public ElmStatus getStatus() {
 		return status;
 	}
@@ -106,6 +117,9 @@ public class Scheduler implements Runnable, IScheduler {
 		setStatus(ElmStatus.OFF);
 	}
 
+	/**
+	 * <em>Note: </em>This method is invoked from inside a {@code synchronized} section. Do not invoke long-running or blocking operations.
+	 */
 	private void processDevices() {
 		int demandPowerWatt = 0;
 		List<DeviceInfo> consumingDevices = new ArrayList<DeviceInfo>();
@@ -141,6 +155,9 @@ public class Scheduler implements Runnable, IScheduler {
 				}
 				device.getHomeServer().putDeviceUpdate(new SetPowerLimit(device, actualPowerLimit));
 			}
+			for (HomeServer server : homeServers) {
+				server.fireDeviceChangesPending();
+			}
 		}
 	}
 
@@ -149,7 +166,7 @@ public class Scheduler implements Runnable, IScheduler {
 			@Override
 			public int compare(DeviceInfo d1, DeviceInfo d2) {
 				if (d1.getConsumptionStartTime() == d2.getConsumptionStartTime()) {
-					// if two consumptions started at the same time, then we favour the one with the lower power consumption:
+					// if two consumptions started at the same time, then we favor the one with the lower power consumption:
 					return Integer.compare(d1.getDemandPowerWatt(), d2.getDemandPowerWatt());
 				} else if (d1.getConsumptionStartTime() < d2.getConsumptionStartTime()) {
 					return -1;
@@ -160,4 +177,16 @@ public class Scheduler implements Runnable, IScheduler {
 		});
 	}
 
+	@Override
+	public synchronized void deviceInfosUpdated(HomeServer server, boolean urgent) {
+		devicesUpdated = true;
+		if (urgent) {
+			notify();
+		}
+	}
+
+	@Override
+	public void deviceUpdatesPending(HomeServer server, boolean urgent) {
+		// ignore
+	}
 }

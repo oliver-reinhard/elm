@@ -5,14 +5,25 @@ import elm.hs.api.client.HomeServerInternalApiClient;
 
 public class DeviceUpdate {
 
-	protected final DeviceInfo device;
+	private final DeviceInfo device;
+	
+	private final boolean urgent;
 
-	public DeviceUpdate(DeviceInfo device) {
+	public DeviceUpdate(DeviceInfo device, boolean urgent) {
+		assert device != null;
 		this.device = device;
+		this.urgent = urgent;
 	}
 
 	public void run(HomeServerInternalApiClient client) throws ClientException {
 		// do nothing
 	}
 
+	public DeviceInfo getDevice() {
+		return device;
+	}
+
+	public boolean isUrgent() {
+		return urgent;
+	}
 }

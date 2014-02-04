@@ -9,10 +9,9 @@ import elm.hs.api.client.ClientUtil;
 import elm.hs.api.client.HomeServerInternalApiClient;
 import elm.hs.api.client.HomeServerPublicApiClient;
 import elm.hs.api.model.HomeServerResponse;
-import elm.scheduler.model.DeviceInfo.UpdateResult;
 import elm.scheduler.model.HomeServer;
 
-public class HomeServerManager implements Runnable {
+public class HomeServerManager implements Runnable, HomeServerChangeListener {
 
 	private static final int POLLING_INTERVAL_MILLIS = 1000;
 	private static final int EXCENDED_POLLING_INTERVAL_MILLIS = 5000;
@@ -26,7 +25,6 @@ public class HomeServerManager implements Runnable {
 	}
 
 	private final HomeServer homeServer;
-	private final IScheduler scheduler;
 	private State state = State.NOT_CONNECTED;
 
 	private HomeServerPublicApiClient publicClient = null;
@@ -39,11 +37,10 @@ public class HomeServerManager implements Runnable {
 	private int pollingIntervalMillis = POLLING_INTERVAL_MILLIS;
 	private final Logger log = Logger.getLogger(getClass().getName());
 
-	public HomeServerManager(HomeServer homeServer, IScheduler scheduler) {
+	public HomeServerManager(HomeServer homeServer) {
 		assert homeServer != null;
-		assert scheduler != null;
 		this.homeServer = homeServer;
-		this.scheduler = scheduler;
+		this.homeServer.addChangeListener(this);
 	}
 
 	public State getState() {
@@ -74,13 +71,6 @@ public class HomeServerManager implements Runnable {
 	public synchronized void stop() {
 		if (runner != null) {
 			event = Event.STOP;
-			this.notify(); // ends the "run()" loop
-		}
-	}
-
-	public synchronized void updateDevices() {
-		if (runner != null && event != Event.STOP) {
-			event = Event.PROCESS_DEVICE_UPDATES;
 			this.notify(); // ends the "run()" loop
 		}
 	}
@@ -184,19 +174,7 @@ public class HomeServerManager implements Runnable {
 			if (response.success) {
 				setState(State.OK);
 				pollingFailureCount = 0;
-				final UpdateResult updateResult = homeServer.updateDeviceInfos(response.devices);
-				switch (updateResult) {
-				case NO_UPDATES:
-					break;
-				case MINOR_UPDATES:
-					scheduler.devicesUpdated(false);
-					break;
-				case URGENT_UPDATES:
-					scheduler.devicesUpdated(true);
-					break;
-				default:
-					throw new IllegalArgumentException(updateResult.toString());
-				}
+				homeServer.updateDeviceInfos(response.devices);
 			}
 			throw new ClientException(ClientException.Error.APPLICATION_FAILURE_RESPONSE);
 
@@ -237,6 +215,20 @@ public class HomeServerManager implements Runnable {
 			if (shouldStop) {
 				stop();
 			}
+		}
+	}
+
+	@Override
+	public void deviceInfosUpdated(HomeServer server, boolean urgent) {
+		// ignore
+		
+	}
+
+	@Override
+	public synchronized void deviceUpdatesPending(HomeServer server, boolean urgent) {
+		if (runner != null && event != Event.STOP) {
+			event = Event.PROCESS_DEVICE_UPDATES;
+			this.notify(); // ends the "run()" loop
 		}
 	}
 

@@ -12,6 +12,7 @@ import java.util.logging.Logger;
 
 import elm.hs.api.client.HomeServerInternalApiClient;
 import elm.hs.api.model.Device;
+import elm.scheduler.HomeServerChangeListener;
 import elm.scheduler.model.DeviceInfo;
 import elm.scheduler.model.DeviceInfo.UpdateResult;
 import elm.scheduler.model.DeviceUpdate;
@@ -26,6 +27,7 @@ public class HomeServerImpl implements HomeServer {
 	private final Map<String, DeviceInfo> deviceInfos = new HashMap<String, DeviceInfo>();
 	private List<DeviceUpdate> pendingUpdates;
 	private final Logger log = Logger.getLogger(getClass().getName());
+	private List<HomeServerChangeListener> listeners;
 
 	public HomeServerImpl(URI uri, String password) {
 		assert uri != null;
@@ -45,7 +47,7 @@ public class HomeServerImpl implements HomeServer {
 	}
 
 	@Override
-	public UpdateResult updateDeviceInfos(List<Device> devices) {
+	public void updateDeviceInfos(List<Device> devices) {
 		assert devices != null;
 		UpdateResult updated = UpdateResult.NO_UPDATES;
 		List<String> idsToRemove = new LinkedList<String>(deviceInfos.keySet());
@@ -65,7 +67,7 @@ public class HomeServerImpl implements HomeServer {
 			deviceInfos.remove(id);
 			updated = updated.and(UpdateResult.MINOR_UPDATES);
 		}
-		return updated;
+		fireDeviceInfosChanged(updated);
 	}
 
 	@Override
@@ -116,7 +118,41 @@ public class HomeServerImpl implements HomeServer {
 	}
 
 	@Override
-	public synchronized boolean hasPendingDeviceUpdates() {
-		return pendingUpdates != null;
+	public void addChangeListener(HomeServerChangeListener listener) {
+		assert listener != null;
+		if (listeners == null) {
+			listeners = new ArrayList<HomeServerChangeListener>();
+		}
+		listeners.add(listener);
+	}
+
+	@Override
+	public void removeChangeListener(HomeServerChangeListener listener) {
+		if (listeners != null) {
+			listeners.remove(listener);
+			if (listeners.isEmpty()) {
+				listeners = null;
+			}
+		}
+	}
+
+	private void fireDeviceInfosChanged(UpdateResult updated) {
+		if (updated != UpdateResult.NO_UPDATES && listeners != null) {
+			for(HomeServerChangeListener listener : listeners) {
+				listener.deviceInfosUpdated(this, updated == UpdateResult.URGENT_UPDATES);
+			}
+		}
+	}
+
+	public void fireDeviceChangesPending() {
+		if (pendingUpdates != null) {
+			boolean urgent = false;
+			for(DeviceUpdate update : pendingUpdates) {
+				urgent = urgent || update.isUrgent();
+			}
+			for(HomeServerChangeListener listener : listeners) {
+				listener.deviceUpdatesPending(this, urgent);
+			}
+		}
 	}
 }
