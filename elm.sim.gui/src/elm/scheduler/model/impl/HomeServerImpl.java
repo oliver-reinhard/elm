@@ -15,25 +15,36 @@ import elm.hs.api.model.Device;
 import elm.scheduler.HomeServerChangeListener;
 import elm.scheduler.model.DeviceInfo;
 import elm.scheduler.model.DeviceInfo.UpdateResult;
-import elm.scheduler.model.DeviceUpdate;
+import elm.scheduler.model.AbstractDeviceUpdate;
 import elm.scheduler.model.HomeServer;
+import elm.scheduler.model.UnsupportedModelException;
 
 public class HomeServerImpl implements HomeServer {
 
+	private final String name;
 	private final URI uri;
 	private final String password;
 	private long lastHomeServerPollTime = 0L;
 	private long isAliveCheckTime = 0L;
 	private final Map<String, DeviceInfo> deviceInfos = new HashMap<String, DeviceInfo>();
-	private List<DeviceUpdate> pendingUpdates;
+	private List<AbstractDeviceUpdate> pendingUpdates;
 	private final Logger log = Logger.getLogger(getClass().getName());
-	private List<HomeServerChangeListener> listeners;
-
+	private List<HomeServerChangeListener> listeners = new ArrayList<HomeServerChangeListener>();
+	
 	public HomeServerImpl(URI uri, String password) {
+		this(uri, password, null);
+	}
+
+	public HomeServerImpl(URI uri, String password, String name) {
 		assert uri != null;
 		assert password != null && !password.isEmpty();
-		this.password = password;
 		this.uri = uri;
+		this.password = password;
+		this.name = name;
+	}
+
+	public String getName() {
+		return name;
 	}
 
 	@Override
@@ -47,22 +58,25 @@ public class HomeServerImpl implements HomeServer {
 	}
 
 	@Override
-	public void updateDeviceInfos(List<Device> devices) {
+	public void updateDeviceInfos(List<Device> devices) throws UnsupportedModelException {
 		assert devices != null;
 		UpdateResult updated = UpdateResult.NO_UPDATES;
 		List<String> idsToRemove = new LinkedList<String>(deviceInfos.keySet());
 		for (Device device : devices) {
 			final String id = device.id;
 			DeviceInfo info = deviceInfos.get(id);
+			// Add DeviceInfo for new devices:
 			if (info == null) {
-				info = new DeviceInfoImpl(id, this);
+				info = new DeviceInfoImpl(this, device);
 				deviceInfos.put(id, info);
+				updated = updated.and(UpdateResult.MINOR_UPDATES);
+			} else {
+				updated = updated.and(info.update(device));
 			}
-			updated = updated.and(info.update(device));
 			idsToRemove.remove(id);
 		}
 
-		// Remove DeviceInfos for obsolete devices
+		// Remove DeviceInfo for obsolete devices
 		for (String id : idsToRemove) {
 			deviceInfos.remove(id);
 			updated = updated.and(UpdateResult.MINOR_UPDATES);
@@ -88,10 +102,10 @@ public class HomeServerImpl implements HomeServer {
 	}
 
 	@Override
-	public synchronized void putDeviceUpdate(DeviceUpdate update) {
+	public synchronized void putDeviceUpdate(AbstractDeviceUpdate update) {
 		assert update != null;
 		if (pendingUpdates == null) {
-			pendingUpdates = new ArrayList<DeviceUpdate>();
+			pendingUpdates = new ArrayList<AbstractDeviceUpdate>();
 		}
 		pendingUpdates.add(update);
 	}
@@ -99,7 +113,7 @@ public class HomeServerImpl implements HomeServer {
 	@Override
 	public void executeDeviceUpdates(HomeServerInternalApiClient client) {
 		assert client != null;
-		List<DeviceUpdate> updates;
+		List<AbstractDeviceUpdate> updates;
 		// we don't want to hold the lock during the update execution
 		synchronized (this) {
 			if (pendingUpdates == null) {
@@ -108,7 +122,7 @@ public class HomeServerImpl implements HomeServer {
 			updates = pendingUpdates;
 			pendingUpdates = null;
 		}
-		for(DeviceUpdate update : updates) {
+		for (AbstractDeviceUpdate update : updates) {
 			try {
 				update.run(client);
 			} catch (Exception e) {
@@ -120,25 +134,19 @@ public class HomeServerImpl implements HomeServer {
 	@Override
 	public void addChangeListener(HomeServerChangeListener listener) {
 		assert listener != null;
-		if (listeners == null) {
-			listeners = new ArrayList<HomeServerChangeListener>();
+		if (!listeners.contains(listener)) {
+			listeners.add(listener);
 		}
-		listeners.add(listener);
 	}
 
 	@Override
 	public void removeChangeListener(HomeServerChangeListener listener) {
-		if (listeners != null) {
-			listeners.remove(listener);
-			if (listeners.isEmpty()) {
-				listeners = null;
-			}
-		}
+		listeners.remove(listener);
 	}
 
 	private void fireDeviceInfosChanged(UpdateResult updated) {
-		if (updated != UpdateResult.NO_UPDATES && listeners != null) {
-			for(HomeServerChangeListener listener : listeners) {
+		if (updated != UpdateResult.NO_UPDATES) {
+			for (HomeServerChangeListener listener : listeners) {
 				listener.deviceInfosUpdated(this, updated == UpdateResult.URGENT_UPDATES);
 			}
 		}
@@ -147,10 +155,10 @@ public class HomeServerImpl implements HomeServer {
 	public void fireDeviceChangesPending() {
 		if (pendingUpdates != null) {
 			boolean urgent = false;
-			for(DeviceUpdate update : pendingUpdates) {
+			for (AbstractDeviceUpdate update : pendingUpdates) {
 				urgent = urgent || update.isUrgent();
 			}
-			for(HomeServerChangeListener listener : listeners) {
+			for (HomeServerChangeListener listener : listeners) {
 				listener.deviceUpdatesPending(this, urgent);
 			}
 		}

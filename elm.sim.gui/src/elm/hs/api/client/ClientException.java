@@ -31,6 +31,13 @@ public class ClientException extends Exception {
 		this(error, null);
 	}
 
+	public ClientException(Error error, Throwable cause) {
+		super(cause);
+		assert error != null;
+		this.error = error;
+		this.time = System.currentTimeMillis();
+	}
+
 	/**
 	 * @param cause see {@link HttpClient#GET(String)}
 	 */
@@ -50,13 +57,6 @@ public class ClientException extends Exception {
 	 */
 	public ClientException(TimeoutException cause) {
 		this(Error.NETWORK_TIMEOUT, cause);
-	}
-
-	protected ClientException(Error error, Throwable cause) {
-		super(cause);
-		assert error != null;
-		this.error = error;
-		this.time = System.currentTimeMillis();
 	}
 
 	public Error getError() {

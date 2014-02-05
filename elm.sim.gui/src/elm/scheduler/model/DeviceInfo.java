@@ -4,7 +4,8 @@ import elm.hs.api.model.Device;
 
 public interface DeviceInfo {
 
-	public static final int NO_POWER_LIMIT = -1;
+	public static final int NO_POWER = 0;
+	public static final int UNLIMITED_POWER = -1;
 
 	public enum State {
 		/** Device has been registered at the home server but there is currently no connection to it. */
@@ -18,21 +19,37 @@ public interface DeviceInfo {
 		/** Device is in a technical error condition. */
 		ERROR
 	}
-	
+
 	public enum UpdateResult {
-		NO_UPDATES, MINOR_UPDATES, URGENT_UPDATES;
-		
+		NO_UPDATES, MINOR_UPDATES, URGENT_UPDATES, ERROR;
+
 		public UpdateResult and(UpdateResult result) {
 			assert result != null;
-			if(this == URGENT_UPDATES || result == URGENT_UPDATES) {
+			if (this == ERROR || result == ERROR) {
+				return ERROR;
+			}
+			if (this == URGENT_UPDATES || result == URGENT_UPDATES) {
 				return URGENT_UPDATES;
 			} else if (this == MINOR_UPDATES || result == MINOR_UPDATES) {
 				return MINOR_UPDATES;
-			} return NO_UPDATES;
+			}
+			return NO_UPDATES;
 		}
 	}
 
+	/**
+	 * The id of the underlying physical {@link Device}.
+	 * 
+	 * @return never {@code null}
+	 */
 	String getId();
+
+	/**
+	 * A user-assigned name or the id of the underlying physical {@link Device} if name is {@code null}.
+	 * 
+	 * @return never {@code null}
+	 */
+	String getName();
 
 	HomeServer getHomeServer();
 
@@ -53,20 +70,7 @@ public interface DeviceInfo {
 
 	int getActualPowerWatt();
 
-	void setActualPowerWatt(int actualPower);
-
-	/**
-	 * Invoked by the actual physical device.
-	 * 
-	 * @param demandPower
-	 *            the power needed to satisfy the user demand (temperature, flow).
-	 */
-	void waterConsumptionStarted(int demandPower);
-
-	/**
-	 * Invoked by the actual physical device.
-	 */
-	void waterConsumptionEnded();
+	void setActualPowerWatt(int actualPowerWatt);
 
 	/**
 	 * Invoked by the scheduler.

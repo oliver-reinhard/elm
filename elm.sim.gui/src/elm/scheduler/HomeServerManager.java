@@ -10,7 +10,16 @@ import elm.hs.api.client.HomeServerInternalApiClient;
 import elm.hs.api.client.HomeServerPublicApiClient;
 import elm.hs.api.model.HomeServerResponse;
 import elm.scheduler.model.HomeServer;
+import elm.scheduler.model.UnsupportedModelException;
 
+/**
+ * This manager is responsible for the connection to and the communication with a single Home Server server via HTTP and with the {@link Scheduler}. However, it
+ * does not communicate to the {@link Scheduler} directly, but indirectly via a {@link HomeServer} object.
+ * <p>
+ * At each poll of the Home Server server, this manager updates an 'alive' flag at its {@link HomeServer}. This enables a separate thread to monitor the
+ * health of this manager.
+ * </p>
+ */
 public class HomeServerManager implements Runnable, HomeServerChangeListener {
 
 	private static final int POLLING_INTERVAL_MILLIS = 1000;
@@ -87,7 +96,7 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 				return;
 			}
 
-			processEvents(); // throws InterruptedException
+			eventLoop(); // throws InterruptedException
 
 		} catch (InterruptedException e) {
 			// do nothing, we have already exited the event loop
@@ -107,19 +116,35 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 		}
 	}
 
-	private void processEvents() throws InterruptedException {
+	/**
+	 * This is the manager's -- a priori infinite -- event loop. It fulfills several important requirments:
+	 * <ul>
+	 * <li>poll the actual home server; this is a potentially long-lasting network call</li>
+	 * <li>change the physical device parameters; ; this is a potentially long-lasting network call</li>
+	 * <li>exit the event loop on user request or thread wait interrupt</li>
+	 * <li>minimize the time spent in {@code synchronized} blocks</li>
+	 * <li>maintain home-server polling interval</li>
+	 * </ul>
+	 * <p>
+	 * <em>Note: </em>The time spent in {@code synchronized} blocks must be kept short so as not to cause delays to callers of {@code synchronized} methods of
+	 * this class, most importantly the {@link Scheduler}.
+	 * </p>
+	 * 
+	 * @throws InterruptedException
+	 *             on thread interrupt
+	 */
+	private void eventLoop() throws InterruptedException {
 		long waitIntervalMillis = pollingIntervalMillis;
 		long pollingCycleStartTime = System.currentTimeMillis();
 
-		eventLoop: while (true) {
+		loop: while (true) {
 
 			if (event == Event.POLL_HOME_SERVER) {
-				// this may take many milliseconds:
-				pollHomeServer();
+				pollHomeServer(); // this may take many milliseconds and 'event' could change in the meantime
 				pollingCycleStartTime = System.currentTimeMillis();
 				synchronized (this) {
 					if (event == Event.STOP) {
-						break eventLoop;
+						break loop;
 					}
 					if (event == Event.POLL_HOME_SERVER) {
 						event = Event.WAIT;
@@ -127,13 +152,12 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 					}
 				}
 			}
-			
+
 			if (event == Event.PROCESS_DEVICE_UPDATES) {
-				// this may take many milliseconds:
-				homeServer.executeDeviceUpdates(internalClient);
+				homeServer.executeDeviceUpdates(internalClient); // this may take many milliseconds and 'event' could change in the meantime
 				synchronized (this) {
 					if (event == Event.STOP) {
-						break eventLoop;
+						break loop;
 					}
 					final long pollingCycleRemainingMillis = pollingIntervalMillis - (System.currentTimeMillis() - pollingCycleStartTime);
 					if (pollingCycleRemainingMillis > 0) {
@@ -152,7 +176,7 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 					wait(waitIntervalMillis); // "sleep"
 
 					if (event == Event.STOP) {
-						break eventLoop;
+						break loop;
 					}
 				}
 			}
@@ -174,7 +198,11 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 			if (response.success) {
 				setState(State.OK);
 				pollingFailureCount = 0;
-				homeServer.updateDeviceInfos(response.devices);
+				try {
+					homeServer.updateDeviceInfos(response.devices);
+				} catch (UnsupportedModelException ume) {
+					throw new ClientException(ClientException.Error.APPLICATION_DATA_ERROR, ume);
+				}
 			}
 			throw new ClientException(ClientException.Error.APPLICATION_FAILURE_RESPONSE);
 
@@ -221,7 +249,7 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 	@Override
 	public void deviceInfosUpdated(HomeServer server, boolean urgent) {
 		// ignore
-		
+
 	}
 
 	@Override

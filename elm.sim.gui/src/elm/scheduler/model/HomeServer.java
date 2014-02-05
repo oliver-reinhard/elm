@@ -7,8 +7,16 @@ import java.util.List;
 import elm.hs.api.client.HomeServerInternalApiClient;
 import elm.hs.api.model.Device;
 import elm.scheduler.HomeServerChangeListener;
+import elm.scheduler.HomeServerManager;
 
 public interface HomeServer {
+
+	/**
+	 * Optional.
+	 * 
+	 * @return may be {@code null}
+	 */
+	String getName();
 
 	URI getUri();
 
@@ -19,8 +27,10 @@ public interface HomeServer {
 	 * 
 	 * @param devices
 	 *            cannot be {@code null}
+	 * @throws UnsupportedModelException
+	 *             if one of the devices does is not suitable for ELM
 	 */
-	void updateDeviceInfos(List<Device> devices);
+	void updateDeviceInfos(List<Device> devices) throws UnsupportedModelException;
 
 	Collection<DeviceInfo> getDevicesInfos();
 
@@ -44,8 +54,12 @@ public interface HomeServer {
 	 * @param updates
 	 *            cannot be {@code null}
 	 */
-	void putDeviceUpdate(DeviceUpdate update);
-	
+	void putDeviceUpdate(AbstractDeviceUpdate update);
+
+	/**
+	 * Device updates can be {@link #putDeviceUpdate(AbstractDeviceUpdate) put} one by one without the receiver even noticing. This method notifies all
+	 * {@link HomeServerChangeListener}s of these changes, notably the {@link HomeServerManager}.
+	 */
 	void fireDeviceChangesPending();
 
 	/**

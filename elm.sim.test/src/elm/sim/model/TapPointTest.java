@@ -1,4 +1,4 @@
-package elm.sim.model.test;
+package elm.sim.model;
 
 import static org.junit.Assert.*;
 
@@ -14,7 +14,7 @@ import elm.sim.model.Temperature;
 import static elm.sim.model.Temperature.*;
 import elm.sim.model.impl.TapPointImpl;
 
-public class OutletImplTest {
+public class TapPointTest {
 
 	private static final Temperature INITIAL_REFERENCE_TEMP = TEMP_3;
 
