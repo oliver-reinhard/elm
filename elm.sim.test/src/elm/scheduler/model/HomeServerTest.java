@@ -1,10 +1,18 @@
 package elm.scheduler.model;
 
-import static elm.scheduler.model.ModelTestUtil.*;
-import static org.junit.Assert.*;
+import static elm.scheduler.model.ModelTestUtil.createDevices;
+import static elm.scheduler.model.ModelTestUtil.createHomeServer;
+import static elm.scheduler.model.ModelTestUtil.sleep;
+import static elm.scheduler.model.ModelTestUtil.toPowerUnits;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -25,6 +33,11 @@ public class HomeServerTest {
 	@Before
 	public void setup() {
 		hs1 = createHomeServer(HS_ID, NUM_DEVICES);
+		resetListener();
+	}
+
+	private void resetListener() {
+		hs1.removeChangeListener(hsL1);
 		hsL1 = mock(HomeServerChangeListener.class);
 		hs1.addChangeListener(hsL1);
 	}
@@ -40,7 +53,6 @@ public class HomeServerTest {
 		hs1.updateLastHomeServerPollTime();
 		sleep(1);
 		assertTrue(hs1.isAlive());
-
 	}
 
 	@Test
@@ -53,13 +65,18 @@ public class HomeServerTest {
 			// remove 2
 			List<Device> devices = createDevices(HS_ID, 4, 0);
 			Device d0 = devices.get(0);
+			Device d1 = devices.get(1);
+			Device d2 = devices.get(2);
 			Device d3 = devices.get(3);
 			devices.remove(1); // remove #2
-			devices.remove(1);// remove #3
+			devices.remove(1); // remove #3
 			hs1.updateDeviceInfos(devices);
 			assertEquals(2, hs1.getDevicesInfos().size());
-			assertTrue(hs1.getDevicesInfos().contains(d0));
-			assertTrue(hs1.getDevicesInfos().contains(d3));
+			Map<String, DeviceInfo> map = toMap(hs1.getDevicesInfos()); // getDevicesInfos() is a Collection
+			assertTrue(map.containsKey(d0.id));
+			assertFalse(map.containsKey(d1.id));
+			assertFalse(map.containsKey(d2.id));
+			assertTrue(map.containsKey(d3.id));
 
 		} catch (UnsupportedModelException e) {
 			assertTrue(false);
@@ -68,10 +85,23 @@ public class HomeServerTest {
 
 	@Test
 	public void deviceInfoUpdates() {
-		List<Device> devices = createDevices(HS_ID, NUM_DEVICES, 0);
-		devices.get(1).status.power = toPowerUnits(10_000);
 		try {
+			// Turn a tap on
+			List<Device> devices = createDevices(HS_ID, NUM_DEVICES, 0);
+			devices.get(1).status.power = toPowerUnits(10_000);
 			hs1.updateDeviceInfos(devices);
+			verify(hsL1).deviceInfosUpdated(hs1, true);
+
+			// Turn a tap off
+			resetListener();
+			devices = createDevices(HS_ID, NUM_DEVICES, 0);
+			hs1.updateDeviceInfos(devices);
+			verify(hsL1).deviceInfosUpdated(hs1, false);
+
+			// Turn nothing on or off
+			resetListener();
+			hs1.updateDeviceInfos(devices);
+			verifyNoMoreInteractions(hsL1);
 
 		} catch (UnsupportedModelException e) {
 			assertTrue(false);
@@ -97,5 +127,13 @@ public class HomeServerTest {
 		} catch (ClientException e) {
 			assertTrue(false);
 		}
+	}
+
+	private Map<String, DeviceInfo> toMap(Collection<DeviceInfo> collection) {
+		Map<String, DeviceInfo> map = new HashMap<String, DeviceInfo>();
+		for (DeviceInfo obj : collection) {
+			map.put(obj.getId(), obj);
+		}
+		return map;
 	}
 }
