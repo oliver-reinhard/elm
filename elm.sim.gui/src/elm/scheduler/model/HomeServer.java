@@ -3,6 +3,7 @@ package elm.scheduler.model;
 import java.net.URI;
 import java.util.Collection;
 import java.util.List;
+import java.util.logging.Logger;
 
 import elm.hs.api.client.HomeServerInternalApiClient;
 import elm.hs.api.model.Device;
@@ -10,6 +11,9 @@ import elm.scheduler.HomeServerChangeListener;
 import elm.scheduler.HomeServerManager;
 
 public interface HomeServer {
+
+	/** {@link #isAlive()} will return {@code true} until this duration after the last {@link #updateLastHomeServerPollTime()} invocation. */
+	static final long POLL_TIME_TOLERANCE_MILLIS_DEFAULT = 2000;
 
 	/**
 	 * Optional.
@@ -32,12 +36,19 @@ public interface HomeServer {
 	 */
 	void updateDeviceInfos(List<Device> devices) throws UnsupportedModelException;
 
-	Collection<DeviceInfo> getDevicesInfos();
+	Collection<DeviceInfo> getDeviceInfos();
+
+	DeviceInfo getDeviceInfo(String deviceId);
+
+	void setPollTimeToleranceMillis(long pollTimeToleranceMillis);
+
+	long getPollTimeToleranceMillis();
 
 	void updateLastHomeServerPollTime();
 
 	/**
-	 * Returns {@code true} if the physical Home Server has been contacted since the last invocation of {@link #isAlive()}.
+	 * Returns {@code true} if the physical Home Server has been contacted since the last invocation of {@link #isAlive()} or if the last invocation of
+	 * {@link #updateLastHomeServerPollTime()} was not earlier than {@link #getPollTimeToleranceMillis()} ago.
 	 * <p>
 	 * <em>Note: </em>that the invocation of this method has the side effect or storing the invocation time.</em>
 	 * 
@@ -67,8 +78,10 @@ public interface HomeServer {
 	 * 
 	 * @param client
 	 *            cannot be {@code null}
+	 * @param log
+	 *            never {@code null}
 	 */
-	void executeDeviceUpdates(HomeServerInternalApiClient client);
+	void executeDeviceUpdates(HomeServerInternalApiClient client, Logger log);
 
 	void addChangeListener(HomeServerChangeListener listener);
 

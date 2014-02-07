@@ -1,5 +1,7 @@
 package elm.scheduler.model;
 
+import java.util.logging.Logger;
+
 import elm.hs.api.client.ClientException;
 import elm.hs.api.client.HomeServerInternalApiClient;
 
@@ -15,7 +17,15 @@ public abstract class AbstractDeviceUpdate {
 		this.urgent = urgent;
 	}
 
-	public abstract void run(HomeServerInternalApiClient client) throws ClientException;
+	/**
+	 * Executes the updates.
+	 * 
+	 * @param client
+	 *            cannot be {@code null}
+	 * @param log
+	 *            cannot be {@code null}
+	 */
+	public abstract void run(HomeServerInternalApiClient client, Logger log) throws ClientException;
 
 	public DeviceInfo getDevice() {
 		return device;

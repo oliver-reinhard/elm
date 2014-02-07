@@ -154,7 +154,7 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 			}
 
 			if (event == Event.PROCESS_DEVICE_UPDATES) {
-				homeServer.executeDeviceUpdates(internalClient); // this may take many milliseconds and 'event' could change in the meantime
+				homeServer.executeDeviceUpdates(internalClient, log); // this may take many milliseconds and 'event' could change in the meantime
 				synchronized (this) {
 					if (event == Event.STOP) {
 						break loop;

@@ -31,18 +31,18 @@ public class DeviceInfoTest {
 	@Test
 	public void test() {
 		assertEquals(0, di1.getDemandPowerWatt());
-		assertEquals(0, di1.getActualPowerWatt());
+		assertEquals(0, di1.getApprovedPowerWatt());
 		assertEquals(State.READY, di1.getState());
 
 		UpdateResult result = di1.update(createDevice(1, 1, 10_000));
 		assertEquals(round(10_000), di1.getDemandPowerWatt());
-		assertEquals(0, di1.getActualPowerWatt());
+		assertEquals(0, di1.getApprovedPowerWatt());
 		assertEquals(UpdateResult.URGENT_UPDATES, result);
 		assertEquals(State.CONSUMING, di1.getState());
 
 		result = di1.update(createDevice(1, 1, 0));
 		assertEquals(0, di1.getDemandPowerWatt());
-		assertEquals(0, di1.getActualPowerWatt());
+		assertEquals(0, di1.getApprovedPowerWatt());
 		assertEquals(UpdateResult.MINOR_UPDATES, result);
 		assertEquals(State.READY, di1.getState());
 	}

@@ -3,6 +3,7 @@ package elm.scheduler.model.impl;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -24,13 +25,15 @@ public class HomeServerImpl implements HomeServer {
 	private final String name;
 	private final URI uri;
 	private final String password;
+	
 	private long lastHomeServerPollTime = 0L;
-	private long isAliveCheckTime = 0L;
+	private long isAliveCheckTime = System.currentTimeMillis();
+	private long pollTimeToleranceMillis = POLL_TIME_TOLERANCE_MILLIS_DEFAULT;
+	
 	private final Map<String, DeviceInfo> deviceInfos = new HashMap<String, DeviceInfo>();
 	private List<AbstractDeviceUpdate> pendingUpdates;
-	private final Logger log = Logger.getLogger(getClass().getName());
 	private List<HomeServerChangeListener> listeners = new ArrayList<HomeServerChangeListener>();
-	
+
 	public HomeServerImpl(URI uri, String password) {
 		this(uri, password, null);
 	}
@@ -85,8 +88,23 @@ public class HomeServerImpl implements HomeServer {
 	}
 
 	@Override
-	public Collection<DeviceInfo> getDevicesInfos() {
+	public Collection<DeviceInfo> getDeviceInfos() {
 		return deviceInfos.values();
+	}
+
+	@Override
+	public DeviceInfo getDeviceInfo(String id) {
+		return deviceInfos.get(id);
+	}
+
+	@Override
+	public long getPollTimeToleranceMillis() {
+		return pollTimeToleranceMillis;
+	}
+
+	@Override
+	public void setPollTimeToleranceMillis(long pollTimeToleranceMillis) {
+		this.pollTimeToleranceMillis = pollTimeToleranceMillis;
 	}
 
 	@Override
@@ -96,9 +114,10 @@ public class HomeServerImpl implements HomeServer {
 
 	@Override
 	public boolean isAlive() {
-		boolean result = lastHomeServerPollTime > isAliveCheckTime;
+		long oldIsAliveCheckTime = isAliveCheckTime;
 		isAliveCheckTime = System.currentTimeMillis();
-		return result;
+		// Either the home server has been polled since the last isAlive inquiry, or this inquiry is no later than POLL_TIME_TOLERANCE_MILLIS after the last poll
+		return oldIsAliveCheckTime <= lastHomeServerPollTime || lastHomeServerPollTime + pollTimeToleranceMillis >= isAliveCheckTime;
 	}
 
 	@Override
@@ -109,10 +128,18 @@ public class HomeServerImpl implements HomeServer {
 		}
 		pendingUpdates.add(update);
 	}
+	
+	/**
+	 * Used for testing.
+	 */
+	public List<AbstractDeviceUpdate> getPendingUpdates() {
+		return pendingUpdates == null ? null : Collections.unmodifiableList(pendingUpdates);
+	}
 
 	@Override
-	public void executeDeviceUpdates(HomeServerInternalApiClient client) {
+	public void executeDeviceUpdates(HomeServerInternalApiClient client, Logger log) {
 		assert client != null;
+		assert log != null;
 		List<AbstractDeviceUpdate> updates;
 		// we don't want to hold the lock during the update execution
 		synchronized (this) {
@@ -124,7 +151,7 @@ public class HomeServerImpl implements HomeServer {
 		}
 		for (AbstractDeviceUpdate update : updates) {
 			try {
-				update.run(client);
+				update.run(client, log);
 			} catch (Exception e) {
 				log.log(Level.SEVERE, "Device update failed", e);
 			}
@@ -162,5 +189,22 @@ public class HomeServerImpl implements HomeServer {
 				listener.deviceUpdatesPending(this, urgent);
 			}
 		}
+	}
+
+	@Override
+	public String toString() {
+		StringBuffer b = new StringBuffer(getName());
+		b.append("[");
+		int n = getDeviceInfos().size();
+		int i = 1;
+		for (DeviceInfo di : getDeviceInfos()) {
+			b.append(di.getName());
+			if (i < n) {
+				b.append(", ");
+			}
+			i++;
+		}
+		b.append("]");
+		return b.toString();
 	}
 }

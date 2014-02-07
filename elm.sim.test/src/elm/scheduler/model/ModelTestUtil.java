@@ -2,7 +2,10 @@ package elm.scheduler.model;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import elm.hs.api.model.Device;
 import elm.hs.api.model.Status;
@@ -79,5 +82,35 @@ public class ModelTestUtil {
 			}
 		}
 
+	}
+
+	public static List<String> getDeviceIds(HomeServer server) {
+		assert server!= null;
+		List<String> list = new ArrayList<String>();
+		for (DeviceInfo obj : server.getDeviceInfos()) {
+			list.add(obj.getId());
+		}
+		Collections.sort(list);
+		return list;
+	}
+
+	public static Map<String, DeviceInfo> getDeviceMap(HomeServer server) {
+		assert server!= null;
+		Map<String, DeviceInfo> map = new HashMap<String, DeviceInfo>();
+		for (DeviceInfo obj : server.getDeviceInfos()) {
+			map.put(obj.getId(), obj);
+		}
+		return map;
+	}
+
+	public static AbstractDeviceUpdate getDeviceUpdate(HomeServer server, Device device) {
+		assert server!= null;
+		assert device != null;
+		for(AbstractDeviceUpdate upd : ((HomeServerImpl) server).getPendingUpdates()) {
+			if (upd.getDevice().getId().equals(device.id)) {
+				return upd;
+			}
+		}
+		return null;
 	}
 }

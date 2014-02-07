@@ -1,8 +1,12 @@
 package elm.scheduler.model.impl;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import elm.hs.api.model.Device;
 import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
 import elm.scheduler.model.DeviceInfo;
+import static elm.scheduler.model.DeviceInfo.State.*;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.UnsupportedModelException;
 
@@ -11,13 +15,19 @@ public class DeviceInfoImpl implements DeviceInfo {
 	private final String id;
 	private final HomeServer homeServer;
 	private final String name;
-	private DeviceModel model;
 	private State state;
-
-	private long consumptionStartTime = 0L;
-	private int demandPowerWatt = 0;
-	private int actualPowerWatt = 0;
+	private DeviceModel model;
+	
+	/** Model-dependent. */
 	private short powerMaxUnits;
+	
+	private long consumptionStartTime = 0L;
+	
+	/** The power to consume demanded by the user. */ 
+	private int demandPowerWatt = 0;
+	
+	/** The power to consume allowed by the scheduler. */
+	private int approvedPowerWatt = 0;
 
 	public DeviceInfoImpl(HomeServer server, Device device) throws UnsupportedModelException {
 		this(server, device, null);
@@ -37,7 +47,7 @@ public class DeviceInfoImpl implements DeviceInfo {
 		}
 		
 		powerMaxUnits = device.status.powerMax;
-		state = State.NOT_CONNECTED;
+		state = NOT_CONNECTED;
 		update(device);
 	}
 
@@ -60,10 +70,10 @@ public class DeviceInfoImpl implements DeviceInfo {
 		assert device != null;
 		UpdateResult result = UpdateResult.NO_UPDATES;
 		
-		if (device.connected && state == State.NOT_CONNECTED) {
-			setState(State.READY);
-		} else if (!device.connected && state != State.ERROR) {
-			setState(State.NOT_CONNECTED);
+		if (device.connected && state == NOT_CONNECTED) {
+			setState(READY);
+		} else if (!device.connected && state != ERROR) {
+			setState(NOT_CONNECTED);
 		}
 		
 		if (device.status != null) {
@@ -100,7 +110,7 @@ public class DeviceInfoImpl implements DeviceInfo {
 	public synchronized void waterConsumptionStarted(int demandPowerWatt) {
 		this.demandPowerWatt = demandPowerWatt;
 		consumptionStartTime = System.currentTimeMillis();
-		setState(State.CONSUMING);
+		setState(CONSUMING);
 	}
 
 	/**
@@ -108,21 +118,25 @@ public class DeviceInfoImpl implements DeviceInfo {
 	 */
 	public synchronized void waterConsumptionEnded() {
 		demandPowerWatt = 0;
-		actualPowerWatt = 0;
+		approvedPowerWatt = 0;
 		consumptionStartTime = 0L;
-		setState(State.READY);
+		setState(READY);
 	}
 
 	@Override
-	public synchronized void powerConsumptionApproved(int actualPowerWatt) {
-		this.actualPowerWatt = actualPowerWatt;
-		setState(State.CONSUMING);
+	public synchronized void powerConsumptionApproved(int approvedPowerWatt) {
+		this.approvedPowerWatt = (approvedPowerWatt == UNLIMITED_POWER) ? model.getPowerMaxWatt() : approvedPowerWatt;
+		if (consumptionStartTime != 0) {
+			setState(CONSUMING);
+		} else {
+			setState(READY);
+		}
 	}
 
 	@Override
 	public synchronized void powerConsumptionDenied() {
-		actualPowerWatt = 0;
-		setState(State.WAITING);
+		approvedPowerWatt = 0;
+		setState(WAITING);
 	}
 
 	@Override
@@ -135,19 +149,21 @@ public class DeviceInfoImpl implements DeviceInfo {
 		return demandPowerWatt;
 	}
 
-	public void setDemandPowerWatt(int demandPowerWatt) {
-		this.demandPowerWatt = demandPowerWatt;
+	public void setDemandPowerWatt(int value) {
+		this.demandPowerWatt = value;
 
 	}
 
 	@Override
-	public int getActualPowerWatt() {
-		return actualPowerWatt;
+	public int getApprovedPowerWatt() {
+		return approvedPowerWatt;
 	}
-
+	
 	@Override
-	public void setActualPowerWatt(int actualPower) {
-		this.actualPowerWatt = actualPower;
+	public int getScaldTemperature() {
+		assert approvedPowerWatt >= 0;
+		// TODO enhance -- this is a simplified result
+		return model.getScaldTemperatureMin() + (model.getScaldTemperatureMax() - model.getScaldTemperatureMin()) * approvedPowerWatt / model.getPowerMaxWatt(); 
 	}
 
 	int toPowerWatt(short powerUnits) {
@@ -159,5 +175,17 @@ public class DeviceInfoImpl implements DeviceInfo {
 		assert powerMaxUnits != 0;
 		return (short) (powerWatt * powerMaxUnits / model.getPowerMaxWatt());
 	}
-
+	
+	@Override
+	public String toString() {
+		final StringBuilder b = new StringBuilder(getName());
+		b.append("(");
+		b.append(getState());
+		if (getState() == CONSUMING) {
+			b.append(", start: ");
+			b.append(new SimpleDateFormat().format(new Date(consumptionStartTime)));
+		}
+		b.append(")");
+		return b.toString();
+	}
 }

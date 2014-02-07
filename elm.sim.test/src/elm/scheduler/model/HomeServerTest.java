@@ -2,17 +2,20 @@ package elm.scheduler.model;
 
 import static elm.scheduler.model.ModelTestUtil.createDevices;
 import static elm.scheduler.model.ModelTestUtil.createHomeServer;
+import static elm.scheduler.model.ModelTestUtil.getDeviceMap;
 import static elm.scheduler.model.ModelTestUtil.sleep;
 import static elm.scheduler.model.ModelTestUtil.toPowerUnits;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -21,11 +24,15 @@ import elm.hs.api.client.ClientException;
 import elm.hs.api.client.HomeServerInternalApiClient;
 import elm.hs.api.model.Device;
 import elm.scheduler.HomeServerChangeListener;
+import elm.scheduler.model.impl.HomeServerImpl;
 
 public class HomeServerTest {
 
-	private static final int HS_ID = 1;
-	private static final int NUM_DEVICES = 2;
+	static final int HS_ID = 1;
+	static final int NUM_DEVICES = 2;
+	static final int ACTUAL_POWER_WATT = 20_000;
+
+	final Logger log = Logger.getLogger(getClass().getName());
 
 	HomeServer hs1;
 	HomeServerChangeListener hsL1;
@@ -36,7 +43,7 @@ public class HomeServerTest {
 		resetListener();
 	}
 
-	private void resetListener() {
+	void resetListener() {
 		hs1.removeChangeListener(hsL1);
 		hsL1 = mock(HomeServerChangeListener.class);
 		hs1.addChangeListener(hsL1);
@@ -44,23 +51,29 @@ public class HomeServerTest {
 
 	@Test
 	public void isAlive() {
-		assertEquals(NUM_DEVICES, hs1.getDevicesInfos().size());
+		hs1.setPollTimeToleranceMillis(10);
+		assertEquals(NUM_DEVICES, hs1.getDeviceInfos().size());
 
+		assertFalse(hs1.isAlive());
 		assertFalse(hs1.isAlive());
 		sleep(1);
 		assertFalse(hs1.isAlive()); // assert isAlive did not have negative side effects
 		sleep(1);
 		hs1.updateLastHomeServerPollTime();
-		sleep(1);
 		assertTrue(hs1.isAlive());
+		assertTrue(hs1.isAlive());
+		sleep(5);
+		assertTrue(hs1.isAlive());
+		sleep(6);
+		assertFalse(hs1.isAlive()); // no longer alive
 	}
 
 	@Test
-	public void deviceInfoUpdatesAddRemove() {
+	public void addRemoveDeviceInfoUpdates() {
 		try {
 			// add 2 more
 			hs1.updateDeviceInfos(createDevices(HS_ID, 4, 0));
-			assertEquals(4, hs1.getDevicesInfos().size());
+			assertEquals(4, hs1.getDeviceInfos().size());
 
 			// remove 2
 			List<Device> devices = createDevices(HS_ID, 4, 0);
@@ -71,8 +84,8 @@ public class HomeServerTest {
 			devices.remove(1); // remove #2
 			devices.remove(1); // remove #3
 			hs1.updateDeviceInfos(devices);
-			assertEquals(2, hs1.getDevicesInfos().size());
-			Map<String, DeviceInfo> map = toMap(hs1.getDevicesInfos()); // getDevicesInfos() is a Collection
+			assertEquals(2, hs1.getDeviceInfos().size());
+			Map<String, DeviceInfo> map = getDeviceMap(hs1); // getDevicesInfos() is a Collection
 			assertTrue(map.containsKey(d0.id));
 			assertFalse(map.containsKey(d1.id));
 			assertFalse(map.containsKey(d2.id));
@@ -110,30 +123,28 @@ public class HomeServerTest {
 
 	@Test
 	public void deviceUpdates() {
+		DeviceInfo[] devices = hs1.getDeviceInfos().toArray(new DeviceInfo[] {});
+		DeviceInfo d1_2 = devices[1];
+		//
 		AbstractDeviceUpdate upd1 = mock(AbstractDeviceUpdate.class);
-		when(upd1.isUrgent()).thenReturn(true);
-		AbstractDeviceUpdate upd2 = mock(AbstractDeviceUpdate.class);
-		when(upd2.isUrgent()).thenReturn(false);
 		hs1.putDeviceUpdate(upd1);
-		hs1.putDeviceUpdate(upd2);
+		//
+		d1_2.powerConsumptionApproved(DeviceInfo.UNLIMITED_POWER);
+		hs1.putDeviceUpdate(new SetPowerLimit(d1_2, ACTUAL_POWER_WATT));
+		assertEquals(2, ((HomeServerImpl) hs1).getPendingUpdates().size());
+		//
 		hs1.fireDeviceChangesPending();
-		verify(hsL1).deviceUpdatesPending(hs1, true);
+		verify(hsL1).deviceUpdatesPending(hs1, true);  // listener was notified
 
 		HomeServerInternalApiClient client = mock(HomeServerInternalApiClient.class);
-		hs1.executeDeviceUpdates(client);
+		hs1.executeDeviceUpdates(client, log);
+		assertNull(((HomeServerImpl) hs1).getPendingUpdates());
 		try {
-			verify(upd1).run(client);
-			verify(upd2).run(client);
+			verify(upd1).run(client, log);
+			assertEquals(ACTUAL_POWER_WATT, d1_2.getApprovedPowerWatt());
+			verify(client).setScaldProtectionTemperature(d1_2.getId(), d1_2.getScaldTemperature());
 		} catch (ClientException e) {
 			assertTrue(false);
 		}
-	}
-
-	private Map<String, DeviceInfo> toMap(Collection<DeviceInfo> collection) {
-		Map<String, DeviceInfo> map = new HashMap<String, DeviceInfo>();
-		for (DeviceInfo obj : collection) {
-			map.put(obj.getId(), obj);
-		}
-		return map;
 	}
 }

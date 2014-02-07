@@ -118,7 +118,7 @@ public abstract class AbstractHomeServerClient {
 			int status = response.getStatus();
 			if (!isSuccess(httpSuccessStatuses, status)) {
 				log.log(Level.SEVERE, "Querying resource path failed: " + (resourcePath.isEmpty() ? "\"\"" : resourcePath) + ", Status: " + status);
-				if (log.getLevel() == Level.INFO) {
+				if (log.isLoggable(Level.INFO)) {
 					final String desc = "GET " + resourcePath + " Response";
 					System.out.println(desc + " status    = " + status);
 					System.out.println(desc + " as String = " + responseAsString);
@@ -128,7 +128,7 @@ public abstract class AbstractHomeServerClient {
 
 			final T result = getGson().fromJson(responseAsString, resultClass);
 
-			if (log.getLevel() == Level.INFO) {
+			if (log.isLoggable(Level.INFO)) {
 				final String desc = "GET " + resourcePath;
 				System.out.println();
 				System.out.println(desc + " Response status    = " + response.getStatus());
@@ -171,14 +171,14 @@ public abstract class AbstractHomeServerClient {
 			ContentResponse response = postRequest.send();
 			int status = response.getStatus();
 
-			final String desc = log.getLevel() == Level.INFO ? "POST " + resourcePath + " (" + content + ") Response" : null;
+			final String desc = log.isLoggable(Level.INFO) ? "POST " + resourcePath + " (" + content + ") Response" : null;
 			if (!isSuccess(httpSuccessStatuses, status)) {
 				log.log(Level.SEVERE, "Posting resource path failed: " + resourcePath + ", Status: " + status);
-				if (log.getLevel() == Level.INFO) {
+				if (log.isLoggable(Level.INFO)) {
 					System.out.println(desc + " status    = " + status);
 				}
 				return null;
-			} else if (log.getLevel() == Level.INFO) {
+			} else if (log.isLoggable(Level.INFO)) {
 				System.out.println();
 				System.out.println(desc + " status    = " + status);
 			}

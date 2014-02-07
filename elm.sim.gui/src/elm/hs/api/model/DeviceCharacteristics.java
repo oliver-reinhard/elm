@@ -38,10 +38,19 @@ public class DeviceCharacteristics {
 
 		final DeviceType type;
 		final int powerMaxWatt;
+		final int scaldTemperatureMin; // degrees C
 
-		private DeviceModel(DeviceType type, int powerMaxWatt) {
+		final int scaldTemperatureMax; // degrees C
+
+		private DeviceModel(DeviceType type, int powerMaxWatt, int scaldTemperatureMin, int scaldTemperatureMax) {
 			this.type = type;
 			this.powerMaxWatt = powerMaxWatt;
+			this.scaldTemperatureMin = scaldTemperatureMin;
+			this.scaldTemperatureMax = scaldTemperatureMax;
+		}
+
+		private DeviceModel(DeviceType type, int powerMaxWatt) {
+			this(type, powerMaxWatt, 19, 60);
 		}
 
 		public DeviceType getType() {
@@ -50,6 +59,14 @@ public class DeviceCharacteristics {
 
 		public int getPowerMaxWatt() {
 			return powerMaxWatt;
+		}
+
+		public int getScaldTemperatureMin() {
+			return scaldTemperatureMin;
+		}
+
+		public int getScaldTemperatureMax() {
+			return scaldTemperatureMax;
 		}
 
 		/**
@@ -64,6 +81,7 @@ public class DeviceCharacteristics {
 			String typeIdStr = device.id.substring(0, 4);
 			int typeId = Integer.parseInt(typeIdStr, 16);
 			int deviceClassId = typeId >> 13;
+			@SuppressWarnings("unused")
 			int variant = typeId & 0x1FFF;
 
 			// TODO implement real mapping (deviceClassId, variant) => DeviceModel.

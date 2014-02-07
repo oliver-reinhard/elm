@@ -4,49 +4,33 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.logging.Logger;
 
 import elm.scheduler.model.DeviceInfo;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.SetPowerLimit;
+import static elm.scheduler.ElmStatus.*;
 
 /**
- * This class implements the ELM scheduler as a robust, event-based scheduling algorithm.
- * <p>
- * The scheduler is <em>stateless</em> in that, each time it runs, it performs a full analysis of all known {@link HomeServer}s and their devices. It does thus
- * not depend on a previous state from which it might never recover.
- * </p>
- * <p>
- * The scheduler is a {@link HomeServerChangeListener listener} to critical changes of {@link HomeServer} {@link DeviceInfo} which trigger a new scheduling
- * cycle.
- * </p>
+ * This scheduler implementation is <em>stateless</em> in that, each time it runs, it performs a full analysis of all known {@link HomeServer}s and their
+ * devices. It does thus not depend on a previous state from which it might never recover. </p>
  */
-public class Scheduler implements Runnable, HomeServerChangeListener {
+public class Scheduler extends AbstractScheduler {
 
-	private static final int SCHEDULING_INTERVAL_MILLIS = 1_000;
 	/** The maximum power of any individual device managed by this scheduler. */
 	private static final int MAX_DEVICE_POWER_WATT = 27_000;
+	
 	/** The absolute saturation power limit is a fraction (among other things this factor) of the maximum power limit. */
 	private static final double SATURATION_POWER_FACTOR = 0.9;
+	
+	private static final long NOT_IN_OVERLOAD = 0L;
 
 	/** Above this limit the scheduler is in {@link ElmStatus#SATURATION} mode. */
 	private final int saturationPowerLimitWatt;
 
 	/** Above this limit the scheduler is in {@link ElmStatus#OVERLOAD} mode. */
 	private final int overloadPowerLimitWatt;
-
-	private ElmStatus status = ElmStatus.OFF;
-
-	/** The Home Server servers (and their connected devices) managed by this scheduler. */
-	private final List<HomeServer> homeServers = new ArrayList<HomeServer>();
-	private List<SchedulerChangeListener> listeners = new ArrayList<SchedulerChangeListener>();
-
-	/* Threading and thread communication. */
-	private Thread runner;
-	private boolean shouldStop;
-	private boolean devicesUpdated;
-
-	private final Logger log = Logger.getLogger(getClass().getName());
+	
+	private long overloadModeBeginTime = NOT_IN_OVERLOAD;
 
 	/**
 	 * @param maxElectricalPowerWatt
@@ -54,78 +38,23 @@ public class Scheduler implements Runnable, HomeServerChangeListener {
 	 */
 	public Scheduler(int maxElectricalPowerWatt) {
 		assert maxElectricalPowerWatt > MAX_DEVICE_POWER_WATT;
-		this.overloadPowerLimitWatt = maxElectricalPowerWatt;
-		this.saturationPowerLimitWatt = Math.min(maxElectricalPowerWatt - MAX_DEVICE_POWER_WATT, (int) SATURATION_POWER_FACTOR * maxElectricalPowerWatt);
-	}
-
-	public synchronized void start() {
-		runner = new Thread(this, Scheduler.class.getSimpleName());
-		shouldStop = false;
-		runner.start();
-	}
-
-	public synchronized void stop() {
-		shouldStop = true;
-		this.notify(); // ends the "run()" loop
-	}
-
-	public synchronized void addHomeServer(HomeServer server) {
-		if (!homeServers.contains(server)) {
-			homeServers.add(server);
-			server.addChangeListener(this);
-		}
-	}
-
-	public synchronized void removeHomeServer(HomeServer server) {
-		if (homeServers.remove(server)) {
-			server.removeChangeListener(this);
-		}
-	}
-
-	public ElmStatus getStatus() {
-		return status;
-	}
-
-	private void setStatus(ElmStatus newStatus) {
-		if (newStatus != status) {
-			ElmStatus oldStatus = status;
-			status = newStatus;
-			for (SchedulerChangeListener listener : listeners) {
-				listener.statusChanged(oldStatus, newStatus);
-			}
-			log.info("status change: " + oldStatus + " -> " + newStatus);
-		}
-	}
-
-	@Override
-	public synchronized void run() {
-		setStatus(ElmStatus.ON);
-		while (!shouldStop) {
-			try {
-				// non-urgent device updates are processed after at most SCHEDULING_INTERVAL_MILLIS:
-				wait(SCHEDULING_INTERVAL_MILLIS);
-				if (devicesUpdated) {
-					devicesUpdated = false;
-					processDevices();
-				}
-			} catch (InterruptedException e) {
-				break; // => exit
-			}
-		}
-		setStatus(ElmStatus.OFF);
+		overloadPowerLimitWatt = maxElectricalPowerWatt;
+		saturationPowerLimitWatt = Math.min(maxElectricalPowerWatt - MAX_DEVICE_POWER_WATT, (int) (SATURATION_POWER_FACTOR * maxElectricalPowerWatt));
+		log.info("saturation limit: " + saturationPowerLimitWatt + ", overload limit: " + overloadPowerLimitWatt);
 	}
 
 	/**
 	 * <em>Note: </em>This method is invoked from inside a {@code synchronized} section. Do not invoke long-running or blocking operations.
 	 */
-	private void processDevices() {
+	protected void processDevices() {
 		int totalDemandPowerWatt = 0;
 		List<DeviceInfo> consumingDevices = new ArrayList<DeviceInfo>();
 		List<DeviceInfo> standbyDevices = new ArrayList<DeviceInfo>();
 
+		// Prepare:
 		for (HomeServer server : homeServers) {
 			if (server.isAlive()) {
-				for (DeviceInfo device : server.getDevicesInfos()) {
+				for (DeviceInfo device : server.getDeviceInfos()) {
 					if (device.getDemandPowerWatt() > 0) {
 						totalDemandPowerWatt += device.getDemandPowerWatt();
 						consumingDevices.add(device);
@@ -135,41 +64,71 @@ public class Scheduler implements Runnable, HomeServerChangeListener {
 				}
 			} else {
 				// HomeServer not updated
-				setStatus(ElmStatus.ERROR);
+				setStatus(ERROR, "HomeServer " + server.getName() + " is not alive");
 				// TODO handle partial failure here
 				return;
 			}
 		}
 
+		// Analyze and act:
 		if (totalDemandPowerWatt <= saturationPowerLimitWatt) {
-			setStatus(ElmStatus.ON);
+			setStatus(ON);
+			endOverloadMode(consumingDevices, standbyDevices);
 		} else if (totalDemandPowerWatt <= overloadPowerLimitWatt) {
-			setStatus(ElmStatus.SATURATION);
+			setStatus(SATURATION);
+			endOverloadMode(consumingDevices, standbyDevices);
 		} else {
-			setStatus(ElmStatus.OVERLOAD);
-			// Sort devices in ascending order of consumption start time. Later we grant power to consuming devices in the order they started their consumption.
-			// This means that those device who have started the consumption earlier are less likely to be preempted.
-			sort(consumingDevices);
-			totalDemandPowerWatt = 0;
+			setStatus(OVERLOAD);
+			beginOverloadMode(consumingDevices, standbyDevices);
+		}
+	}
+
+	private void beginOverloadMode(List<DeviceInfo> consumingDevices, List<DeviceInfo> standbyDevices) {
+		// Sort devices in ascending order of consumption start time. Later we grant power to consuming devices in the order they started their consumption.
+		// This means that those device who have started the consumption earlier are less likely to be preempted.
+		sort(consumingDevices);
+		int totalDemandPowerWatt = 0;
+		for (DeviceInfo device : consumingDevices) {
+			int approvedPowerLimit = DeviceInfo.NO_POWER;
+			if (totalDemandPowerWatt + device.getDemandPowerWatt() <= overloadPowerLimitWatt) {
+				totalDemandPowerWatt += device.getDemandPowerWatt();
+				approvedPowerLimit = DeviceInfo.UNLIMITED_POWER;
+			} else if (! isInOverloadMode()) {
+				overloadModeBeginTime = System.currentTimeMillis();
+				log.info("Beginning overload mode");
+			}
+			updateDevice(device, approvedPowerLimit);
+		}
+		for (DeviceInfo device : standbyDevices) {
+			updateDevice(device, DeviceInfo.NO_POWER);
+		}
+		for (HomeServer server : homeServers) {
+			server.fireDeviceChangesPending();
+		}
+	}
+
+	/**
+	 * Also used for testing.
+	 */
+	final boolean isInOverloadMode() {
+		return overloadModeBeginTime != NOT_IN_OVERLOAD;
+	}
+	
+	private void endOverloadMode(List<DeviceInfo> consumingDevices, List<DeviceInfo> standbyDevices) {
+		if (isInOverloadMode()) {
+			log.info("Ending overload mode after " + (System.currentTimeMillis() - overloadModeBeginTime) + " ms");
+			// Notify consuming devices first as there may be some that had the Power level reduced earlier
 			for (DeviceInfo device : consumingDevices) {
-				int actualPowerLimit = DeviceInfo.NO_POWER;
-				if (totalDemandPowerWatt + device.getDemandPowerWatt() <= overloadPowerLimitWatt) {
-					totalDemandPowerWatt += device.getDemandPowerWatt();
-					actualPowerLimit = DeviceInfo.UNLIMITED_POWER;
-				}
-				updateDevice(device, actualPowerLimit);
+				updateDevice(device, DeviceInfo.UNLIMITED_POWER);
 			}
 			for (DeviceInfo device : standbyDevices) {
-				updateDevice(device, DeviceInfo.NO_POWER);
+				updateDevice(device, DeviceInfo.UNLIMITED_POWER);
 			}
 			for (HomeServer server : homeServers) {
 				server.fireDeviceChangesPending();
 			}
+			overloadModeBeginTime = NOT_IN_OVERLOAD;
 		}
-	}
-
-	private void updateDevice(DeviceInfo device, int actualPowerLimit) {
-		device.getHomeServer().putDeviceUpdate(new SetPowerLimit(device, actualPowerLimit));
 	}
 
 	protected void sort(List<DeviceInfo> consumingDevices) {
@@ -188,27 +147,7 @@ public class Scheduler implements Runnable, HomeServerChangeListener {
 		});
 	}
 
-	@Override
-	public synchronized void deviceInfosUpdated(HomeServer server, boolean urgent) {
-		devicesUpdated = true;
-		if (urgent) {
-			notify();
-		}
-	}
-
-	@Override
-	public void deviceUpdatesPending(HomeServer server, boolean urgent) {
-		// ignore
-	}
-
-	public void addChangeListener(SchedulerChangeListener listener) {
-		assert listener != null;
-		if (!listeners.contains(listener)) {
-			listeners.add(listener);
-		}
-	}
-
-	public void removeChangeListener(SchedulerChangeListener listener) {
-		listeners.remove(listener);
+	protected void updateDevice(DeviceInfo device, int actualPowerLimit) {
+		device.getHomeServer().putDeviceUpdate(new SetPowerLimit(device, actualPowerLimit));
 	}
 }

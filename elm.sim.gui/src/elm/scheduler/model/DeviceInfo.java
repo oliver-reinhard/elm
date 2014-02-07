@@ -66,22 +66,33 @@ public interface DeviceInfo {
 
 	long getConsumptionStartTime();
 
+	/**
+	 * The power in [W] the device should consume to satisfy the user's choice of temperature and flow.
+	 */
 	int getDemandPowerWatt();
 
-	int getActualPowerWatt();
-
-	void setActualPowerWatt(int actualPowerWatt);
+	/**
+	 * The maximum power [W] the device may consume as granted by the scheduler.
+	 */
+	int getApprovedPowerWatt();
 
 	/**
-	 * Invoked by the scheduler.
+	 * The scald temperature limit that corresponds to the current {@link #getApprovedPowerWatt()}.
+	 * 
+	 * @return value in [° Celsius]
+	 */
+	int getScaldTemperature();
+
+	/**
+	 * Invoked only by the scheduler.
 	 * 
 	 * @param actualPower
 	 *            the power (in [W] the device may consume)
 	 */
-	void powerConsumptionApproved(int actualPower);
+	void powerConsumptionApproved(int actualPowerWatt);
 
 	/**
-	 * Invoked by the scheduler.
+	 * Invoked only by the scheduler.
 	 */
 	void powerConsumptionDenied();
 
