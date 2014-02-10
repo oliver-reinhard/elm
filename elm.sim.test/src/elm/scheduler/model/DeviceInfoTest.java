@@ -66,13 +66,10 @@ public class DeviceInfoTest {
 	@Test
 	public void updateIntakeTemperature() {
 		final Device d = createDevice(1, 1, 0);
-		d.status.tIn = 100; // 10°C
-		UpdateResult result = di1.update(d);
-		assertEquals(100, di1.getIntakeWaterTemperature());
-		assertEquals(UpdateResult.MINOR_UPDATES, result);
+		assert d.status.tIn == 100; // 10°C
 
 		d.status.tIn = 110; // 11°C
-		result = di1.update(d);
+		UpdateResult result = di1.update(d);
 		// minor difference ignored:
 		assertEquals(100, di1.getIntakeWaterTemperature());
 		assertEquals(UpdateResult.NO_UPDATES, result);
@@ -116,12 +113,12 @@ public class DeviceInfoTest {
 		di1.updateMaximumPowerConsumption(5_000, ElmStatus.OVERLOAD);
 		assertEquals(CONSUMPTION_LIMITED, di1.getStatus());
 		assertEquals(5_000, di1.getApprovedPowerWatt());
-		assertEquals(265, di1.getScaldProtectionTemperature());
+		assertEquals(242, di1.getScaldProtectionTemperature());
 		verify(hs1).putDeviceUpdate(Mockito.<SetScaldProtectionTemperature>any());
 		// next poll returns setpoint = scald-protection temperature:
-		d.status.setpoint = 265;
+		d.status.setpoint = 242;
 		di1.update(d);
-		assertEquals(265, di1.getActualDemandTemperature());
+		assertEquals(242, di1.getActualDemandTemperature());
 		assertEquals(referenceTemperature, di1.getUserDemandTemperature());
 		
 		// APPROVED = Unlimited
@@ -160,12 +157,12 @@ public class DeviceInfoTest {
 		di1.updateMaximumPowerConsumption(5_000, ElmStatus.OVERLOAD);
 		assertEquals(CONSUMPTION_LIMITED, di1.getStatus());
 		assertEquals(5_000, di1.getApprovedPowerWatt());
-		assertEquals(265, di1.getScaldProtectionTemperature());
+		assertEquals(242, di1.getScaldProtectionTemperature());
 		verify(hs1, times(2)).putDeviceUpdate(Mockito.<SetScaldProtectionTemperature>any());
 		// next poll returns setpoint = scald-protection temperature:
-		d.status.setpoint = 265;
+		d.status.setpoint = 242;
 		di1.update(d);
-		assertEquals(265, di1.getActualDemandTemperature());
+		assertEquals(242, di1.getActualDemandTemperature());
 		assertEquals(380, di1.getUserDemandTemperature());
 		
 		// APPROVED = Unlimited

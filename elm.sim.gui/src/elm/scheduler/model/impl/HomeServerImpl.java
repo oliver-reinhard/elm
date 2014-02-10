@@ -173,6 +173,7 @@ public class HomeServerImpl implements HomeServer {
 
 	private void fireDeviceInfosChanged(UpdateResult updated) {
 		if (updated != UpdateResult.NO_UPDATES) {
+			// The device info updates MUST NOT BE long-lasting or blocking!
 			for (HomeServerChangeListener listener : listeners) {
 				listener.deviceInfosUpdated(this, updated == UpdateResult.URGENT_UPDATES);
 			}
@@ -185,7 +186,7 @@ public class HomeServerImpl implements HomeServer {
 			for (AsynchronousDeviceUpdate update : pendingUpdates) {
 				urgent = urgent || update.isUrgent();
 			}
-			// TODO the listener calls might potentially be long-lasting !!!!!!!!!!!!!!!
+			// The device updates MUST NOT BE long-lasting or blocking!
 			for (HomeServerChangeListener listener : listeners) {
 				listener.deviceUpdatesPending(this, urgent);
 			}

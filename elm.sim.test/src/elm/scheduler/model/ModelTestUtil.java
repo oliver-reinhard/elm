@@ -48,8 +48,9 @@ public class ModelTestUtil {
 		d.id = b.toString();
 		d.status = new Status();
 		d.connected = true;
-		d.status.setpoint = 380;
+		d.status.setpoint = 380;  // 38°C
 		d.status.powerMax = DSX_POWER_MAX_UNITS;
+		d.status.tIn = 100;  // 10°C
 		d.status.power = toPowerUnits(powerWatt);
 		return d;
 	}

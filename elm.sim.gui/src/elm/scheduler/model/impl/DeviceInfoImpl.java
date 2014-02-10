@@ -22,6 +22,8 @@ import elm.scheduler.model.UnsupportedModelException;
 
 public class DeviceInfoImpl implements DeviceInfo {
 
+	private static final int LOWEST_INTAKE_WATER_TEMPERATURE = 50;
+
 	/** Changes in intake-water temperature (in 1/10°C) below this threshold are ignored. */
 	private static final int INTAKE_WATER_TEMP_CHANGE_IGNORE_DELTA = 20;
 
@@ -153,7 +155,7 @@ public class DeviceInfoImpl implements DeviceInfo {
 		assert demandPowerWatt >= 0 && demandPowerWatt <= deviceModel.getPowerMaxWatt();
 		this.demandPowerWatt = demandPowerWatt;
 		consumptionStartTime = System.currentTimeMillis();
-		setStatus(CONSUMPTION_STARTED); // needs approval by scheduler =>
+		setStatus(CONSUMPTION_STARTED); // needs approval by scheduler
 	}
 
 	void waterConsumptionChanged(final int newDemandPowerWatt) {
@@ -198,15 +200,39 @@ public class DeviceInfoImpl implements DeviceInfo {
 			userDemandTemperature = UNDEFINED_TEMPERATURE;
 
 		} else { // limited power
-			// TODO enhance -- this is a simplified result
-			scaldProtectionTemperature = (short) (deviceModel.getScaldProtectionTemperatureMin() + (deviceModel.getScaldProtectionTemperatureMax() - deviceModel
-					.getScaldProtectionTemperatureMin()) * internalApprovedPowerWatt / deviceModel.getPowerMaxWatt());
+			scaldProtectionTemperature = toTemperatureLimit(newApprovedPowerWatt);
 			assert scaldProtectionTemperature >= deviceModel.getScaldProtectionTemperatureMin();
 			if (userDemandTemperature == UNDEFINED_TEMPERATURE) {
 				userDemandTemperature = actualDemandTemperature;
 			}
 			// ASYNCHRONOUS device update:
 			getHomeServer().putDeviceUpdate(new SetScaldProtectionTemperature(this, scaldProtectionTemperature));
+		}
+	}
+
+	/**
+	 * @param approvedPowerWatt
+	 * @return the temperature in [1/10°C] that requires the given amount of power
+	 */
+	private short toTemperatureLimit(final int approvedPowerWatt) {
+		if (getDemandPowerWatt() > 0) {
+			// dPowerDemand [W] = flow [kg/sec] * dTDemand [°K] * heatCapacity [J/kg/K].
+			// Assume flow and heatCapacity are constant =>
+			// dTnew = dPowerApproved / (demandPower / dTDemand)
+			int flowTimesHeatCapacity = getDemandPowerWatt() / (getDemandTemperature() - getIntakeWaterTemperature());
+			short temperature = (short) (approvedPowerWatt / flowTimesHeatCapacity + getIntakeWaterTemperature());
+			if (temperature < deviceModel.getScaldProtectionTemperatureMin()) {
+				return deviceModel.getScaldProtectionTemperatureMin();
+			}
+			if (temperature > deviceModel.getScaldProtectionTemperatureMax()) {
+				return deviceModel.getScaldProtectionTemperatureMax();
+			}
+			return temperature;
+
+		} else {
+			// Interpolate from maximum device heating power and maximum temperature difference:
+			return (short) (deviceModel.getScaldProtectionTemperatureMin() + (deviceModel.getScaldProtectionTemperatureMax() - LOWEST_INTAKE_WATER_TEMPERATURE)
+					* approvedPowerWatt / deviceModel.getPowerMaxWatt());
 		}
 	}
 
@@ -223,6 +249,10 @@ public class DeviceInfoImpl implements DeviceInfo {
 	@Override
 	public int getApprovedPowerWatt() {
 		return internalApprovedPowerWatt == UNLIMITED_POWER ? deviceModel.getPowerMaxWatt() : internalApprovedPowerWatt;
+	}
+
+	private short getDemandTemperature() {
+		return userDemandTemperature == UNDEFINED_TEMPERATURE ? actualDemandTemperature : userDemandTemperature;
 	}
 
 	/** Used for testing. */
