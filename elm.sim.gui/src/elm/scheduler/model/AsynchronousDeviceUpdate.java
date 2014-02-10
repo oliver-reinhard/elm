@@ -5,13 +5,13 @@ import java.util.logging.Logger;
 import elm.hs.api.client.ClientException;
 import elm.hs.api.client.HomeServerInternalApiClient;
 
-public abstract class AbstractDeviceUpdate {
+public abstract class AsynchronousDeviceUpdate {
 
 	private final DeviceInfo device;
 	
 	private final boolean urgent;
 
-	public AbstractDeviceUpdate(DeviceInfo device, boolean urgent) {
+	public AsynchronousDeviceUpdate(DeviceInfo device, boolean urgent) {
 		assert device != null;
 		this.device = device;
 		this.urgent = urgent;

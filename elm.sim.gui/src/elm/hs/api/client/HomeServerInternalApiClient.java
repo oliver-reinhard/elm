@@ -47,14 +47,15 @@ public class HomeServerInternalApiClient extends AbstractHomeServerClient {
 	 *            in 1/10 degree Celsius, cannot be {@code < 0}
 	 * @param deviceID
 	 *            cannot be {@code null} or empty
-	 * @return the new scald temperature in in 1/10 degree Celsius, or {@code null}
+	 * @return the new scald temperature in in 1/10 degree Celsius, or {@code null}; never {@code null} (the value is a {@link Short} for mocking purposes)
 	 * @throws ClientException if the operation ended in a status {@code != 200} or if the execution threw an exception
 	 */
-	public int setScaldProtectionTemperature(String deviceID, int newTemp) throws ClientException {
+	public Short setScaldProtectionTemperature(String deviceID, int newTemp) throws ClientException {
 		assert newTemp >= 0;
 		assert deviceID != null && !deviceID.isEmpty();
 
 		publicClient.setReferenceTemperature(deviceID, newTemp);
+		// Set reference-temperature protection flag => no longer user-changeable
 		doPost("/cmd/VF/" + deviceID, "data=1", new int[] { HttpStatus.OK_200 });
 		// scald protection value is in FULL DEGREES Celcius!
 		ContentResponse response = doPost("/cmd/Vv/" + deviceID, "data=" + (newTemp / 10), new int[] { HttpStatus.OK_200 });
@@ -65,7 +66,7 @@ public class HomeServerInternalApiClient extends AbstractHomeServerClient {
 				throw new ClientException(ClientException.Error.APPLICATION_DATA_ERROR);
 			}
 			final String confirmedTemp = result.response.data;
-			int value = Integer.parseInt(confirmedTemp.substring(2));
+			short value = Short.parseShort(confirmedTemp.substring(2));
 			System.out.println("New scald temperature = " + value);
 			return value;
 		}

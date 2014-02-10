@@ -38,19 +38,18 @@ public class DeviceCharacteristics {
 
 		final DeviceType type;
 		final int powerMaxWatt;
-		final int scaldTemperatureMin; // degrees C
+		final short scaldTemperatureMin; // degrees C
+		final short scaldTemperatureMax; // degrees C
 
-		final int scaldTemperatureMax; // degrees C
+		private DeviceModel(DeviceType type, int powerMaxWatt) {
+			this(type, powerMaxWatt, 190, 600);
+		}
 
 		private DeviceModel(DeviceType type, int powerMaxWatt, int scaldTemperatureMin, int scaldTemperatureMax) {
 			this.type = type;
 			this.powerMaxWatt = powerMaxWatt;
-			this.scaldTemperatureMin = scaldTemperatureMin;
-			this.scaldTemperatureMax = scaldTemperatureMax;
-		}
-
-		private DeviceModel(DeviceType type, int powerMaxWatt) {
-			this(type, powerMaxWatt, 19, 60);
+			this.scaldTemperatureMin = (short) scaldTemperatureMin;
+			this.scaldTemperatureMax = (short) scaldTemperatureMax;
 		}
 
 		public DeviceType getType() {
@@ -61,11 +60,13 @@ public class DeviceCharacteristics {
 			return powerMaxWatt;
 		}
 
-		public int getScaldTemperatureMin() {
+		/** @return Minimum scald-protection temperature in [1/10°C]. */
+		public short getScaldProtectionTemperatureMin() {
 			return scaldTemperatureMin;
 		}
 
-		public int getScaldTemperatureMax() {
+		/** @return Maximum scald-protection temperature in [1/10°C]. */
+		public short getScaldProtectionTemperatureMax() {
 			return scaldTemperatureMax;
 		}
 

@@ -65,11 +65,14 @@ public interface HomeServer {
 	 * @param updates
 	 *            cannot be {@code null}
 	 */
-	void putDeviceUpdate(AbstractDeviceUpdate update);
+	void putDeviceUpdate(AsynchronousDeviceUpdate update);
 
 	/**
-	 * Device updates can be {@link #putDeviceUpdate(AbstractDeviceUpdate) put} one by one without the receiver even noticing. This method notifies all
+	 * Device updates can be {@link #putDeviceUpdate(AsynchronousDeviceUpdate) put} one by one without the receiver even noticing. This method notifies all
 	 * {@link HomeServerChangeListener}s of these changes, notably the {@link HomeServerManager}.
+	 * <p>
+	 * <em>Note: </em>This method must not be long-running or blocking; this could delay the scheduler.
+	 * </p>
 	 */
 	void fireDeviceChangesPending();
 
@@ -81,8 +84,17 @@ public interface HomeServer {
 	 * @param log
 	 *            never {@code null}
 	 */
-	void executeDeviceUpdates(HomeServerInternalApiClient client, Logger log);
+	void executePhysicalDeviceUpdates(HomeServerInternalApiClient client, Logger log);
 
+	/**
+	 * Adds a listener.
+	 * <p>
+	 * <em>Note: </em>Method implementations of the listener must not be long-running or blocking; this could delay the scheduler.
+	 * </p>
+	 * 
+	 * @param listener
+	 *            cannot be {@code null}
+	 */
 	void addChangeListener(HomeServerChangeListener listener);
 
 	void removeChangeListener(HomeServerChangeListener listener);

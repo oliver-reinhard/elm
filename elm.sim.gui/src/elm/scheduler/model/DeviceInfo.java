@@ -1,23 +1,59 @@
 package elm.scheduler.model;
 
 import elm.hs.api.model.Device;
+import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
+import elm.scheduler.ElmStatus;
 
+/**
+ * The {@link DeviceInfo} represents a physical {@link Device} in the scheduler.
+ * <p>
+ * {@link DeviceInfo} has the following responsibilities:
+ * <ul>
+ * <li>reflect the true state of the underlying physical {@link Device}</li>
+ * <li>track consumptions and consumption state</li>
+ * <li>map power [W] to scald-protection temperature</li>
+ * <li>act as an asynchronous communication adapter between the scheduler and the actual device</li>
+ * </ul>
+ * /p>
+ */
 public interface DeviceInfo {
 
 	public static final int NO_POWER = 0;
-	public static final int UNLIMITED_POWER = -1;
+	public static final int UNLIMITED_POWER = Integer.MAX_VALUE;
 
-	public enum State {
+	public static final long NO_CONSUMPTION = -1;
+
+	public static final short UNDEFINED_TEMPERATURE = -1;
+
+	public enum DeviceStatus {
 		/** Device has been registered at the home server but there is currently no connection to it. */
 		NOT_CONNECTED,
 		/** Device is ready for hot-water consumption. */
 		READY,
-		/** Device is currently consuming hot water. */
-		CONSUMING,
-		/** Consumer has started a consumption but the heater is off waiting for power quota. */
-		WAITING,
+		/** Device has recently started a hot-water consumption that has not been approved by the scheduler yet. */
+		CONSUMPTION_STARTED,
+		/** Device is currently consuming hot water after approval by the scheduler; the power consumption will not be interrupted. */
+		CONSUMPTION_APPROVED,
+		/**
+		 * Device is currently consuming hot water and the scheduler has approved, however, with a power limit lower than requested by the user; the power
+		 * consumption will not be interrupted.
+		 */
+		CONSUMPTION_LIMITED,
+		/** Consumer has started a consumption but was denied the power consumption by the scheduler; the heater is off and cold water runs. */
+		CONSUMPTION_DENIED,
 		/** Device is in a technical error condition. */
-		ERROR
+		ERROR;
+
+		public boolean in(DeviceStatus... other) {
+			for (DeviceStatus value : other) {
+				if (this == value) return true;
+			}
+			return false;
+		}
+
+		public boolean isConsuming() {
+			return this.in(CONSUMPTION_STARTED, CONSUMPTION_APPROVED, CONSUMPTION_LIMITED, CONSUMPTION_DENIED);
+		}
 	}
 
 	public enum UpdateResult {
@@ -45,15 +81,26 @@ public interface DeviceInfo {
 	String getId();
 
 	/**
-	 * A user-assigned name or the id of the underlying physical {@link Device} if name is {@code null}.
+	 * A user-assigned name or the {@link #getId() id} of the underlying physical {@link Device} if no explicit name is assigned.
 	 * 
 	 * @return never {@code null}
 	 */
 	String getName();
 
+	/**
+	 * @return never {@code null}
+	 */
 	HomeServer getHomeServer();
 
-	State getState();
+	/**
+	 * @return never {@code null}
+	 */
+	DeviceModel getDeviceModel();
+
+	/**
+	 * @return never {@code null}
+	 */
+	DeviceStatus getStatus();
 
 	/**
 	 * Updates the internal state and values from the given {@link Device}.
@@ -64,6 +111,25 @@ public interface DeviceInfo {
 	 */
 	UpdateResult update(Device device);
 
+	/**
+	 * Invoked only by the scheduler. This method may be invoked at any time even with the same value for {@code approvedPowerWatt}, i.e. implementations must
+	 * guard against this case to avoid computing overhead.
+	 * <p>
+	 * <em>Note: </em>This method must not be long-running or blocking; this could delay the scheduler.
+	 * </p>
+	 * 
+	 * @param approvedPowerWatt
+	 *            the power (in [W] the device may consume)
+	 * @param elmStatus
+	 *            the current {@link ElmStatus}, cannot be {@code null}
+	 */
+	void updateMaximumPowerConsumption(int approvedPowerWatt, ElmStatus elmStatus);
+
+	/**
+	 * The time the current consumption started, or {@link #NO_CONSUMPTION} if the device does not currently provide hot water.
+	 * 
+	 * @return Unix time in milliseconds
+	 */
 	long getConsumptionStartTime();
 
 	/**
@@ -75,25 +141,5 @@ public interface DeviceInfo {
 	 * The maximum power [W] the device may consume as granted by the scheduler.
 	 */
 	int getApprovedPowerWatt();
-
-	/**
-	 * The scald temperature limit that corresponds to the current {@link #getApprovedPowerWatt()}.
-	 * 
-	 * @return value in [° Celsius]
-	 */
-	int getScaldTemperature();
-
-	/**
-	 * Invoked only by the scheduler.
-	 * 
-	 * @param actualPower
-	 *            the power (in [W] the device may consume)
-	 */
-	void powerConsumptionApproved(int actualPowerWatt);
-
-	/**
-	 * Invoked only by the scheduler.
-	 */
-	void powerConsumptionDenied();
 
 }

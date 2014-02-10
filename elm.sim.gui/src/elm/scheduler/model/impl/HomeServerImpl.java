@@ -16,7 +16,7 @@ import elm.hs.api.model.Device;
 import elm.scheduler.HomeServerChangeListener;
 import elm.scheduler.model.DeviceInfo;
 import elm.scheduler.model.DeviceInfo.UpdateResult;
-import elm.scheduler.model.AbstractDeviceUpdate;
+import elm.scheduler.model.AsynchronousDeviceUpdate;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.UnsupportedModelException;
 
@@ -31,7 +31,7 @@ public class HomeServerImpl implements HomeServer {
 	private long pollTimeToleranceMillis = POLL_TIME_TOLERANCE_MILLIS_DEFAULT;
 	
 	private final Map<String, DeviceInfo> deviceInfos = new HashMap<String, DeviceInfo>();
-	private List<AbstractDeviceUpdate> pendingUpdates;
+	private List<AsynchronousDeviceUpdate> pendingUpdates;
 	private List<HomeServerChangeListener> listeners = new ArrayList<HomeServerChangeListener>();
 
 	public HomeServerImpl(URI uri, String password) {
@@ -121,10 +121,10 @@ public class HomeServerImpl implements HomeServer {
 	}
 
 	@Override
-	public synchronized void putDeviceUpdate(AbstractDeviceUpdate update) {
+	public synchronized void putDeviceUpdate(AsynchronousDeviceUpdate update) {
 		assert update != null;
 		if (pendingUpdates == null) {
-			pendingUpdates = new ArrayList<AbstractDeviceUpdate>();
+			pendingUpdates = new ArrayList<AsynchronousDeviceUpdate>();
 		}
 		pendingUpdates.add(update);
 	}
@@ -132,15 +132,15 @@ public class HomeServerImpl implements HomeServer {
 	/**
 	 * Used for testing.
 	 */
-	public List<AbstractDeviceUpdate> getPendingUpdates() {
+	public List<AsynchronousDeviceUpdate> getPendingUpdates() {
 		return pendingUpdates == null ? null : Collections.unmodifiableList(pendingUpdates);
 	}
 
 	@Override
-	public void executeDeviceUpdates(HomeServerInternalApiClient client, Logger log) {
+	public void executePhysicalDeviceUpdates(HomeServerInternalApiClient client, Logger log) {
 		assert client != null;
 		assert log != null;
-		List<AbstractDeviceUpdate> updates;
+		List<AsynchronousDeviceUpdate> updates;
 		// we don't want to hold the lock during the update execution
 		synchronized (this) {
 			if (pendingUpdates == null) {
@@ -149,7 +149,7 @@ public class HomeServerImpl implements HomeServer {
 			updates = pendingUpdates;
 			pendingUpdates = null;
 		}
-		for (AbstractDeviceUpdate update : updates) {
+		for (AsynchronousDeviceUpdate update : updates) {
 			try {
 				update.run(client, log);
 			} catch (Exception e) {
@@ -182,9 +182,10 @@ public class HomeServerImpl implements HomeServer {
 	public void fireDeviceChangesPending() {
 		if (pendingUpdates != null) {
 			boolean urgent = false;
-			for (AbstractDeviceUpdate update : pendingUpdates) {
+			for (AsynchronousDeviceUpdate update : pendingUpdates) {
 				urgent = urgent || update.isUrgent();
 			}
+			// TODO the listener calls might potentially be long-lasting !!!!!!!!!!!!!!!
 			for (HomeServerChangeListener listener : listeners) {
 				listener.deviceUpdatesPending(this, urgent);
 			}
@@ -198,7 +199,7 @@ public class HomeServerImpl implements HomeServer {
 		int n = getDeviceInfos().size();
 		int i = 1;
 		for (DeviceInfo di : getDeviceInfos()) {
-			b.append(di.getName());
+			b.append(di.toString());
 			if (i < n) {
 				b.append(", ");
 			}

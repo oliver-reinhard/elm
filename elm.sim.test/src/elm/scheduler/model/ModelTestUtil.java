@@ -1,5 +1,8 @@
 package elm.scheduler.model;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -45,6 +48,7 @@ public class ModelTestUtil {
 		d.id = b.toString();
 		d.status = new Status();
 		d.connected = true;
+		d.status.setpoint = 380;
 		d.status.powerMax = DSX_POWER_MAX_UNITS;
 		d.status.power = toPowerUnits(powerWatt);
 		return d;
@@ -54,7 +58,7 @@ public class ModelTestUtil {
 		assert homeServerId >= 0 && homeServerId < 100;
 		assert n > 0 && n < 100;
 		List<Device> result = new ArrayList<Device>();
-		for (int i=1; i<=n; i++) {
+		for (int i = 1; i <= n; i++) {
 			result.add(createDevice(homeServerId, i, powerWatt));
 		}
 		return result;
@@ -85,7 +89,7 @@ public class ModelTestUtil {
 	}
 
 	public static List<String> getDeviceIds(HomeServer server) {
-		assert server!= null;
+		assert server != null;
 		List<String> list = new ArrayList<String>();
 		for (DeviceInfo obj : server.getDeviceInfos()) {
 			list.add(obj.getId());
@@ -95,7 +99,7 @@ public class ModelTestUtil {
 	}
 
 	public static Map<String, DeviceInfo> getDeviceMap(HomeServer server) {
-		assert server!= null;
+		assert server != null;
 		Map<String, DeviceInfo> map = new HashMap<String, DeviceInfo>();
 		for (DeviceInfo obj : server.getDeviceInfos()) {
 			map.put(obj.getId(), obj);
@@ -103,14 +107,22 @@ public class ModelTestUtil {
 		return map;
 	}
 
-	public static AbstractDeviceUpdate getDeviceUpdate(HomeServer server, Device device) {
-		assert server!= null;
+	public static AsynchronousDeviceUpdate getDeviceUpdate(HomeServer server, Device device) {
+		assert server != null;
 		assert device != null;
-		for(AbstractDeviceUpdate upd : ((HomeServerImpl) server).getPendingUpdates()) {
+		for (AsynchronousDeviceUpdate upd : ((HomeServerImpl) server).getPendingUpdates()) {
 			if (upd.getDevice().getId().equals(device.id)) {
 				return upd;
 			}
 		}
 		return null;
+	}
+
+	public static void checkDeviceUpdate(HomeServer server, Device device, int expectedLimitWatt) {
+		final DeviceInfo deviceInfo = server.getDeviceInfo(device.id);
+		assertEquals(expectedLimitWatt == DeviceInfo.UNLIMITED_POWER ? deviceInfo.getDeviceModel().getPowerMaxWatt() : expectedLimitWatt,
+				deviceInfo.getApprovedPowerWatt());
+		final AsynchronousDeviceUpdate deviceUpdate = getDeviceUpdate(server, device);
+		assertNotNull(deviceUpdate);
 	}
 }

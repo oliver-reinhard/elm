@@ -1,16 +1,24 @@
 package elm.scheduler;
 
+import static elm.scheduler.ElmStatus.ERROR;
+import static elm.scheduler.ElmStatus.OFF;
+import static elm.scheduler.ElmStatus.ON;
+import static elm.scheduler.ElmStatus.OVERLOAD;
+import static elm.scheduler.ElmStatus.SATURATION;
+import static elm.scheduler.model.DeviceInfo.DeviceStatus.CONSUMPTION_APPROVED;
+import static elm.scheduler.model.DeviceInfo.DeviceStatus.CONSUMPTION_DENIED;
+import static elm.scheduler.model.DeviceInfo.DeviceStatus.CONSUMPTION_STARTED;
+import static elm.scheduler.model.DeviceInfo.DeviceStatus.READY;
+import static elm.scheduler.model.ModelTestUtil.checkDeviceUpdate;
 import static elm.scheduler.model.ModelTestUtil.createDevices;
 import static elm.scheduler.model.ModelTestUtil.createHomeServer;
-import static elm.scheduler.model.ModelTestUtil.getDeviceUpdate;
 import static elm.scheduler.model.ModelTestUtil.sleep;
 import static elm.scheduler.model.ModelTestUtil.toPowerUnits;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 
 import java.util.List;
 import java.util.logging.Level;
@@ -23,11 +31,8 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import elm.hs.api.client.HomeServerInternalApiClient;
 import elm.hs.api.model.Device;
-import static elm.scheduler.ElmStatus.*;
-import elm.scheduler.model.AbstractDeviceUpdate;
 import elm.scheduler.model.DeviceInfo;
 import elm.scheduler.model.HomeServer;
-import elm.scheduler.model.SetPowerLimit;
 import elm.scheduler.model.UnsupportedModelException;
 import elm.scheduler.model.impl.HomeServerImpl;
 
@@ -62,7 +67,7 @@ public class SchedulerTest {
 		hsL3 = mock(HomeServerChangeListener.class);
 		hs3.addChangeListener(hsL3);
 
-		scheduler = new Scheduler(50_000);
+		scheduler = new Scheduler(50_000, 30_000);
 		scheduler.setLogLevel(Level.SEVERE);
 		statusL = mock(SchedulerChangeListener.class);
 		scheduler.addChangeListener(statusL);
@@ -89,6 +94,7 @@ public class SchedulerTest {
 	@Test
 	public void schedulingBeginEndOverload() {
 		try {
+			scheduler.setIsAliveCheckDisabled(true); // enable debugger
 			scheduler.addHomeServer(hs1);
 			scheduler.addHomeServer(hs2);
 			scheduler.addHomeServer(hs3);
@@ -110,18 +116,29 @@ public class SchedulerTest {
 			Device d1_1 = hs1_Devices.get(0);
 			Device d1_2 = hs1_Devices.get(1);
 			d1_2.status.power = toPowerUnits(20_000); // Turn tap 1-2 ON
-			assertEquals(DeviceInfo.State.READY, hs1.getDeviceInfo(d1_2.id).getState());
+			assertEquals(READY, hs1.getDeviceInfo(d1_2.id).getStatus());
 			runCount = scheduler.getSchdedulingRunCount();
-			// this would normally trigger a run but we have not started the scheduler => no run
+			//
+			// the following command would normally trigger a run but we have not started the scheduler => no run
 			hs1.updateDeviceInfos(hs1_Devices);
 			assertEquals(runCount, scheduler.getSchdedulingRunCount());
-			assertEquals(DeviceInfo.State.CONSUMING, hs1.getDeviceInfo(d1_2.id).getState());
-			// start a run manually:
+			assertEquals(CONSUMPTION_STARTED, hs1.getDeviceInfo(d1_2.id).getStatus());
+			//
+			// start a scheduler run manually:
 			scheduler.runOnce();
 			assertEquals(ON, scheduler.getStatus());
 			assertFalse(scheduler.isInOverloadMode());
 			assertEquals(runCount + 1, scheduler.getSchdedulingRunCount());
-			assertEquals(DeviceInfo.State.CONSUMING, hs1.getDeviceInfo(d1_2.id).getState());
+			assertEquals(READY, hs1.getDeviceInfo(d1_1.id).getStatus());
+			assertEquals(CONSUMPTION_APPROVED, hs1.getDeviceInfo(d1_2.id).getStatus());
+			//
+			// home server 1: check device updates
+			assertEquals(1, ((HomeServerImpl)hs1).getPendingUpdates().size());
+			checkDeviceUpdate(hs1, d1_2, DeviceInfo.UNLIMITED_POWER);
+			//
+			// home server 1: process device updates => "execute" (and clear) the device updates
+			HomeServerInternalApiClient client = mock(HomeServerInternalApiClient.class);
+			hs1.executePhysicalDeviceUpdates(client, log);
 
 			// ON --> SATURATION
 			List<Device> hs2_Devices = createDevices(2, NUM_DEVICES, 0);
@@ -129,11 +146,21 @@ public class SchedulerTest {
 			Device d2_2 = hs2_Devices.get(1);
 			d2_2.status.power = toPowerUnits(20_000); // Turn tap 2-2 ON
 			hs2.updateDeviceInfos(hs2_Devices);
-			assertEquals(DeviceInfo.State.CONSUMING, hs2.getDeviceInfo(d2_2.id).getState());
+			assertEquals(CONSUMPTION_STARTED, hs2.getDeviceInfo(d2_2.id).getStatus());
+			//
+			// scheduler: act
 			scheduler.runOnce();
 			assertEquals(SATURATION, scheduler.getStatus());
 			assertFalse(scheduler.isInOverloadMode());
-			assertEquals(DeviceInfo.State.CONSUMING, hs2.getDeviceInfo(d2_2.id).getState());
+			assertEquals(READY, hs2.getDeviceInfo(d2_1.id).getStatus());
+			assertEquals(CONSUMPTION_APPROVED, hs2.getDeviceInfo(d2_2.id).getStatus());
+			//
+			// home server 2: check device updates
+			assertEquals(1, ((HomeServerImpl)hs2).getPendingUpdates().size());
+			checkDeviceUpdate(hs2, d2_2, DeviceInfo.UNLIMITED_POWER);
+			//
+			// home server 2: execute & clear device updates
+			hs2.executePhysicalDeviceUpdates(client, log);
 
 			// SATURATION --> OVERLOAD
 			List<Device> hs3_Devices = createDevices(2, NUM_DEVICES, 0);
@@ -141,81 +168,102 @@ public class SchedulerTest {
 			Device d3_2 = hs3_Devices.get(1);
 			d3_2.status.power = toPowerUnits(20_000); // Turn tap 3-2 ON
 			hs3.updateDeviceInfos(hs3_Devices);
-			assertEquals(DeviceInfo.State.CONSUMING, hs3.getDeviceInfo(d3_2.id).getState()); // tap 3-2 is CONSUMING (new)
+			assertEquals(CONSUMPTION_STARTED, hs3.getDeviceInfo(d3_2.id).getStatus()); // tap 3-2 is CONSUMING (new)
+			//
+			// scheduler: act
 			scheduler.runOnce();
 			assertEquals(OVERLOAD, scheduler.getStatus());
 			assertTrue(scheduler.isInOverloadMode());
+			assertEquals(READY, hs1.getDeviceInfo(d1_1.id).getStatus());
+			assertEquals(CONSUMPTION_APPROVED, hs1.getDeviceInfo(d1_2.id).getStatus());
+			assertEquals(READY, hs2.getDeviceInfo(d2_1.id).getStatus());
+			assertEquals(CONSUMPTION_APPROVED, hs2.getDeviceInfo(d2_2.id).getStatus());
+			assertEquals(READY, hs3.getDeviceInfo(d3_1.id).getStatus());
+			assertEquals(CONSUMPTION_DENIED, hs3.getDeviceInfo(d3_2.id).getStatus()); // tap 3-2 is WAITING
 			//
-			List<AbstractDeviceUpdate> hs1_Updates = ((HomeServerImpl)hs1).getPendingUpdates();
-			assertEquals(2, hs1_Updates.size());
-			assertPowerLimit(hs1, d1_1, DeviceInfo.NO_POWER);
-			assertEquals(DeviceInfo.State.READY, hs1.getDeviceInfo(d1_1.id).getState());
-			assertPowerLimit(hs1, d1_2, DeviceInfo.UNLIMITED_POWER);
-			assertEquals(DeviceInfo.State.CONSUMING, hs1.getDeviceInfo(d1_2.id).getState());
-			verify(hsL1).deviceUpdatesPending(hs1, true);
-			// "execute" (and clear) the device updates
-			HomeServerInternalApiClient client = mock(HomeServerInternalApiClient.class);
-			hs1.executeDeviceUpdates(client, log);
-			assertEquals(DeviceInfo.State.WAITING, hs1.getDeviceInfo(d1_1.id).getState());
-			assertEquals(DeviceInfo.State.CONSUMING, hs1.getDeviceInfo(d1_2.id).getState());
+			// check device updates at home server 1:
+			assertEquals(1, ((HomeServerImpl)hs1).getPendingUpdates().size());
+			checkDeviceUpdate(hs1, d1_1, DeviceInfo.NO_POWER);
 			//
-			List<AbstractDeviceUpdate> hs2_Updates = ((HomeServerImpl)hs2).getPendingUpdates();
-			assertEquals(2, hs2_Updates.size());
-			assertPowerLimit(hs2, d2_1, DeviceInfo.NO_POWER);
-			assertEquals(DeviceInfo.State.READY, hs2.getDeviceInfo(d2_1.id).getState());
-			assertPowerLimit(hs2, d2_2, DeviceInfo.UNLIMITED_POWER);
-			assertEquals(DeviceInfo.State.CONSUMING, hs2.getDeviceInfo(d2_2.id).getState());
-			verify(hsL2).deviceUpdatesPending(hs2, true);
-			hs2.executeDeviceUpdates(client, log);
-			assertEquals(DeviceInfo.State.WAITING, hs2.getDeviceInfo(d2_1.id).getState());
-			assertEquals(DeviceInfo.State.CONSUMING, hs2.getDeviceInfo(d2_2.id).getState());
+			// home server 1: execute & clear device updates
+			hs1.executePhysicalDeviceUpdates(client, log);
 			//
-			List<AbstractDeviceUpdate> hs3_Updates = ((HomeServerImpl)hs3).getPendingUpdates();
-			assertEquals(2, hs3_Updates.size());
-			assertPowerLimit(hs3, d3_1, DeviceInfo.NO_POWER);
-			assertEquals(DeviceInfo.State.READY, hs3.getDeviceInfo(d3_1.id).getState());
-			assertPowerLimit(hs3, d3_2, DeviceInfo.NO_POWER); // No power!
-			assertEquals(DeviceInfo.State.CONSUMING, hs3.getDeviceInfo(d3_2.id).getState()); // tap 3-2 still CONSUMING
-			verify(hsL3).deviceUpdatesPending(hs3, true);
-			hs3.executeDeviceUpdates(client, log);
-			assertEquals(DeviceInfo.State.WAITING, hs3.getDeviceInfo(d3_1.id).getState());
-			assertEquals(DeviceInfo.State.WAITING, hs3.getDeviceInfo(d3_2.id).getState()); // tap 3-2 is WAITING
+			// check device updates at home server 2:
+			assertEquals(1, ((HomeServerImpl)hs2).getPendingUpdates().size());
+			checkDeviceUpdate(hs2, d2_1, DeviceInfo.NO_POWER);
+			//
+			// home server 2: execute & clear device updates
+			hs2.executePhysicalDeviceUpdates(client, log);
+			//
+			// check device updates at home server 3:
+			assertEquals(2, ((HomeServerImpl)hs3).getPendingUpdates().size());
+			checkDeviceUpdate(hs3, d3_1, DeviceInfo.NO_POWER);
+			checkDeviceUpdate(hs3, d3_2, DeviceInfo.NO_POWER); // No power!
+			//
+			// home server 3: execute & clear device updates
+			hs3.executePhysicalDeviceUpdates(client, log);
 			
 			// OVERLOAD --> SATURATION
 			d1_2.status.power = toPowerUnits(10_000); // Reduce tap 1-2 power => tap 3-2 can run as well
 			hs1.updateDeviceInfos(hs1_Devices);
+			//
+			// scheduler: act
 			scheduler.runOnce();
 			assertEquals(SATURATION, scheduler.getStatus());
 			assertFalse(scheduler.isInOverloadMode());
-			//
-			assertPowerLimit(hs1, d1_1, DeviceInfo.UNLIMITED_POWER);
-			assertPowerLimit(hs1, d1_2, DeviceInfo.UNLIMITED_POWER);
-			hs1.executeDeviceUpdates(client, log);
-			assertEquals(DeviceInfo.State.READY, hs1.getDeviceInfo(d1_1.id).getState());
-			assertEquals(DeviceInfo.State.CONSUMING, hs1.getDeviceInfo(d1_2.id).getState());
-			//
-			assertPowerLimit(hs2, d2_1, DeviceInfo.UNLIMITED_POWER);
-			assertPowerLimit(hs2, d2_2, DeviceInfo.UNLIMITED_POWER);
-			hs2.executeDeviceUpdates(client, log);
-			assertEquals(DeviceInfo.State.READY, hs2.getDeviceInfo(d2_1.id).getState());
-			assertEquals(DeviceInfo.State.CONSUMING, hs2.getDeviceInfo(d2_2.id).getState());
-
-			assertPowerLimit(hs3, d3_1, DeviceInfo.UNLIMITED_POWER);
-			assertPowerLimit(hs3, d3_2, DeviceInfo.UNLIMITED_POWER); // Consuming now!
-			hs3.executeDeviceUpdates(client, log);
-			assertEquals(DeviceInfo.State.READY, hs3.getDeviceInfo(d3_1.id).getState());
-			assertEquals(DeviceInfo.State.CONSUMING, hs3.getDeviceInfo(d3_2.id).getState()); // tap 3-2 CONSUMING now
+			assertEquals(READY, hs1.getDeviceInfo(d1_1.id).getStatus());
+			assertEquals(CONSUMPTION_APPROVED, hs1.getDeviceInfo(d1_2.id).getStatus());
+			assertEquals(READY, hs2.getDeviceInfo(d2_1.id).getStatus());
+			assertEquals(CONSUMPTION_APPROVED, hs2.getDeviceInfo(d2_2.id).getStatus());
+			assertEquals(READY, hs3.getDeviceInfo(d3_1.id).getStatus());
+			assertEquals(CONSUMPTION_APPROVED, hs3.getDeviceInfo(d3_2.id).getStatus()); // tap 3-2 CONSUMING now
 			
+			//
+			// check device updates at home server 1:
+			checkDeviceUpdate(hs1, d1_1, DeviceInfo.UNLIMITED_POWER);
+			//
+			// home server 1: execute & clear device updates
+			hs1.executePhysicalDeviceUpdates(client, log);
+			assertNull(((HomeServerImpl)hs1).getPendingUpdates());
+			//
+			// check device updates at home server 2:
+			checkDeviceUpdate(hs2, d2_1, DeviceInfo.UNLIMITED_POWER);
+			//
+			// home server 2: execute & clear device updates
+			hs2.executePhysicalDeviceUpdates(client, log);
+			assertNull(((HomeServerImpl)hs2).getPendingUpdates());
+			//
+			// check device updates at home server 3:
+			checkDeviceUpdate(hs3, d3_1, DeviceInfo.UNLIMITED_POWER);
+			checkDeviceUpdate(hs3, d3_2, DeviceInfo.UNLIMITED_POWER); // Consuming now!
+			//
+			// home server 3: execute & clear device updates
+			hs3.executePhysicalDeviceUpdates(client, log);
+			assertNull(((HomeServerImpl)hs3).getPendingUpdates());
+			
+			// SATURATION --> ON
+			d2_2.status.power = toPowerUnits(0); // Turn tap 1-2 OFF
+			hs2.updateDeviceInfos(hs2_Devices);
+			//
+			// scheduler: act
+			scheduler.runOnce();
+			assertEquals(ON, scheduler.getStatus());
+			assertFalse(scheduler.isInOverloadMode());
+			assertEquals(READY, hs1.getDeviceInfo(d1_1.id).getStatus());
+			assertEquals(CONSUMPTION_APPROVED, hs1.getDeviceInfo(d1_2.id).getStatus()); // tap 1-2 still consuming
+			assertEquals(READY, hs2.getDeviceInfo(d2_1.id).getStatus());
+			assertEquals(READY, hs2.getDeviceInfo(d2_2.id).getStatus()); // tap 2-2 is OFF
+			assertEquals(READY, hs3.getDeviceInfo(d3_1.id).getStatus());
+			assertEquals(CONSUMPTION_APPROVED, hs3.getDeviceInfo(d3_2.id).getStatus()); // tap 3-2 still consuming
+			//
+			// check device updates at home servers:
+			assertNull(((HomeServerImpl)hs1).getPendingUpdates());
+			assertNull(((HomeServerImpl)hs2).getPendingUpdates());
+			assertNull(((HomeServerImpl)hs3).getPendingUpdates());
 
 		} catch (UnsupportedModelException e) {
 			assertTrue(false);
 		}
 
-	}
-
-	private void assertPowerLimit(HomeServer server, Device device, int expectedLimitWatt) {
-		SetPowerLimit limit = (SetPowerLimit) getDeviceUpdate(server, device);
-		assertNotNull(limit);
-		assertEquals(expectedLimitWatt, limit.getApprovedPowerLimitWatt());
 	}
 }
