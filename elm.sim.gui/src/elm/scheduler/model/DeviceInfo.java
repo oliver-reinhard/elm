@@ -2,6 +2,8 @@ package elm.scheduler.model;
 
 import elm.hs.api.model.Device;
 import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
+import elm.hs.api.model.Info;
+import elm.hs.api.model.Status;
 import elm.scheduler.ElmStatus;
 
 /**
@@ -26,6 +28,8 @@ public interface DeviceInfo {
 	public static final short UNDEFINED_TEMPERATURE = -1;
 
 	public enum DeviceStatus {
+		/** Initial status. */
+		INITIALIZING,
 		/** Device has been registered at the home server but there is currently no connection to it. */
 		NOT_CONNECTED,
 		/** Device is ready for hot-water consumption. */
@@ -57,14 +61,24 @@ public interface DeviceInfo {
 	}
 
 	public enum UpdateResult {
-		NO_UPDATES, MINOR_UPDATES, URGENT_UPDATES, ERROR;
+		NO_UPDATES,
+		/** No immediate scheduler pass is required, updates can be propagated on the next opportunity. */
+		MINOR_UPDATES,
+		/** Immediate scheduler pass is required. */
+		URGENT_UPDATES,
+		/** The device update was based on device {@link Info} only, device {@link Status} is required immediately. */
+		DEVICE_STATUS_REQUIRED,
+		/** Update information inconsistent or erroneous. */
+		ERROR;
 
 		public UpdateResult and(UpdateResult result) {
 			assert result != null;
 			if (this == ERROR || result == ERROR) {
 				return ERROR;
 			}
-			if (this == URGENT_UPDATES || result == URGENT_UPDATES) {
+			if (this == DEVICE_STATUS_REQUIRED || result == DEVICE_STATUS_REQUIRED) {
+				return DEVICE_STATUS_REQUIRED;
+			} else if (this == URGENT_UPDATES || result == URGENT_UPDATES) {
 				return URGENT_UPDATES;
 			} else if (this == MINOR_UPDATES || result == MINOR_UPDATES) {
 				return MINOR_UPDATES;

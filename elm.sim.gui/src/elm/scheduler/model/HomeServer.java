@@ -7,6 +7,8 @@ import java.util.logging.Logger;
 
 import elm.hs.api.client.HomeServerInternalApiClient;
 import elm.hs.api.model.Device;
+import elm.hs.api.model.Info;
+import elm.hs.api.model.Status;
 import elm.scheduler.HomeServerChangeListener;
 import elm.scheduler.HomeServerManager;
 
@@ -27,14 +29,21 @@ public interface HomeServer {
 	String getPassword();
 
 	/**
-	 * Updates the internal device list and individual device's properties.
+	 * Updates the internal device list and individual device's properties. Devices that are not yet known to the {@link HomeServer} are added to its internal
+	 * list of devices; devices absent from the list are removed from the internal structures.
+	 * <p>
+	 * <em>Note: </em>Typically the {@code devices} passed to the method only contain an {@link Info} but <em>NOT</em> the {@link Status} block. However, the
+	 * {@link Status} block is required in some situations to make relevant decisions. The returned list of device IDs asks for more detailed device information
+	 * including the {@link Status} block.
+	 * </p>
 	 * 
 	 * @param devices
 	 *            cannot be {@code null}
+	 * @return list of device IDs for which to pass more detailed information immediately; can be {@code null}
 	 * @throws UnsupportedModelException
 	 *             if one of the devices does is not suitable for ELM
 	 */
-	void updateDeviceInfos(List<Device> devices) throws UnsupportedModelException;
+	List<String> updateDeviceInfos(List<Device> devices) throws UnsupportedModelException;
 
 	Collection<DeviceInfo> getDeviceInfos();
 

@@ -1,6 +1,6 @@
 package elm.scheduler.model;
 
-import static elm.scheduler.model.ModelTestUtil.createDevices;
+import static elm.scheduler.model.ModelTestUtil.createDevicesWithStatus;
 import static elm.scheduler.model.ModelTestUtil.createHomeServer;
 import static elm.scheduler.model.ModelTestUtil.getDeviceMap;
 import static elm.scheduler.model.ModelTestUtil.sleep;
@@ -75,11 +75,11 @@ public class HomeServerTest {
 	public void addRemoveDeviceInfoUpdates() {
 		try {
 			// add 2 more
-			hs1.updateDeviceInfos(createDevices(HS_ID, 4, 0));
+			hs1.updateDeviceInfos(createDevicesWithStatus(HS_ID, 4, 0));
 			assertEquals(4, hs1.getDeviceInfos().size());
 
 			// remove 2
-			List<Device> devices = createDevices(HS_ID, 4, 0);
+			List<Device> devices = createDevicesWithStatus(HS_ID, 4, 0);
 			Device d0 = devices.get(0);
 			Device d1 = devices.get(1);
 			Device d2 = devices.get(2);
@@ -103,14 +103,14 @@ public class HomeServerTest {
 	public void deviceInfoUpdates() {
 		try {
 			// Turn a tap on
-			List<Device> devices = createDevices(HS_ID, NUM_DEVICES, 0);
+			List<Device> devices = createDevicesWithStatus(HS_ID, NUM_DEVICES, 0);
 			devices.get(1).status.power = toPowerUnits(10_000);
 			hs1.updateDeviceInfos(devices);
 			verify(hsL1).deviceInfosUpdated(hs1, true);
 
 			// Turn a tap off
 			resetListener();
-			devices = createDevices(HS_ID, NUM_DEVICES, 0);
+			devices = createDevicesWithStatus(HS_ID, NUM_DEVICES, 0);
 			hs1.updateDeviceInfos(devices);
 			verify(hsL1).deviceInfosUpdated(hs1, false);
 
@@ -130,7 +130,7 @@ public class HomeServerTest {
 			DeviceInfo[] deviceInfos = hs1.getDeviceInfos().toArray(new DeviceInfo[] {});
 			DeviceInfo di1_2 = deviceInfos[1];
 			
-			List<Device> devices = createDevices(1, NUM_DEVICES, 0);
+			List<Device> devices = createDevicesWithStatus(1, NUM_DEVICES, 0);
 			Device d1_2 = devices.get(1);
 			final short referenceTemperature = d1_2.status.setpoint;
 			d1_2.status.power = toPowerUnits(20_000); // Turn tap 1-2 ON

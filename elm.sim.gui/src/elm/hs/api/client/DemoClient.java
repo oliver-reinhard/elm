@@ -30,7 +30,7 @@ public class DemoClient extends AbstractCommandLineClient {
 
 			HomeServerResponse response = publicClient.getServerStatus();
 			if (verbose) {
-				print(publicClient, response);
+				print("Server Status", publicClient, response);
 			}
 
 			response = publicClient.getRegisteredDevices();
@@ -43,24 +43,28 @@ public class DemoClient extends AbstractCommandLineClient {
 				}
 			}
 			if (verbose) {
-				print(publicClient, response);
+				print("Registered Devices", publicClient, response);
 			}
 
 			if (deviceID != null && response._isDeviceAlive(deviceID)) {
 				response = publicClient.getDeviceStatus(deviceID);
 				if (verbose) {
-					print(publicClient, response);
+					print("Device Status of " + deviceID, publicClient, response);
 				}
 
 				// Change demand temperature:
-				publicClient.setReferenceTemperature(deviceID, 190);
+				int referenceTemperature = 190;
+				publicClient.setReferenceTemperature(deviceID, referenceTemperature);
+				System.out.println("\n---- Set Reference Temperature (setpoint) := " + referenceTemperature + " ----");
 
-				Short demandTemp = publicClient.getReferenceTemperature(deviceID);
-				System.out.println("Reference temp (setpoint) = " + demandTemp);
+				Short actualTemperature = publicClient.getReferenceTemperature(deviceID);
+				System.out.println("\n---- Get Reference Temperature (setpoint) = " + actualTemperature + " ----");
 
 				if (useInternalClient) {
 					internalClient.start();
-					internalClient.setScaldProtectionTemperature(deviceID, 310);
+					int scaldProtectionTemperature = 310;
+					System.out.println("\n---- Set Scald-Protection Temperature = " + scaldProtectionTemperature + " ----");
+					internalClient.setScaldProtectionTemperature(deviceID, scaldProtectionTemperature);
 				}
 			}
 
@@ -80,8 +84,8 @@ public class DemoClient extends AbstractCommandLineClient {
 		}
 	}
 
-	protected static void print(HomeServerPublicApiClient publicClient, HomeServerResponse response) {
-		System.out.println("\n----");
+	protected static void print(String title, HomeServerPublicApiClient publicClient, HomeServerResponse response) {
+		System.out.println("\n---- " + title + " ----");
 		System.out.println(publicClient.getGson().toJson(response));
 	}
 

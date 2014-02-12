@@ -4,7 +4,9 @@ public class DeviceCharacteristics {
 
 	public enum DeviceType {
 
-		TYPE_0(false), TYPE_1(true), TYPE_2(false), TYPE_3(true), TYPE_4(false), TYPE_5(true);
+		TYPE_0(false), TYPE_1(true), TYPE_2(false), TYPE_3(true), TYPE_4(false), TYPE_5(true),
+		/** Simulated. */
+		TYPE_7_SIM(true);
 
 		final boolean remoteControllable;
 
@@ -34,7 +36,9 @@ public class DeviceCharacteristics {
 
 		/* Remote controllable */
 		DCX(DeviceType.TYPE_1, 27_000), DEX(DeviceType.TYPE_1, 27_000), DSX(DeviceType.TYPE_1, 27_000), CEX(DeviceType.TYPE_3, 13_500), CFX(DeviceType.TYPE_3,
-				13_500), MCX3(DeviceType.TYPE_5, 3_500), MCX4(DeviceType.TYPE_5, 4_400), MCX6(DeviceType.TYPE_5, 5_700), MCX7(DeviceType.TYPE_5, 6_500);
+				13_500), MCX3(DeviceType.TYPE_5, 3_500), MCX4(DeviceType.TYPE_5, 4_400), MCX6(DeviceType.TYPE_5, 5_700), MCX7(DeviceType.TYPE_5, 6_500),
+		/** Simulated. */
+		SIM(DeviceType.TYPE_7_SIM, 22_000);
 
 		final DeviceType type;
 		final int powerMaxWatt;
@@ -104,6 +108,8 @@ public class DeviceCharacteristics {
 				return DeviceModel.MCX6;
 			case TYPE_5:
 				return DeviceModel.DSX;
+			case TYPE_7_SIM:
+				return DeviceModel.SIM;
 			default:
 				throw new IllegalArgumentException(type.toString());
 			}

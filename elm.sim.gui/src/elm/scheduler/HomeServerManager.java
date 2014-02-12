@@ -1,6 +1,7 @@
 package elm.scheduler;
 
 import java.net.URISyntaxException;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -8,6 +9,7 @@ import elm.hs.api.client.ClientException;
 import elm.hs.api.client.ClientUtil;
 import elm.hs.api.client.HomeServerInternalApiClient;
 import elm.hs.api.client.HomeServerPublicApiClient;
+import elm.hs.api.model.Device;
 import elm.hs.api.model.HomeServerResponse;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.UnsupportedModelException;
@@ -16,8 +18,8 @@ import elm.scheduler.model.UnsupportedModelException;
  * This manager is responsible for the connection to and the communication with a single Home Server server via HTTP and with the {@link Scheduler}. However, it
  * does not communicate to the {@link Scheduler} directly, but indirectly via a {@link HomeServer} object.
  * <p>
- * At each poll of the Home Server server, this manager updates an 'alive' flag at its {@link HomeServer}. This enables a separate thread to monitor the
- * health of this manager.
+ * At each poll of the Home Server server, this manager updates an 'alive' flag at its {@link HomeServer}. This enables a separate thread to monitor the health
+ * of this manager.
  * </p>
  */
 public class HomeServerManager implements Runnable, HomeServerChangeListener {
@@ -190,7 +192,9 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 		boolean shouldStop = false;
 		try {
 			homeServer.updateLastHomeServerPollTime();
-			final HomeServerResponse response = publicClient.getAllDevices();
+
+			final HomeServerResponse response = publicClient.getRegisteredDevices();
+
 			pollingIntervalMillis = POLLING_INTERVAL_MILLIS;
 			if (response == null || response.devices == null) {
 				throw new ClientException(ClientException.Error.APPLICATION_DATA_ERROR);
@@ -199,9 +203,28 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 				setState(State.OK);
 				pollingFailureCount = 0;
 				try {
-					homeServer.updateDeviceInfos(response.devices);
+					final List<String> devicesNeedingStatus = homeServer.updateDeviceInfos(response.devices);
+					if (devicesNeedingStatus != null) { // some devices need the Status block for the device => poll again
+						for (String deviceID : devicesNeedingStatus) {
+
+							final HomeServerResponse deviceResponse = publicClient.getDeviceStatus(deviceID);
+
+							assert !deviceResponse.devices.isEmpty();
+							if (deviceResponse.devices.get(0).status == null) {
+								// this is not an assert statement because failure to check this condition (i.e. asserts not checked) would result in
+								// permanently missing information for a critical scheduler decision as the device update would re-request the Status block
+								throw new ClientException(ClientException.Error.APPLICATION_DATA_ERROR, "Status block missing", null);
+							}
+							for (Device device : response.devices) {
+								if (device.id.equals(deviceID)) {
+									// Set Status block
+									device.status = deviceResponse.devices.get(0).status;
+								}
+							}
+						}
+					}
 				} catch (UnsupportedModelException ume) {
-					throw new ClientException(ClientException.Error.APPLICATION_DATA_ERROR, ume);
+					throw new ClientException(ClientException.Error.APPLICATION_DATA_ERROR, null, ume);
 				}
 			}
 			throw new ClientException(ClientException.Error.APPLICATION_FAILURE_RESPONSE);

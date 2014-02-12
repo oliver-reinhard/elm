@@ -19,8 +19,8 @@ public class ClientException extends Exception {
 		/** No HTTP response was delivered within the given time frame. */
 		NETWORK_TIMEOUT,
 		/** The execution thread was interrupted by the application. */
-		INTERRUPTED, 
-		/** A problem has arisen at a technical layer (not an application layer). */ 
+		INTERRUPTED,
+		/** A problem has arisen at a technical layer (not an application layer). */
 		EXECUTION_ERROR
 	}
 
@@ -28,35 +28,38 @@ public class ClientException extends Exception {
 	private final long time;
 
 	public ClientException(Error error) {
-		this(error, null);
+		this(error, null, null);
 	}
 
-	public ClientException(Error error, Throwable cause) {
-		super(cause);
+	public ClientException(Error error, String msg, Throwable cause) {
+		super(msg, cause);
 		assert error != null;
 		this.error = error;
 		this.time = System.currentTimeMillis();
 	}
 
 	/**
-	 * @param cause see {@link HttpClient#GET(String)}
+	 * @param cause
+	 *            see {@link HttpClient#GET(String)}
 	 */
 	public ClientException(InterruptedException cause) {
-		this(Error.INTERRUPTED, cause);
+		this(Error.INTERRUPTED, null, cause);
 	}
 
 	/**
-	 * @param cause see {@link HttpClient#GET(String)}
+	 * @param cause
+	 *            see {@link HttpClient#GET(String)}
 	 */
 	public ClientException(ExecutionException cause) {
-		this(Error.EXECUTION_ERROR, cause);
+		this(Error.EXECUTION_ERROR, null, cause);
 	}
-	
+
 	/**
-	 * @param cause see {@link HttpClient#GET(String)}
+	 * @param cause
+	 *            see {@link HttpClient#GET(String)}
 	 */
 	public ClientException(TimeoutException cause) {
-		this(Error.NETWORK_TIMEOUT, cause);
+		this(Error.NETWORK_TIMEOUT, null, cause);
 	}
 
 	public Error getError() {

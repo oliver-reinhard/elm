@@ -47,7 +47,7 @@ public class HomeServerPublicApiClient extends AbstractHomeServerClient {
 	}
 
 	/**
-	 * @return
+	 * @return never {@code null}
 	 * @throws ClientException if the operation ended in a status {@code != 200} or if the execution threw an exception
 	 */
 	public HomeServerResponse getServerStatus() throws ClientException {
@@ -57,7 +57,7 @@ public class HomeServerPublicApiClient extends AbstractHomeServerClient {
 	/**
 	 * Returns all devices registered at this Home Server, regardless of whether they are currently turned on or off.
 	 * 
-	 * @return {@code null} on errors
+	 * @return never {@code null}
 	 * @throws ClientException if the operation ended in a status {@code != 200} or if the execution threw an exception
 	 */
 	public HomeServerResponse getRegisteredDevices() throws ClientException {
@@ -71,7 +71,7 @@ public class HomeServerPublicApiClient extends AbstractHomeServerClient {
 	 * </p>
 	 * <p>
 	 * 
-	 * @return {@code null} on errors
+	 * @return never {@code null}
 	 * @throws ClientException 
 	 */
 	public HomeServerResponse getAllDevices() throws ClientException {
@@ -81,7 +81,7 @@ public class HomeServerPublicApiClient extends AbstractHomeServerClient {
 	/**
 	 * 
 	 * @param deviceID
-	 * @return
+	 * @return never {@code null}
 	 * @throws ClientException if the operation ended in a status {@code != 200} or if the execution threw an exception
 	 */
 	public HomeServerResponse getDeviceStatus(String deviceID) throws ClientException {
@@ -117,7 +117,6 @@ public class HomeServerPublicApiClient extends AbstractHomeServerClient {
 	 *            in 1/10 degree Celsius, cannot be {@code < 0}
 	 * @param deviceID
 	 *            cannot be {@code null} or empty
-	 * @return {@code false} , else {@code true}
 	 * @throws ClientException if the operation ended in a status {@code != 200} or if the execution threw an exception
 	 */
 	public void setReferenceTemperature(String deviceID, int newTemp) throws ClientException {

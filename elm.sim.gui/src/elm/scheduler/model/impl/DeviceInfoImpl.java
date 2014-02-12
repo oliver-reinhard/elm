@@ -5,6 +5,7 @@ import static elm.scheduler.model.DeviceInfo.DeviceStatus.CONSUMPTION_DENIED;
 import static elm.scheduler.model.DeviceInfo.DeviceStatus.CONSUMPTION_LIMITED;
 import static elm.scheduler.model.DeviceInfo.DeviceStatus.CONSUMPTION_STARTED;
 import static elm.scheduler.model.DeviceInfo.DeviceStatus.ERROR;
+import static elm.scheduler.model.DeviceInfo.DeviceStatus.INITIALIZING;
 import static elm.scheduler.model.DeviceInfo.DeviceStatus.NOT_CONNECTED;
 import static elm.scheduler.model.DeviceInfo.DeviceStatus.READY;
 
@@ -30,7 +31,7 @@ public class DeviceInfoImpl implements DeviceInfo {
 	private final String id;
 	private final HomeServer homeServer;
 	private final String name;
-	private DeviceStatus status;
+	private DeviceStatus status = INITIALIZING;
 	private DeviceModel deviceModel;
 
 	/** Model-dependent. */
@@ -69,7 +70,6 @@ public class DeviceInfoImpl implements DeviceInfo {
 	public DeviceInfoImpl(HomeServer server, Device device, String name) throws UnsupportedModelException {
 		assert server != null;
 		assert device != null;
-		assert device.status != null;
 		this.id = device.id;
 		this.homeServer = server;
 		this.name = (name == null || name.isEmpty()) ? device.id : name;
@@ -78,9 +78,6 @@ public class DeviceInfoImpl implements DeviceInfo {
 		if (!deviceModel.getType().isRemoteControllable()) {
 			throw new UnsupportedModelException(device.id);
 		}
-		powerMaxUnits = device.status.powerMax;
-		status = NOT_CONNECTED;
-		update(device);
 	}
 
 	@Override
@@ -105,15 +102,30 @@ public class DeviceInfoImpl implements DeviceInfo {
 	@Override
 	public synchronized UpdateResult update(Device device) {
 		assert device != null;
-		UpdateResult result = UpdateResult.NO_UPDATES;
+		assert device.info != null || device.status != null;
+		
+		// The Info block of the device only contains information about heater on/off. For the actual power value, the Status block is required,
+		// however, the Status block must be requested individually for each device.
+		if (device.status == null) {
+			// device.info != null as per assertion, above
+			final boolean deviceHeaterOn = device.info.flags == 0;
+			if ((deviceHeaterOn || status.isConsuming()) || status == INITIALIZING) {
+				// The heater is turned ON or it is OFF because of denied or limited power
+				return UpdateResult.DEVICE_STATUS_REQUIRED;
+			}
+		}
 
-		if (device.connected && status == NOT_CONNECTED) {
+		if (device.connected && status.in(INITIALIZING, NOT_CONNECTED)) {
 			setStatus(READY);
 		} else if (!device.connected && status != ERROR) {
 			setStatus(NOT_CONNECTED);
 		}
+		
+		UpdateResult result = UpdateResult.NO_UPDATES;
 
 		if (device.status != null) {
+			powerMaxUnits = device.status.powerMax;
+			
 			final int newDemandPowerWatt = toPowerWatt(device.status.power);
 			if (newDemandPowerWatt != demandPowerWatt) {
 				if (demandPowerWatt == 0) {

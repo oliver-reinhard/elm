@@ -51,15 +51,15 @@ public enum Error {
 
 	UNKNOWN_ERROR(99, "Unbekannter Fehler");
 
-	private final int code;
+	private final short code;
 	private final String description;
 
 	private Error(int code, String description) {
-		this.code = code;
+		this.code = (short) code;
 		this.description = description;
 	}
 
-	public int getCode() {
+	public short getCode() {
 		return code;
 	}
 

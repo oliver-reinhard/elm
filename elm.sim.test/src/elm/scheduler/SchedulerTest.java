@@ -10,7 +10,7 @@ import static elm.scheduler.model.DeviceInfo.DeviceStatus.CONSUMPTION_DENIED;
 import static elm.scheduler.model.DeviceInfo.DeviceStatus.CONSUMPTION_STARTED;
 import static elm.scheduler.model.DeviceInfo.DeviceStatus.READY;
 import static elm.scheduler.model.ModelTestUtil.checkDeviceUpdate;
-import static elm.scheduler.model.ModelTestUtil.createDevices;
+import static elm.scheduler.model.ModelTestUtil.createDevicesWithStatus;
 import static elm.scheduler.model.ModelTestUtil.createHomeServer;
 import static elm.scheduler.model.ModelTestUtil.sleep;
 import static elm.scheduler.model.ModelTestUtil.toPowerUnits;
@@ -112,7 +112,7 @@ public class SchedulerTest {
 			assertEquals(runCount + 1, scheduler.getSchdedulingRunCount());
 
 			// ON --> ON
-			List<Device> hs1_Devices = createDevices(1, NUM_DEVICES, 0);
+			List<Device> hs1_Devices = createDevicesWithStatus(1, NUM_DEVICES, 0);
 			Device d1_1 = hs1_Devices.get(0);
 			Device d1_2 = hs1_Devices.get(1);
 			d1_2.status.power = toPowerUnits(20_000); // Turn tap 1-2 ON
@@ -141,7 +141,7 @@ public class SchedulerTest {
 			hs1.executePhysicalDeviceUpdates(client, log);
 
 			// ON --> SATURATION
-			List<Device> hs2_Devices = createDevices(2, NUM_DEVICES, 0);
+			List<Device> hs2_Devices = createDevicesWithStatus(2, NUM_DEVICES, 0);
 			Device d2_1 = hs2_Devices.get(0);
 			Device d2_2 = hs2_Devices.get(1);
 			d2_2.status.power = toPowerUnits(20_000); // Turn tap 2-2 ON
@@ -163,7 +163,7 @@ public class SchedulerTest {
 			hs2.executePhysicalDeviceUpdates(client, log);
 
 			// SATURATION --> OVERLOAD
-			List<Device> hs3_Devices = createDevices(2, NUM_DEVICES, 0);
+			List<Device> hs3_Devices = createDevicesWithStatus(2, NUM_DEVICES, 0);
 			Device d3_1 = hs3_Devices.get(0);
 			Device d3_2 = hs3_Devices.get(1);
 			d3_2.status.power = toPowerUnits(20_000); // Turn tap 3-2 ON

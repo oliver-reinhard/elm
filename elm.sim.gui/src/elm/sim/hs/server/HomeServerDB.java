@@ -92,7 +92,7 @@ public class HomeServerDB {
 	}
 
 	/**
-	 * Changes the setpoint of the given devices in the database and returns the proper response.
+	 * Changes the setpoint of the given device in the database and returns the proper response.
 	 * 
 	 * @param id
 	 * @param setpoint

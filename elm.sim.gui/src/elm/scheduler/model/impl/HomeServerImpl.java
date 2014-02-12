@@ -1,5 +1,10 @@
 package elm.scheduler.model.impl;
 
+import static elm.scheduler.model.DeviceInfo.UpdateResult.DEVICE_STATUS_REQUIRED;
+import static elm.scheduler.model.DeviceInfo.UpdateResult.MINOR_UPDATES;
+import static elm.scheduler.model.DeviceInfo.UpdateResult.NO_UPDATES;
+import static elm.scheduler.model.DeviceInfo.UpdateResult.URGENT_UPDATES;
+
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -14,9 +19,9 @@ import java.util.logging.Logger;
 import elm.hs.api.client.HomeServerInternalApiClient;
 import elm.hs.api.model.Device;
 import elm.scheduler.HomeServerChangeListener;
+import elm.scheduler.model.AsynchronousDeviceUpdate;
 import elm.scheduler.model.DeviceInfo;
 import elm.scheduler.model.DeviceInfo.UpdateResult;
-import elm.scheduler.model.AsynchronousDeviceUpdate;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.UnsupportedModelException;
 
@@ -61,30 +66,39 @@ public class HomeServerImpl implements HomeServer {
 	}
 
 	@Override
-	public void updateDeviceInfos(List<Device> devices) throws UnsupportedModelException {
+	public List<String> updateDeviceInfos(List<Device> devices) throws UnsupportedModelException {
 		assert devices != null;
-		UpdateResult updated = UpdateResult.NO_UPDATES;
+		UpdateResult updated = NO_UPDATES;
 		List<String> idsToRemove = new LinkedList<String>(deviceInfos.keySet());
+		List<String> idsNeedingStatus = new ArrayList<String>();
+		
 		for (Device device : devices) {
 			final String id = device.id;
-			DeviceInfo info = deviceInfos.get(id);
+			DeviceInfo deviceInfo = deviceInfos.get(id);
 			// Add DeviceInfo for new devices:
-			if (info == null) {
-				info = new DeviceInfoImpl(this, device);
-				deviceInfos.put(id, info);
-				updated = updated.and(UpdateResult.MINOR_UPDATES);
-			} else {
-				updated = updated.and(info.update(device));
+			if (deviceInfo == null) {
+				deviceInfo = new DeviceInfoImpl(this, device);
+				deviceInfos.put(id, deviceInfo);
+			} 
+			final UpdateResult deviceInfoUpdate = deviceInfo.update(device);
+			if (deviceInfoUpdate == DEVICE_STATUS_REQUIRED) {
+				// need Status block for this device
+				idsNeedingStatus.add(id);
 			}
+			updated = updated.and(deviceInfoUpdate);
 			idsToRemove.remove(id);
+		}
+		if (!idsNeedingStatus.isEmpty()) {
+			return idsNeedingStatus;
 		}
 
 		// Remove DeviceInfo for obsolete devices
 		for (String id : idsToRemove) {
 			deviceInfos.remove(id);
-			updated = updated.and(UpdateResult.MINOR_UPDATES);
+			updated = updated.and(MINOR_UPDATES);
 		}
 		fireDeviceInfosChanged(updated);
+		return null;
 	}
 
 	@Override
@@ -172,10 +186,10 @@ public class HomeServerImpl implements HomeServer {
 	}
 
 	private void fireDeviceInfosChanged(UpdateResult updated) {
-		if (updated != UpdateResult.NO_UPDATES) {
+		if (updated != NO_UPDATES) {
 			// The device info updates MUST NOT BE long-lasting or blocking!
 			for (HomeServerChangeListener listener : listeners) {
-				listener.deviceInfosUpdated(this, updated == UpdateResult.URGENT_UPDATES);
+				listener.deviceInfosUpdated(this, updated == URGENT_UPDATES);
 			}
 		}
 	}

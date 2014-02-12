@@ -3,6 +3,8 @@ package elm.sim.hs.server;
 import java.io.IOException;
 import java.net.URI;
 
+import javax.jmdns.JmDNS;
+import javax.jmdns.ServiceInfo;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 
@@ -108,7 +110,18 @@ public class HomeServerSimulation {
 	}
 
 	public static void main(String[] args) throws Exception {
-		HomeServerSimulation server = new HomeServerSimulation(URI.create("http://chs.local:8080"));
+		try {
+			JmDNS jmDNS = JmDNS.create();
+			ServiceInfo info = ServiceInfo.create("_clage-hs._tcp.local.", "Home Server Sim", 9090, "Home Server Simulation");
+			jmDNS.registerService(info);
+			System.out.println(HomeServerSimulation.class.getSimpleName() + " registered as Bonjour service.");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		HomeServerSimulation server = new HomeServerSimulation(URI.create("http://chs.local:9090"));
 		server.start();
+		System.out.println(HomeServerSimulation.class.getSimpleName() + " started.");
+		
 	}
 }
