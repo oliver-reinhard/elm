@@ -47,7 +47,7 @@ public class DeviceTapPointAdapter implements SimModelListener {
 	}
 	
 	public void updateTapPoint() {
-		point.setActualTemperature(Temperature.fromInt(device.status.setpoint / 10));
+		point.setScaldProtectionTemperature(Temperature.fromInt(device.status.setpoint / 10));
 	}
 
 }

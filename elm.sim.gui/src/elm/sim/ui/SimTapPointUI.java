@@ -144,10 +144,10 @@ public class SimTapPointUI extends AbstractTapPointUI {
 	private void updateReferenceTemperatureEnablement() {
 		temperature.setEnabled(false); // disable all
 		List<Temperature> toEnable = new ArrayList<Temperature>();
-		if (Temperature.TEMP_MIN.lessThan(model.getScaldTemperature())) {
+		if (Temperature.TEMP_MIN.lessThan(model.getScaldProtectionTemperature())) {
 			// enable only those lower than the current reference:
 			for (Temperature literal : temperature.getLiterals()) {
-				if (literal.getDegreesCelsius() <= model.getScaldTemperature().getDegreesCelsius()) {
+				if (literal.getDegreesCelsius() <= model.getScaldProtectionTemperature().getDegreesCelsius()) {
 					toEnable.add(literal);
 				}
 			}

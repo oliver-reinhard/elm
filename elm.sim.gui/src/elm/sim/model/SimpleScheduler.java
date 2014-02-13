@@ -2,10 +2,15 @@ package elm.sim.model;
 
 import elm.sim.metamodel.SimAttribute;
 import elm.sim.metamodel.SimChangeNotifier;
+import elm.sim.ui.SimpleSchedulerUI;
 
-public interface SimScheduler extends SimChangeNotifier {
+/**
+ * This is the model object for a {@link SimpleSchedulerUI} widget. It contains no scheduling logic of its own but merely reacts to events from the UI
+ * component.
+ */
+public interface SimpleScheduler extends SimChangeNotifier {
 
-	/** A simple metamodel of the {@link SimScheduler}. */
+	/** A simple metamodel of the {@link SimpleScheduler}. */
 	public enum Attribute implements SimAttribute {
 		STATUS("Status"), WAITING_TIME_SECONDS("Wartezeit [s]");
 

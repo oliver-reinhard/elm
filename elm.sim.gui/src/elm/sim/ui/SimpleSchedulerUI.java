@@ -15,15 +15,15 @@ import javax.swing.border.EtchedBorder;
 
 import elm.sim.metamodel.SimModelEvent;
 import elm.sim.metamodel.SimModelListener;
-import elm.sim.model.SimScheduler;
+import elm.sim.model.SimpleScheduler;
 import elm.sim.model.SimStatus;
-import elm.sim.model.impl.SimSchedulerImpl;
+import elm.sim.model.impl.SimpleSchedulerImpl;
 
-public class SchedulerMonitorUI extends JPanel {
+public class SimpleSchedulerUI extends JPanel {
 
 	private static final long serialVersionUID = 1L;
 
-	private static final Logger LOG = Logger.getLogger(SchedulerMonitorUI.class.getName());
+	private static final Logger LOG = Logger.getLogger(SimpleSchedulerUI.class.getName());
 
 	@SuppressWarnings("serial")
 	class StatusPanel extends EnumSelectorPanel<SimStatus> {
@@ -40,7 +40,7 @@ public class SchedulerMonitorUI extends JPanel {
 	}
 
 	// State
-	private final SimSchedulerImpl model;
+	private final SimpleSchedulerImpl model;
 
 	// Widgets
 	private final StatusPanel statusPanel;
@@ -59,7 +59,7 @@ public class SchedulerMonitorUI extends JPanel {
 			SwingUtilities.invokeLater(new Runnable() {
 				@Override
 				public void run() {
-					switch ((SimSchedulerImpl.Attribute) event.getAttribute()) {
+					switch ((SimpleSchedulerImpl.Attribute) event.getAttribute()) {
 					case STATUS:
 						statusPanel.setReference((SimStatus) event.getNewValue());
 						break;
@@ -77,7 +77,7 @@ public class SchedulerMonitorUI extends JPanel {
 	/**
 	 * Create the panel.
 	 */
-	public SchedulerMonitorUI(SimSchedulerImpl model) {
+	public SimpleSchedulerUI(SimpleSchedulerImpl model) {
 		assert model != null;
 		this.model = model;
 		model.addModelListener(modelListener);
@@ -145,11 +145,11 @@ public class SchedulerMonitorUI extends JPanel {
 		updateFromModel(model);
 	}
 
-	private void updateFromModel(SimScheduler model) {
+	private void updateFromModel(SimpleScheduler model) {
 		statusPanel.setReference(model.getStatus());
 	}
 
-	public SimSchedulerImpl getModel() {
+	public SimpleSchedulerImpl getModel() {
 		return model;
 	}
 

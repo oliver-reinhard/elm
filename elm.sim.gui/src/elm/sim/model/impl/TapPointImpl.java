@@ -11,9 +11,10 @@ import java.util.logging.Logger;
 import elm.sim.metamodel.AbstractSimObject;
 import elm.sim.metamodel.SimAttribute;
 import elm.sim.model.Flow;
-import elm.sim.model.TapPoint;
 import elm.sim.model.SimStatus;
+import elm.sim.model.TapPoint;
 import elm.sim.model.Temperature;
+import elm.ui.api.ElmStatus;
 
 /**
  * Apart from the name, which is mandatory, all fields are optional.
@@ -39,7 +40,7 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 	private Temperature referenceTemperature;
 
 	/** Temperature as constrained by the scheduler. */
-	private Temperature scaldTemperature = Temperature.TEMP_MAX; // = no limit
+	private Temperature scaldProtectionTemperature = Temperature.TEMP_MAX; // = no limit
 
 	/** Temperature as granted by scheduler. */
 	private Temperature actualTemperature = Temperature.TEMP_MIN; // = cold water
@@ -124,15 +125,13 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 		return referenceTemperature;
 	}
 
-	@Override
-	public synchronized void setActualTemperature(Temperature newValue) {
+	private void setActualTemperature(Temperature newValue) {
 		assert newValue != null;
-		if (newValue.lessOrEqualThan(getScaldTemperature())) {
+		if (newValue.lessOrEqualThan(getScaldProtectionTemperature())) {
 			Temperature oldValue = actualTemperature;
 			if (oldValue != newValue) {
 				actualTemperature = newValue;
 				fireModelChanged(Attribute.ACTUAL_TEMPERATURE, oldValue, newValue);
-				updateDerived();
 			}
 		} else {
 			LOG.warning("actual temperature cannot exceed scald temperature");
@@ -144,32 +143,49 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 		return actualTemperature;
 	}
 
-	private void setScaldTemperature(Temperature newValue) {
+	@Override
+	public synchronized void setScaldProtectionTemperature(Temperature newValue) {
+		setInternalScaldProtectionTemperature(newValue, true);
+	}
+
+	/**
+	 * @param newValue
+	 *            cannot be {@code null} 
+	 * @param updateDerived
+	 *            update derived values on true status change
+	 */
+	private void setInternalScaldProtectionTemperature(Temperature newValue, boolean updateDerived) {
 		assert newValue != null;
-		Temperature oldValue = scaldTemperature;
+		Temperature oldValue = scaldProtectionTemperature;
 		if (oldValue != newValue) {
-			scaldTemperature = newValue;
+			scaldProtectionTemperature = newValue;
 			fireModelChanged(Attribute.SCALD_TEMPERATURE, oldValue, newValue);
+			if (updateDerived) {
+				updateDerived();
+			}
 		}
 	}
 
 	@Override
-	public synchronized Temperature getScaldTemperature() {
-		return scaldTemperature;
+	public synchronized Temperature getScaldProtectionTemperature() {
+		return scaldProtectionTemperature;
 	}
 
 	/**
-	 * Usually status changes are set via {@link #setSchedulerStatus(SimStatus)}.
-	 * 
 	 * @param newValue
 	 *            cannot be {@code null}
+	 * @param updateDerived
+	 *            update derived values on true status change
 	 */
-	protected void setStatus(SimStatus newValue) {
+	private void setInternalStatus(SimStatus newValue, boolean updateDerived) {
 		assert newValue != null;
 		SimStatus oldValue = status;
 		if (oldValue != newValue) {
 			status = newValue;
 			fireModelChanged(Attribute.STATUS, oldValue, newValue);
+			if (updateDerived) {
+				updateDerived();
+			}
 		}
 	}
 
@@ -179,10 +195,22 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 	}
 
 	@Override
+	public void setStatus(ElmStatus deviceStatus) {
+		setInternalStatus(SimStatus.fromElmStatus(deviceStatus), true);
+	}
+
+	@Override
 	public synchronized void setSchedulerStatus(SimStatus schedulerStatus) {
 		assert schedulerStatus != null;
 		// remember the scheduler status
 		this.schedulerStatus = schedulerStatus;
+
+		// infer scald-protection temperature
+		if (actualFlow.isOn() || schedulerStatus.in(ON, SATURATION)) {
+			setInternalScaldProtectionTemperature(Temperature.TEMP_MAX, false);
+		} else {
+			setInternalScaldProtectionTemperature(Temperature.TEMP_MIN, false);
+		}
 		updateDerived();
 	}
 
@@ -209,38 +237,34 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 		if (actualFlow.isOn()) {
 			// Yes => interfere as little as possible with the user's reference temperature;
 			if (schedulerStatus.in(ON, SATURATION)) {
-				setStatus(ON);
+				setInternalStatus(ON, false);
 				// allow to increase or decrease the reference temperature:
 				LOG.info("A1 — user can freely change temperature");
-				setScaldTemperature(Temperature.TEMP_MAX);
 				setActualTemperature(referenceTemperature);
 
-			} else if (schedulerStatus == OVERLOAD && scaldTemperature != Temperature.TEMP_MIN) {
-				setStatus(ON);
+			} else if (schedulerStatus == OVERLOAD && scaldProtectionTemperature != Temperature.TEMP_MIN) {
+				setInternalStatus(ON, false);
 				// allow to increase or decrease the reference temperature:
 				LOG.info("A2 — user can freely change temperature");
 				setActualTemperature(referenceTemperature);
 
 			} else { // schedulerStatus.in(OFF, ERROR)
-				setStatus(schedulerStatus); // user can see why reference-flow increase is disabled
-				// allow only to decrease the reference:
+				setInternalStatus(schedulerStatus, false); // user can see why reference-flow increase is disabled
+				// allow only to decrease the reference with respect to current actual temp.:
 				LOG.info("A3 — user can only reduce temperature");
-				setScaldTemperature(actualTemperature);
-				setActualTemperature(Temperature.min(referenceTemperature, scaldTemperature));
+				setActualTemperature(Temperature.min(actualTemperature, referenceTemperature, scaldProtectionTemperature));
 			}
 
 		} else if (schedulerStatus.in(ON, SATURATION)) {
 			// No, there is no actual flow:
-			setStatus(schedulerStatus);
+			setInternalStatus(schedulerStatus, false);
 			LOG.info("B - enable reference temperature change up or down");
 			// allow to increase or decrease the reference
-			setScaldTemperature(Temperature.TEMP_MAX);
 			setActualTemperature(referenceTemperature);
 
 		} else { // schedulerStatus.in(OFF, OVERLOAD, ERROR)
-			setStatus(schedulerStatus);
+			setInternalStatus(schedulerStatus, false);
 			LOG.info("C - cold water only");
-			setScaldTemperature(Temperature.TEMP_MIN);
 			setActualTemperature(Temperature.TEMP_MIN);
 		}
 	}

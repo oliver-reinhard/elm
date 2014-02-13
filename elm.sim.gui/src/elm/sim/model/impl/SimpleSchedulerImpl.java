@@ -2,10 +2,10 @@ package elm.sim.model.impl;
 
 import elm.sim.metamodel.AbstractSimObject;
 import elm.sim.metamodel.SimAttribute;
-import elm.sim.model.SimScheduler;
+import elm.sim.model.SimpleScheduler;
 import elm.sim.model.SimStatus;
 
-public class SimSchedulerImpl extends AbstractSimObject implements SimScheduler {
+public class SimpleSchedulerImpl extends AbstractSimObject implements SimpleScheduler {
 
 	public static final int SIMULATED_WAITING_TIME_SECONDS = 10;
 

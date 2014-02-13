@@ -1,6 +1,6 @@
 package elm.sim.model.impl;
 
-import elm.sim.model.SimScheduler;
+import elm.sim.model.SimpleScheduler;
 import elm.sim.model.SimStatus;
 
 /**
@@ -16,12 +16,12 @@ public class WaitingTimeCountdown implements Runnable {
 
 	private static final int MILLIS_PER_SECOND = 1000;
 
-	private final SimSchedulerImpl model;
+	private final SimpleSchedulerImpl model;
 	private Thread running;
 	private boolean shouldStop;
 	private int waitingTimeSeconds;
 
-	public WaitingTimeCountdown(SimSchedulerImpl model) {
+	public WaitingTimeCountdown(SimpleSchedulerImpl model) {
 		assert model != null;
 		this.model = model;
 	}
@@ -55,13 +55,13 @@ public class WaitingTimeCountdown implements Runnable {
 		int remainingTimeMillis = waitingTimeSeconds * MILLIS_PER_SECOND;
 		for (; !shouldStop && remainingTimeMillis > 0; remainingTimeMillis -= MILLIS_PER_SECOND) {
 			try {
-				((SimSchedulerImpl) model).setWaitingTimeSeconds(remainingTimeMillis / MILLIS_PER_SECOND);
+				((SimpleSchedulerImpl) model).setWaitingTimeSeconds(remainingTimeMillis / MILLIS_PER_SECOND);
 				wait(MILLIS_PER_SECOND);
 			} catch (InterruptedException e) {
 				break; // ends the loop
 			}
 		}
-		((SimSchedulerImpl) model).setWaitingTimeSeconds(SimScheduler.NO_WAITING_TIME);
+		((SimpleSchedulerImpl) model).setWaitingTimeSeconds(SimpleScheduler.NO_WAITING_TIME);
 		if (remainingTimeMillis <= 0) { // timer was NOT interrupted / stopped
 			model.setStatus(FOLLOW_UP_STATUS);
 		}

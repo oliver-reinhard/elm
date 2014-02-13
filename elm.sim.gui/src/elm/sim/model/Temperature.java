@@ -36,6 +36,10 @@ public enum Temperature implements SimEnum {
 		return (a.lessThan(b)) ? a : b;
 	}
 
+	public static Temperature min(Temperature a, Temperature b, Temperature c) {
+		return min(min(a,b),c);
+	}
+
 	public static Temperature fromInt(int degreesCelsius) {
 		assert degreesCelsius >= TEMP_MIN.degreesCelsius && degreesCelsius <= TEMP_MAX.degreesCelsius;
 		Temperature prev = TEMP_MIN;

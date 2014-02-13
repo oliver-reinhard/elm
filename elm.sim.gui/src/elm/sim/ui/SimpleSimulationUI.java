@@ -10,22 +10,22 @@ import javax.swing.SwingUtilities;
 
 import elm.sim.metamodel.SimModelEvent;
 import elm.sim.metamodel.SimModelListener;
-import elm.sim.model.SimScheduler;
+import elm.sim.model.SimpleScheduler;
 import elm.sim.model.SimStatus;
 import elm.sim.model.Temperature;
 import elm.sim.model.impl.TapPointImpl;
-import elm.sim.model.impl.SimSchedulerImpl;
+import elm.sim.model.impl.SimpleSchedulerImpl;
 
 @SuppressWarnings("serial")
-public class SimulatorUI extends JFrame {
+public class SimpleSimulationUI extends JFrame {
 	
 	private AbstractTapPointUI tapPoint_1;
 	private AbstractTapPointUI tapPoint_2;
 	private AbstractTapPointUI tapPoint_3;
 	private AbstractTapPointUI tapPoint_4;
-	private SchedulerMonitorUI scheduler;
+	private SimpleSchedulerUI scheduler;
 
-	public SimulatorUI() {
+	public SimpleSimulationUI() {
 		setTitle("Dusche");
 		setSize(800, 600);
 		setLocationRelativeTo(null);
@@ -35,7 +35,7 @@ public class SimulatorUI extends JFrame {
 		panel.setLayout(gbl);
 		
 		
-		scheduler = new SchedulerMonitorUI(new SimSchedulerImpl());
+		scheduler = new SimpleSchedulerUI(new SimpleSchedulerImpl());
 		GridBagConstraints gbc_scheduler = new GridBagConstraints();
 		gbc_scheduler.insets = new Insets(5, 5, 5, 5);
 		gbc_scheduler.gridheight = 2;
@@ -74,7 +74,7 @@ public class SimulatorUI extends JFrame {
 //				System.out.println("PCL: source = " + e.getSource());
 //				System.out.println("PCL: value = " + e.getAttribute().id() + ": " + e.getOldValue() + " --> " + e.getNewValue());
 				
-				if (e.getAttribute() == SimScheduler.Attribute.STATUS) {
+				if (e.getAttribute() == SimpleScheduler.Attribute.STATUS) {
 					tapPoint_1.getModel().setSchedulerStatus((SimStatus)e.getNewValue());
 					tapPoint_2.getModel().setSchedulerStatus((SimStatus)e.getNewValue());
 					tapPoint_3.getModel().setSchedulerStatus((SimStatus)e.getNewValue());
@@ -83,8 +83,8 @@ public class SimulatorUI extends JFrame {
 //						outlet_1.getModel().setWaitingTimePercent(25);
 //						outlet_2.getModel().setWaitingTimePercent(25);
 //					}
-				} else if (e.getAttribute() == SimScheduler.Attribute.WAITING_TIME_SECONDS) {
-					int waitTimePercent = (int) e.getNewValue() * 100 / SimSchedulerImpl.SIMULATED_WAITING_TIME_SECONDS;
+				} else if (e.getAttribute() == SimpleScheduler.Attribute.WAITING_TIME_SECONDS) {
+					int waitTimePercent = (int) e.getNewValue() * 100 / SimpleSchedulerImpl.SIMULATED_WAITING_TIME_SECONDS;
 					tapPoint_1.getModel().setWaitingTimePercent(waitTimePercent);
 					tapPoint_2.getModel().setWaitingTimePercent(waitTimePercent); 
 					tapPoint_3.getModel().setWaitingTimePercent(waitTimePercent); 
@@ -107,7 +107,7 @@ public class SimulatorUI extends JFrame {
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
 			public void run() {
-				SimulatorUI ex = new SimulatorUI();
+				SimpleSimulationUI ex = new SimpleSimulationUI();
 				ex.setVisible(true);
 			}
 		});

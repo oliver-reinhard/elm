@@ -27,7 +27,8 @@ public class TapPointTest {
 	}
 
 	@Test
-	public void setServerStatusNoActualFlow() {
+	public void setSchedulerStatusNoActualFlow() {
+		o.setSchedulerStatus(OFF);
 		assertStatus(OFF, TEMP_MIN, NONE);
 		// Full life cycle:
 		o.setSchedulerStatus(ON); // turn on
@@ -53,7 +54,8 @@ public class TapPointTest {
 	}
 
 	@Test
-	public void setServerStatusDuringActualFlow() {
+	public void setSchedulerStatusDuringActualFlow() {
+		o.setSchedulerStatus(OFF);
 		assertStatus(OFF, TEMP_MIN, NONE);
 
 		o.setReferenceFlow(MEDIUM); // turn on
@@ -86,7 +88,8 @@ public class TapPointTest {
 	}
 
 	@Test
-	public void setServerStatus_EndActualFlow_Off() {
+	public void setSchedulerStatus_EndActualFlow_Off() {
+		o.setSchedulerStatus(OFF);
 		assertStatus(OFF, TEMP_MIN, NONE);
 
 		o.setReferenceFlow(MEDIUM); // turn on
@@ -97,7 +100,8 @@ public class TapPointTest {
 	}
 
 	@Test
-	public void setServerStatus_EndActualFlow_On() {
+	public void setSchedulerStatus_EndActualFlow_On() {
+		o.setSchedulerStatus(OFF);
 		assertStatus(OFF, TEMP_MIN, NONE);
 
 		o.setSchedulerStatus(ON);
@@ -109,7 +113,8 @@ public class TapPointTest {
 	}
 
 	@Test
-	public void setServerStatus_EndActualFlow_Saturation() {
+	public void setSchedulerStatus_EndActualFlow_Saturation() {
+		o.setSchedulerStatus(OFF);
 		assertStatus(OFF, TEMP_MIN, NONE);
 
 		o.setSchedulerStatus(SATURATION);
@@ -127,7 +132,8 @@ public class TapPointTest {
 	}
 
 	@Test
-	public void setServerStatus_EndActualFlow_Overload() {
+	public void setSchedulerStatus_EndActualFlow_Overload() {
+		o.setSchedulerStatus(OFF);
 		assertStatus(OFF, TEMP_MIN, NONE);
 
 		o.setSchedulerStatus(SATURATION);
@@ -148,11 +154,12 @@ public class TapPointTest {
 	}
 
 	@Test
-	public void setServerStatus_EndActualFlow_Error() {
+	public void setSchedulerStatus_EndActualFlow_Error() {
+		o.setSchedulerStatus(OFF);
 		assertStatus(OFF, TEMP_MIN, NONE);
 
 		o.setSchedulerStatus(SATURATION);
-		o.setReferenceFlow(MEDIUM); // turn on
+		o.setReferenceFlow(MEDIUM); // turn ON
 		o.setReferenceTemperature(TEMP_3);
 		assertStatus(ON, TEMP_3, MEDIUM);
 
