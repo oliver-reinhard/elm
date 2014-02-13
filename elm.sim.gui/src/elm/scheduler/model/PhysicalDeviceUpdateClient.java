@@ -1,7 +1,7 @@
 package elm.scheduler.model;
 
-import elm.hs.api.client.ClientException;
 import elm.ui.api.ElmDeviceUserFeedback;
+import elm.util.ClientException;
 
 public interface PhysicalDeviceUpdateClient {
 

@@ -2,6 +2,8 @@ package elm.hs.api.client;
 
 import java.net.URI;
 
+import elm.util.AbstractJSONClient;
+
 public abstract class AbstractHomeServerClient extends AbstractJSONClient {
 
 	/** The Home Server administration user according to API v1.0 documentation. */

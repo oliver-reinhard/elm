@@ -27,7 +27,7 @@ public interface HomeServer {
 	String getPassword();
 
 	/**
-	 * Updates the internal device list and individual device's properties. Devices that are not yet known to the {@link HomeServer} are added to its internal
+	 * Updates the internal device list and individual devices' properties. Devices that are not yet known to the {@link HomeServer} are added to its internal
 	 * list of devices; devices absent from the list are removed from the internal structures.
 	 * <p>
 	 * <em>Note: </em>Typically the {@code devices} passed to the method only contain an {@link Info} but <em>NOT</em> the {@link Status} block. However, the
@@ -41,11 +41,11 @@ public interface HomeServer {
 	 * @throws UnsupportedModelException
 	 *             if one of the devices does is not suitable for ELM
 	 */
-	List<String> updateDeviceInfos(List<Device> devices) throws UnsupportedModelException;
+	List<String> updateDeviceManagers(List<Device> devices) throws UnsupportedModelException;
 
-	Collection<DeviceInfo> getDeviceInfos();
+	Collection<DeviceManager> getDeviceManagers();
 
-	DeviceInfo getDeviceInfo(String deviceId);
+	DeviceManager getDeviceManager(String deviceId);
 
 	void setPollTimeToleranceMillis(long pollTimeToleranceMillis);
 

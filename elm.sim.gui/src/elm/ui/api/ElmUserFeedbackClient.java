@@ -2,8 +2,8 @@ package elm.ui.api;
 
 import java.net.URI;
 
-import elm.hs.api.client.AbstractJSONClient;
-import elm.hs.api.client.ClientException;
+import elm.util.AbstractJSONClient;
+import elm.util.ClientException;
 
 public class ElmUserFeedbackClient extends AbstractJSONClient {
 

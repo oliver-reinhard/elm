@@ -6,6 +6,7 @@ import org.apache.commons.cli.Options;
 
 import elm.hs.api.model.Device;
 import elm.hs.api.model.HomeServerResponse;
+import elm.util.ClientUtil;
 
 public class DemoClient extends AbstractCommandLineClient {
 

@@ -1,4 +1,4 @@
-package elm.hs.api.client;
+package elm.util;
 
 import java.net.URI;
 import java.util.concurrent.ExecutionException;

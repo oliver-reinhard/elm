@@ -6,6 +6,7 @@ import java.net.URISyntaxException;
 import org.eclipse.jetty.http.HttpStatus;
 
 import elm.hs.api.model.HomeServerResponse;
+import elm.util.ClientException;
 
 public class HomeServerPublicApiClient extends AbstractHomeServerClient {
 

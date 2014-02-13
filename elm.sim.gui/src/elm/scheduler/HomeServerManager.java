@@ -5,8 +5,6 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import elm.hs.api.client.ClientException;
-import elm.hs.api.client.ClientUtil;
 import elm.hs.api.client.HomeServerInternalApiClient;
 import elm.hs.api.client.HomeServerPublicApiClient;
 import elm.hs.api.model.Device;
@@ -19,6 +17,8 @@ import elm.scheduler.model.PhysicalDeviceUpdateClient;
 import elm.scheduler.model.UnsupportedModelException;
 import elm.ui.api.ElmDeviceUserFeedback;
 import elm.ui.api.ElmUserFeedbackClient;
+import elm.util.ClientException;
+import elm.util.ClientUtil;
 
 /**
  * This manager is responsible for the connection to and the communication with a single Home Server server via HTTP and with the {@link Scheduler}. However, it
@@ -238,7 +238,7 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 				setState(State.OK);
 				pollingFailureCount = 0;
 				try {
-					final List<String> devicesNeedingStatus = homeServer.updateDeviceInfos(devices);
+					final List<String> devicesNeedingStatus = homeServer.updateDeviceManagers(devices);
 					if (devicesNeedingStatus != null) { // some devices need the Status block for the device => poll again
 						for (String deviceID : devicesNeedingStatus) {
 
@@ -254,7 +254,7 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 							updateDeviceEntry(devices, deviceID, status);
 						}
 						@SuppressWarnings("unused")
-						final List<String> ignored = homeServer.updateDeviceInfos(devices);
+						final List<String> ignored = homeServer.updateDeviceManagers(devices);
 					}
 
 				} catch (UnsupportedModelException ume) {
@@ -325,7 +325,7 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 	}
 
 	@Override
-	public void deviceInfosUpdated(HomeServer server, boolean urgent) {
+	public void devicesManagersUpdated(HomeServer server, boolean urgent) {
 		// ignore
 
 	}

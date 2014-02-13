@@ -4,12 +4,13 @@ public class ElmDeviceUserFeedback {
 
 	/** Device id. */
 	public String id;
-	public ElmStatus status;
+	public ElmStatus deviceStatus;
+	public ElmStatus schedulerStatus;
 	public int expectedWaitingTimeMillis;
 
-	public ElmDeviceUserFeedback(String id, ElmStatus status) {
+	public ElmDeviceUserFeedback(String id, ElmStatus deviceStatus) {
 		assert id != null && ! id.isEmpty();
 		this.id = id;
-		this.status = status;
+		this.deviceStatus = deviceStatus;
 	}
 }

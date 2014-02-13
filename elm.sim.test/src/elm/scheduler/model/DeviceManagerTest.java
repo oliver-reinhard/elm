@@ -1,14 +1,14 @@
 package elm.scheduler.model;
 
-import static elm.scheduler.model.DeviceInfo.NO_POWER;
-import static elm.scheduler.model.DeviceInfo.UNDEFINED_TEMPERATURE;
-import static elm.scheduler.model.DeviceInfo.UNLIMITED_POWER;
-import static elm.scheduler.model.DeviceInfo.DeviceStatus.CONSUMPTION_APPROVED;
-import static elm.scheduler.model.DeviceInfo.DeviceStatus.CONSUMPTION_DENIED;
-import static elm.scheduler.model.DeviceInfo.DeviceStatus.CONSUMPTION_LIMITED;
-import static elm.scheduler.model.DeviceInfo.DeviceStatus.CONSUMPTION_STARTED;
-import static elm.scheduler.model.DeviceInfo.DeviceStatus.INITIALIZING;
-import static elm.scheduler.model.DeviceInfo.DeviceStatus.READY;
+import static elm.scheduler.model.DeviceManager.NO_POWER;
+import static elm.scheduler.model.DeviceManager.UNDEFINED_TEMPERATURE;
+import static elm.scheduler.model.DeviceManager.UNLIMITED_POWER;
+import static elm.scheduler.model.DeviceManager.DeviceStatus.CONSUMPTION_APPROVED;
+import static elm.scheduler.model.DeviceManager.DeviceStatus.CONSUMPTION_DENIED;
+import static elm.scheduler.model.DeviceManager.DeviceStatus.CONSUMPTION_LIMITED;
+import static elm.scheduler.model.DeviceManager.DeviceStatus.CONSUMPTION_STARTED;
+import static elm.scheduler.model.DeviceManager.DeviceStatus.INITIALIZING;
+import static elm.scheduler.model.DeviceManager.DeviceStatus.READY;
 import static elm.scheduler.model.ModelTestUtil.createDeviceWithInfo;
 import static elm.scheduler.model.ModelTestUtil.createDeviceWithStatus;
 import static elm.scheduler.model.ModelTestUtil.round;
@@ -24,23 +24,23 @@ import org.mockito.Mockito;
 
 import elm.hs.api.model.Device;
 import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
-import elm.scheduler.model.DeviceInfo.UpdateResult;
-import elm.scheduler.model.impl.DeviceInfoImpl;
+import elm.scheduler.model.DeviceManager.UpdateResult;
+import elm.scheduler.model.impl.DeviceManagerImpl;
 import elm.ui.api.ElmStatus;
 
-public class DeviceInfoTest {
+public class DeviceManagerTest {
 
 	static final String ID = "d1";
 	static final int EXPECTED_WAITING_TIME = 5_000;
 
 	HomeServer hs1;
-	DeviceInfoImpl di1;
+	DeviceManagerImpl di1;
 
 	@Before
 	public void setup() {
 		hs1 = mock(HomeServer.class);
 		try {
-			di1 = new DeviceInfoImpl(hs1, createDeviceWithInfo(1, 1), ID);
+			di1 = new DeviceManagerImpl(hs1, createDeviceWithInfo(1, 1), ID);
 		} catch (UnsupportedModelException e) {
 			throw new IllegalArgumentException(e);
 		}

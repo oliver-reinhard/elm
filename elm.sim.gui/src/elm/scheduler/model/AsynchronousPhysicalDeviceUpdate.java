@@ -2,12 +2,12 @@ package elm.scheduler.model;
 
 import java.util.logging.Logger;
 
-import elm.hs.api.client.ClientException;
 import elm.ui.api.ElmDeviceUserFeedback;
+import elm.util.ClientException;
 
 public class AsynchronousPhysicalDeviceUpdate {
 
-	private final DeviceInfo device;
+	private final DeviceManager device;
 	private ElmDeviceUserFeedback feedback;
 	/** The new scald-protection temperature, in [1/10°C]. */
 	private Short scaldProtectionTemperature;
@@ -18,12 +18,12 @@ public class AsynchronousPhysicalDeviceUpdate {
 	 * @param device
 	 *            device that should have its power limit changed
 	 */
-	public AsynchronousPhysicalDeviceUpdate(DeviceInfo device) {
+	public AsynchronousPhysicalDeviceUpdate(DeviceManager device) {
 		assert device != null;
 		this.device = device;
 	}
 
-	public DeviceInfo getDevice() {
+	public DeviceManager getDevice() {
 		return device;
 	}
 
@@ -42,7 +42,7 @@ public class AsynchronousPhysicalDeviceUpdate {
 	 *            the new scald-protection temperature in [1/10°C]
 	 */
 	public void setScaldProtectionTemperature(short temperature) {
-		assert temperature != DeviceInfo.UNDEFINED_TEMPERATURE && temperature > 0;
+		assert temperature != DeviceManager.UNDEFINED_TEMPERATURE && temperature > 0;
 		this.scaldProtectionTemperature = temperature;
 		this.previousDemandTemperature = null;
 	}
@@ -55,7 +55,7 @@ public class AsynchronousPhysicalDeviceUpdate {
 	 *            reference temperature as set by the user before scald-protection became effective in [1/10°C]
 	 */
 	public void clearScaldProtection(short previousDemandTemperature) {
-		assert previousDemandTemperature != DeviceInfo.UNDEFINED_TEMPERATURE && previousDemandTemperature > 0;
+		assert previousDemandTemperature != DeviceManager.UNDEFINED_TEMPERATURE && previousDemandTemperature > 0;
 		this.previousDemandTemperature = previousDemandTemperature;
 		this.scaldProtectionTemperature = null;
 	}

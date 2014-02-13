@@ -1,13 +1,13 @@
 package elm.scheduler.model.impl;
 
-import static elm.scheduler.model.DeviceInfo.DeviceStatus.CONSUMPTION_APPROVED;
-import static elm.scheduler.model.DeviceInfo.DeviceStatus.CONSUMPTION_DENIED;
-import static elm.scheduler.model.DeviceInfo.DeviceStatus.CONSUMPTION_LIMITED;
-import static elm.scheduler.model.DeviceInfo.DeviceStatus.CONSUMPTION_STARTED;
-import static elm.scheduler.model.DeviceInfo.DeviceStatus.ERROR;
-import static elm.scheduler.model.DeviceInfo.DeviceStatus.INITIALIZING;
-import static elm.scheduler.model.DeviceInfo.DeviceStatus.NOT_CONNECTED;
-import static elm.scheduler.model.DeviceInfo.DeviceStatus.READY;
+import static elm.scheduler.model.DeviceManager.DeviceStatus.CONSUMPTION_APPROVED;
+import static elm.scheduler.model.DeviceManager.DeviceStatus.CONSUMPTION_DENIED;
+import static elm.scheduler.model.DeviceManager.DeviceStatus.CONSUMPTION_LIMITED;
+import static elm.scheduler.model.DeviceManager.DeviceStatus.CONSUMPTION_STARTED;
+import static elm.scheduler.model.DeviceManager.DeviceStatus.ERROR;
+import static elm.scheduler.model.DeviceManager.DeviceStatus.INITIALIZING;
+import static elm.scheduler.model.DeviceManager.DeviceStatus.NOT_CONNECTED;
+import static elm.scheduler.model.DeviceManager.DeviceStatus.READY;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -16,18 +16,18 @@ import elm.hs.api.model.Device;
 import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
 import elm.scheduler.Scheduler;
 import elm.scheduler.model.AsynchronousPhysicalDeviceUpdate;
-import elm.scheduler.model.DeviceInfo;
+import elm.scheduler.model.DeviceManager;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.UnsupportedModelException;
 import elm.ui.api.ElmDeviceUserFeedback;
 import elm.ui.api.ElmStatus;
 
 /**
- * This device info implementation is close to <em>stateless</em> in that, each time it runs, it performs a full analysis of all {@link Device} fields and
- * {@link Scheduler} input. It keeps a minimum of state and status information. It thus depend only lightly on a previous state from which it might never
- * recover. </p>
+ * This device-manager implementation is close to <em>stateless</em> in that, each time it runs, it performs a full analysis of all locally stored
+ * {@link Device} fields and {@link Scheduler} input. It keeps only minimal state and status information and thus depend only weakly on its previous state from
+ * which it might never recover. </p>
  */
-public class DeviceInfoImpl implements DeviceInfo {
+public class DeviceManagerImpl implements DeviceManager {
 
 	private static final int LOWEST_INTAKE_WATER_TEMPERATURE = 50;
 
@@ -78,11 +78,11 @@ public class DeviceInfoImpl implements DeviceInfo {
 	/** Unix time of last {@link ElmStatus} communicated to the physical device. */
 	private long lastElmStatusNotificationTime = 0;
 
-	public DeviceInfoImpl(HomeServer server, Device device) throws UnsupportedModelException {
+	public DeviceManagerImpl(HomeServer server, Device device) throws UnsupportedModelException {
 		this(server, device, null);
 	}
 
-	public DeviceInfoImpl(HomeServer server, Device device, String name) throws UnsupportedModelException {
+	public DeviceManagerImpl(HomeServer server, Device device, String name) throws UnsupportedModelException {
 		assert server != null;
 		assert device != null;
 		this.id = device.id;
@@ -276,23 +276,23 @@ public class DeviceInfoImpl implements DeviceInfo {
 
 	/** Used for testing. */
 	public void putElmStatus(AsynchronousPhysicalDeviceUpdate deviceUpdate, DeviceStatus currentStatus, ElmStatus schedulerStatus, int expectedWaitingTimeMillis) {
-		ElmStatus feedbackStatus = null;
+		ElmStatus deviceFeedbackStatus = null;
 		switch (currentStatus) {
 		case READY:
-			feedbackStatus = schedulerStatus;
+			deviceFeedbackStatus = schedulerStatus;
 			break;
 		case CONSUMPTION_STARTED:
 		case CONSUMPTION_APPROVED:
-			feedbackStatus = ElmStatus.ON;
+			deviceFeedbackStatus = ElmStatus.ON;
 			break;
 		case CONSUMPTION_LIMITED:
-			feedbackStatus = ElmStatus.SATURATION;
+			deviceFeedbackStatus = ElmStatus.SATURATION;
 			break;
 		case CONSUMPTION_DENIED:
-			feedbackStatus = ElmStatus.OVERLOAD;
+			deviceFeedbackStatus = ElmStatus.OVERLOAD;
 			break;
 		case ERROR:
-			feedbackStatus = ElmStatus.ERROR;
+			deviceFeedbackStatus = ElmStatus.ERROR;
 			break;
 		case INITIALIZING:
 		case NOT_CONNECTED:
@@ -300,12 +300,13 @@ public class DeviceInfoImpl implements DeviceInfo {
 			throw new IllegalArgumentException(currentStatus.toString());
 		}
 		final long time = System.currentTimeMillis();
-		if (feedbackStatus != lastElmStatus
+		if (deviceFeedbackStatus != lastElmStatus
 				|| (expectedWaitingTimeMillis > 0 && (time - lastElmStatusNotificationTime) >= ELM_STATUS_NOTIFICATION_MIN_DELAY_MILLIS)) {
-			ElmDeviceUserFeedback feedback = new ElmDeviceUserFeedback(id, feedbackStatus);
+			ElmDeviceUserFeedback feedback = new ElmDeviceUserFeedback(id, deviceFeedbackStatus);
+			feedback.schedulerStatus = schedulerStatus;
 			feedback.expectedWaitingTimeMillis = expectedWaitingTimeMillis;
 			deviceUpdate.setFeedback(feedback);
-			lastElmStatus = feedbackStatus;
+			lastElmStatus = deviceFeedbackStatus;
 			lastElmStatusNotificationTime = time;
 		}
 	}

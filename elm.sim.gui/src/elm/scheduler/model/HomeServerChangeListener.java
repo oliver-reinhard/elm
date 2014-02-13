@@ -4,8 +4,8 @@ package elm.scheduler.model;
 public interface HomeServerChangeListener {
 
 	/**
-	 * Notification that {@link DeviceInfo} objects have been added to or removed from the {@link HomeServer}, or that important properties of
-	 * {@link DeviceInfo} objects have changed.
+	 * Notification that {@link DeviceManager} objects have been added to or removed from the {@link HomeServer}, or that important properties of
+	 * {@link DeviceManager} objects have changed.
 	 * <p>
 	 * <em>Note: </em>This method must not be long-running or blocking; this could delay the scheduler.
 	 * </p>
@@ -15,7 +15,7 @@ public interface HomeServerChangeListener {
 	 * @param urgent
 	 *            the callee must react immediately
 	 */
-	void deviceInfosUpdated(HomeServer server, boolean urgent);
+	void devicesManagersUpdated(HomeServer server, boolean urgent);
 
 	/**
 	 * Notification that {@link AsynchronousPhysicalDeviceUpdate}s that await processing have been added to the {@link HomeServer} .

@@ -1,4 +1,4 @@
-package elm.hs.api.client;
+package elm.util;
 
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.util.ssl.SslContextFactory;

@@ -1,4 +1,4 @@
-package elm.hs.api.client;
+package elm.util;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;

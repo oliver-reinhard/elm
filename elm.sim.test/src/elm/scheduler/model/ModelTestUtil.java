@@ -25,8 +25,8 @@ public class ModelTestUtil {
 	public static HomeServer createHomeServer(int id, int devices) {
 		HomeServer hs = new HomeServerImpl(URI.create("http://hs" + id), "pw", "hs" + id);
 		try {
-			hs.updateDeviceInfos(ModelTestUtil.createDevicesWithInfo(id, devices));
-			hs.updateDeviceInfos(ModelTestUtil.createDevicesWithStatus(id, devices, 0));
+			hs.updateDeviceManagers(ModelTestUtil.createDevicesWithInfo(id, devices));
+			hs.updateDeviceManagers(ModelTestUtil.createDevicesWithStatus(id, devices, 0));
 		} catch (UnsupportedModelException e) {
 			throw new IllegalArgumentException(e);
 		}
@@ -138,17 +138,17 @@ public class ModelTestUtil {
 	public static List<String> getDeviceIds(HomeServer server) {
 		assert server != null;
 		List<String> list = new ArrayList<String>();
-		for (DeviceInfo obj : server.getDeviceInfos()) {
+		for (DeviceManager obj : server.getDeviceManagers()) {
 			list.add(obj.getId());
 		}
 		Collections.sort(list);
 		return list;
 	}
 
-	public static Map<String, DeviceInfo> getDeviceMap(HomeServer server) {
+	public static Map<String, DeviceManager> getDeviceMap(HomeServer server) {
 		assert server != null;
-		Map<String, DeviceInfo> map = new HashMap<String, DeviceInfo>();
-		for (DeviceInfo obj : server.getDeviceInfos()) {
+		Map<String, DeviceManager> map = new HashMap<String, DeviceManager>();
+		for (DeviceManager obj : server.getDeviceManagers()) {
 			map.put(obj.getId(), obj);
 		}
 		return map;
@@ -166,9 +166,9 @@ public class ModelTestUtil {
 	}
 
 	public static void checkDeviceUpdate(HomeServer server, Device device, int expectedLimitWatt) {
-		final DeviceInfo deviceInfo = server.getDeviceInfo(device.id);
-		assertEquals(expectedLimitWatt == DeviceInfo.UNLIMITED_POWER ? deviceInfo.getDeviceModel().getPowerMaxWatt() : expectedLimitWatt,
-				deviceInfo.getApprovedPowerWatt());
+		final DeviceManager deviceManager = server.getDeviceManager(device.id);
+		assertEquals(expectedLimitWatt == DeviceManager.UNLIMITED_POWER ? deviceManager.getDeviceModel().getPowerMaxWatt() : expectedLimitWatt,
+				deviceManager.getApprovedPowerWatt());
 		final AsynchronousPhysicalDeviceUpdate deviceUpdate = getDeviceUpdate(server, device);
 		assertNotNull(deviceUpdate);
 	}

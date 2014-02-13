@@ -8,6 +8,7 @@ import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.http.HttpStatus;
 
 import elm.hs.api.model.HomeServerResponse;
+import elm.util.ClientException;
 
 public class HomeServerInternalApiClient extends AbstractHomeServerClient {
 
