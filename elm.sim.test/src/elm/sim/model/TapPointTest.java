@@ -8,8 +8,8 @@ import org.junit.Test;
 import elm.sim.model.Flow;
 import static elm.sim.model.Flow.*;
 import elm.sim.model.TapPoint;
-import elm.sim.model.Status;
-import static elm.sim.model.Status.*;
+import elm.sim.model.SimStatus;
+import static elm.sim.model.SimStatus.*;
 import elm.sim.model.Temperature;
 import static elm.sim.model.Temperature.*;
 import elm.sim.model.impl.TapPointImpl;
@@ -178,7 +178,7 @@ public class TapPointTest {
 		assertStatus(ERROR, TEMP_MIN, NONE);
 	}
 
-	private void assertStatus(Status expectedStatus, Temperature expectedActualTemp, Flow expectedActualFlow) {
+	private void assertStatus(SimStatus expectedStatus, Temperature expectedActualTemp, Flow expectedActualFlow) {
 		assertEquals(expectedStatus, o.getStatus());
 		assertEquals(expectedActualTemp, o.getActualTemperature());
 		assertEquals(expectedActualFlow, o.getActualFlow());

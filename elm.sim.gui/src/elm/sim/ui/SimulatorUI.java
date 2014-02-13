@@ -10,11 +10,11 @@ import javax.swing.SwingUtilities;
 
 import elm.sim.metamodel.SimModelEvent;
 import elm.sim.metamodel.SimModelListener;
-import elm.sim.model.Scheduler;
-import elm.sim.model.Status;
+import elm.sim.model.SimScheduler;
+import elm.sim.model.SimStatus;
 import elm.sim.model.Temperature;
 import elm.sim.model.impl.TapPointImpl;
-import elm.sim.model.impl.SchedulerImpl;
+import elm.sim.model.impl.SimSchedulerImpl;
 
 @SuppressWarnings("serial")
 public class SimulatorUI extends JFrame {
@@ -35,7 +35,7 @@ public class SimulatorUI extends JFrame {
 		panel.setLayout(gbl);
 		
 		
-		scheduler = new SchedulerMonitorUI(new SchedulerImpl());
+		scheduler = new SchedulerMonitorUI(new SimSchedulerImpl());
 		GridBagConstraints gbc_scheduler = new GridBagConstraints();
 		gbc_scheduler.insets = new Insets(5, 5, 5, 5);
 		gbc_scheduler.gridheight = 2;
@@ -74,17 +74,17 @@ public class SimulatorUI extends JFrame {
 //				System.out.println("PCL: source = " + e.getSource());
 //				System.out.println("PCL: value = " + e.getAttribute().id() + ": " + e.getOldValue() + " --> " + e.getNewValue());
 				
-				if (e.getAttribute() == Scheduler.Attribute.STATUS) {
-					tapPoint_1.getModel().setSchedulerStatus((Status)e.getNewValue());
-					tapPoint_2.getModel().setSchedulerStatus((Status)e.getNewValue());
-					tapPoint_3.getModel().setSchedulerStatus((Status)e.getNewValue());
-					tapPoint_4.getModel().setSchedulerStatus((Status)e.getNewValue());
+				if (e.getAttribute() == SimScheduler.Attribute.STATUS) {
+					tapPoint_1.getModel().setSchedulerStatus((SimStatus)e.getNewValue());
+					tapPoint_2.getModel().setSchedulerStatus((SimStatus)e.getNewValue());
+					tapPoint_3.getModel().setSchedulerStatus((SimStatus)e.getNewValue());
+					tapPoint_4.getModel().setSchedulerStatus((SimStatus)e.getNewValue());
 //					if (Status.OVERLOAD == e.getNewValue()) {
 //						outlet_1.getModel().setWaitingTimePercent(25);
 //						outlet_2.getModel().setWaitingTimePercent(25);
 //					}
-				} else if (e.getAttribute() == Scheduler.Attribute.WAITING_TIME_SECONDS) {
-					int waitTimePercent = (int) e.getNewValue() * 100 / SchedulerImpl.SIMULATED_WAITING_TIME_SECONDS;
+				} else if (e.getAttribute() == SimScheduler.Attribute.WAITING_TIME_SECONDS) {
+					int waitTimePercent = (int) e.getNewValue() * 100 / SimSchedulerImpl.SIMULATED_WAITING_TIME_SECONDS;
 					tapPoint_1.getModel().setWaitingTimePercent(waitTimePercent);
 					tapPoint_2.getModel().setWaitingTimePercent(waitTimePercent); 
 					tapPoint_3.getModel().setWaitingTimePercent(waitTimePercent); 

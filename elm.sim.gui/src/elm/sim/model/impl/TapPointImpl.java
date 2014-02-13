@@ -1,9 +1,9 @@
 package elm.sim.model.impl;
 
-import static elm.sim.model.Status.OFF;
-import static elm.sim.model.Status.ON;
-import static elm.sim.model.Status.OVERLOAD;
-import static elm.sim.model.Status.SATURATION;
+import static elm.sim.model.SimStatus.OFF;
+import static elm.sim.model.SimStatus.ON;
+import static elm.sim.model.SimStatus.OVERLOAD;
+import static elm.sim.model.SimStatus.SATURATION;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -12,7 +12,7 @@ import elm.sim.metamodel.AbstractSimObject;
 import elm.sim.metamodel.SimAttribute;
 import elm.sim.model.Flow;
 import elm.sim.model.TapPoint;
-import elm.sim.model.Status;
+import elm.sim.model.SimStatus;
 import elm.sim.model.Temperature;
 
 /**
@@ -45,13 +45,13 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 	private Temperature actualTemperature = Temperature.TEMP_MIN; // = cold water
 
 	/** The status of the outlet. */
-	private Status status = OFF;
+	private SimStatus status = OFF;
 
-	/** The waiting time indication if status == {@link Status#OVERLOAD}. */
+	/** The waiting time indication if status == {@link SimStatus#OVERLOAD}. */
 	private int waitingTimePercent = NO_WAITING_PERCENT;
 
 	/** Mirror of the scheduler's status. */
-	private Status schedulerStatus = OFF;
+	private SimStatus schedulerStatus = OFF;
 
 	public TapPointImpl(String name, Temperature referenceTemperature) {
 		assert name != null && !name.isEmpty();
@@ -159,14 +159,14 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 	}
 
 	/**
-	 * Usually status changes are set via {@link #setSchedulerStatus(Status)}.
+	 * Usually status changes are set via {@link #setSchedulerStatus(SimStatus)}.
 	 * 
 	 * @param newValue
 	 *            cannot be {@code null}
 	 */
-	protected void setStatus(Status newValue) {
+	protected void setStatus(SimStatus newValue) {
 		assert newValue != null;
-		Status oldValue = status;
+		SimStatus oldValue = status;
 		if (oldValue != newValue) {
 			status = newValue;
 			fireModelChanged(Attribute.STATUS, oldValue, newValue);
@@ -174,12 +174,12 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 	}
 
 	@Override
-	public synchronized Status getStatus() {
+	public synchronized SimStatus getStatus() {
 		return status;
 	}
 
 	@Override
-	public synchronized void setSchedulerStatus(Status schedulerStatus) {
+	public synchronized void setSchedulerStatus(SimStatus schedulerStatus) {
 		assert schedulerStatus != null;
 		// remember the scheduler status
 		this.schedulerStatus = schedulerStatus;
@@ -249,7 +249,7 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 	public void setWaitingTimePercent(int newValue) {
 		assert newValue >= NO_WAITING_PERCENT && newValue <= MAX_WAITING_PERCENT;
 		// ignore values when not in OVERLOAD
-		if (status == Status.OVERLOAD) {
+		if (status == SimStatus.OVERLOAD) {
 			int oldValue = waitingTimePercent;
 			if (oldValue != newValue) {
 				waitingTimePercent = newValue;

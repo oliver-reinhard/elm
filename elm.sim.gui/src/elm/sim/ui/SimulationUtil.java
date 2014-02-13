@@ -8,7 +8,7 @@ import java.util.WeakHashMap;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 
-import elm.sim.model.Status;
+import elm.sim.model.SimStatus;
 
 public class SimulationUtil {
 	
@@ -17,12 +17,12 @@ public class SimulationUtil {
 	}
 
 	/** Cache for status icons. */
-	private static final WeakHashMap<Status, ImageIcon>	statusIcons	= new WeakHashMap<Status, ImageIcon>();
+	private static final WeakHashMap<SimStatus, ImageIcon>	statusIcons	= new WeakHashMap<SimStatus, ImageIcon>();
 	
 	/** Cache for icons specified by filename. */
 	private static final WeakHashMap<String, ImageIcon>	otherIcons	= new WeakHashMap<String, ImageIcon>();
 
-	public static ImageIcon getIcon(Status status) {
+	public static ImageIcon getIcon(SimStatus status) {
 		if (statusIcons.containsKey(status)) {
 			return statusIcons.get(status); // can be null !
 		}

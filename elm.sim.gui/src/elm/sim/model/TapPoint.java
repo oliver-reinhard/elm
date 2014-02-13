@@ -1,8 +1,9 @@
 package elm.sim.model;
 
 import elm.sim.metamodel.SimAttribute;
+import elm.sim.metamodel.SimChangeNotifier;
 
-public interface TapPoint {
+public interface TapPoint extends SimChangeNotifier {
 
 	/** A simple metamodel of the {@link TapPoint}. */
 	public enum Attribute implements SimAttribute {
@@ -56,9 +57,9 @@ public interface TapPoint {
 
 	Temperature getScaldTemperature();
 
-	Status getStatus();
+	SimStatus getStatus();
 
-	void setSchedulerStatus(Status schedulerStatus);
+	void setSchedulerStatus(SimStatus schedulerStatus);
 
 	void setWaitingTimePercent(int newValue);
 

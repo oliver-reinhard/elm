@@ -9,7 +9,7 @@ import javax.swing.SwingUtilities;
 
 import elm.sim.metamodel.SimModelEvent;
 import elm.sim.metamodel.SimModelListener;
-import elm.sim.model.Status;
+import elm.sim.model.SimStatus;
 import elm.sim.model.impl.TapPointImpl;
 
 @SuppressWarnings("serial")
@@ -37,7 +37,7 @@ public class RealTapPointUI extends AbstractTapPointUI {
 						// not displayed by this panel => ignore changes
 						break;
 					case STATUS:
-						setStatus((Status) event.getNewValue());
+						setStatus((SimStatus) event.getNewValue());
 						break;
 					case WAITING_TIME_PERCENT:
 						setWaitingTimePercent((int) event.getNewValue());

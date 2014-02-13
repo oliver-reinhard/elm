@@ -13,13 +13,13 @@ import javax.swing.SwingConstants;
 import javax.swing.border.EtchedBorder;
 
 import elm.sim.model.TapPoint;
-import elm.sim.model.Status;
+import elm.sim.model.SimStatus;
 
 @SuppressWarnings("serial")
 public abstract class AbstractTapPointUI extends JPanel {
 
 	/** A blinker instance shared between all outlets. */
-	protected static final LabelIconBlinker BLINKER = new LabelIconBlinker(SimulationUtil.getIcon(Status.ERROR), SimulationUtil.getIcon(Status.OFF));
+	protected static final LabelIconBlinker BLINKER = new LabelIconBlinker(SimulationUtil.getIcon(SimStatus.ERROR), SimulationUtil.getIcon(SimStatus.OFF));
 	
 	protected final TapPoint model;
 	protected JLabel statusLabel;
@@ -106,15 +106,15 @@ public abstract class AbstractTapPointUI extends JPanel {
 		setStatus(model.getStatus());
 	}
 
-	protected void setStatus(Status status) {
+	protected void setStatus(SimStatus status) {
 		assert status != null;
-		if (status == Status.ERROR) {
+		if (status == SimStatus.ERROR) {
 			BLINKER.start(statusLabel);
 		} else {
 			BLINKER.stop(statusLabel);
 			statusLabel.setIcon(SimulationUtil.getIcon(status));
 		}
-		waitingTimePercent.setEnabled(status == Status.OVERLOAD);
+		waitingTimePercent.setEnabled(status == SimStatus.OVERLOAD);
 		waitingTimePercent.setValue(0);
 	}
 

@@ -2,14 +2,14 @@ package elm.sim.model.impl;
 
 import elm.sim.metamodel.AbstractSimObject;
 import elm.sim.metamodel.SimAttribute;
-import elm.sim.model.Scheduler;
-import elm.sim.model.Status;
+import elm.sim.model.SimScheduler;
+import elm.sim.model.SimStatus;
 
-public class SchedulerImpl extends AbstractSimObject implements Scheduler {
+public class SimSchedulerImpl extends AbstractSimObject implements SimScheduler {
 
 	public static final int SIMULATED_WAITING_TIME_SECONDS = 10;
 
-	private Status status = Status.OFF;
+	private SimStatus status = SimStatus.OFF;
 
 	/** Forecasted waiting time in seconds; {@code 0} means currently no waiting time. */
 	private int waitingTimeSeconds = NO_WAITING_TIME;
@@ -28,13 +28,13 @@ public class SchedulerImpl extends AbstractSimObject implements Scheduler {
 	}
 
 	@Override
-	public void setStatus(Status newValue) {
+	public void setStatus(SimStatus newValue) {
 		assert newValue != null;
-		Status oldValue = status;
+		SimStatus oldValue = status;
 		if (oldValue != newValue) {
 			status = newValue;
 			fireModelChanged(Attribute.STATUS, oldValue, newValue);
-			if (newValue == Status.OVERLOAD) {
+			if (newValue == SimStatus.OVERLOAD) {
 				waitingTimeCountdown.start(SIMULATED_WAITING_TIME_SECONDS);
 			} else {
 				waitingTimeCountdown.stop();
@@ -43,7 +43,7 @@ public class SchedulerImpl extends AbstractSimObject implements Scheduler {
 	}
 
 	@Override
-	public Status getStatus() {
+	public SimStatus getStatus() {
 		return status;
 	}
 
@@ -63,7 +63,7 @@ public class SchedulerImpl extends AbstractSimObject implements Scheduler {
 	}
 
 	/**
-	 * The waiting time is only set if {@link #getStatus()} returns {@link Status#OVERLOAD}.
+	 * The waiting time is only set if {@link #getStatus()} returns {@link SimStatus#OVERLOAD}.
 	 * 
 	 * @return a value between {@code 0} and {@code 100}
 	 */

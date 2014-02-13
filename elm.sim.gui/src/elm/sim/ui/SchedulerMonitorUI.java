@@ -15,9 +15,9 @@ import javax.swing.border.EtchedBorder;
 
 import elm.sim.metamodel.SimModelEvent;
 import elm.sim.metamodel.SimModelListener;
-import elm.sim.model.Scheduler;
-import elm.sim.model.Status;
-import elm.sim.model.impl.SchedulerImpl;
+import elm.sim.model.SimScheduler;
+import elm.sim.model.SimStatus;
+import elm.sim.model.impl.SimSchedulerImpl;
 
 public class SchedulerMonitorUI extends JPanel {
 
@@ -26,21 +26,21 @@ public class SchedulerMonitorUI extends JPanel {
 	private static final Logger LOG = Logger.getLogger(SchedulerMonitorUI.class.getName());
 
 	@SuppressWarnings("serial")
-	class StatusPanel extends EnumSelectorPanel<Status> {
+	class StatusPanel extends EnumSelectorPanel<SimStatus> {
 
 		StatusPanel() {
-			super("Status", Status.OFF, Status.ON, Status.SATURATION, Status.OVERLOAD, Status.ERROR);
+			super("Status", SimStatus.OFF, SimStatus.ON, SimStatus.SATURATION, SimStatus.OVERLOAD, SimStatus.ERROR);
 		}
 
 		@Override
-		protected void referenceValueChanged(Status newValue) {
+		protected void referenceValueChanged(SimStatus newValue) {
 			info("Status changed: " + newValue.getLabel());
 			model.setStatus(newValue);
 		}
 	}
 
 	// State
-	private final SchedulerImpl model;
+	private final SimSchedulerImpl model;
 
 	// Widgets
 	private final StatusPanel statusPanel;
@@ -59,9 +59,9 @@ public class SchedulerMonitorUI extends JPanel {
 			SwingUtilities.invokeLater(new Runnable() {
 				@Override
 				public void run() {
-					switch ((SchedulerImpl.Attribute) event.getAttribute()) {
+					switch ((SimSchedulerImpl.Attribute) event.getAttribute()) {
 					case STATUS:
-						statusPanel.setReference((Status) event.getNewValue());
+						statusPanel.setReference((SimStatus) event.getNewValue());
 						break;
 					case WAITING_TIME_SECONDS:
 						waitingTimeSeconds.setText(Integer.toString((int) event.getNewValue()));
@@ -77,7 +77,7 @@ public class SchedulerMonitorUI extends JPanel {
 	/**
 	 * Create the panel.
 	 */
-	public SchedulerMonitorUI(SchedulerImpl model) {
+	public SchedulerMonitorUI(SimSchedulerImpl model) {
 		assert model != null;
 		this.model = model;
 		model.addModelListener(modelListener);
@@ -145,11 +145,11 @@ public class SchedulerMonitorUI extends JPanel {
 		updateFromModel(model);
 	}
 
-	private void updateFromModel(Scheduler model) {
+	private void updateFromModel(SimScheduler model) {
 		statusPanel.setReference(model.getStatus());
 	}
 
-	public SchedulerImpl getModel() {
+	public SimSchedulerImpl getModel() {
 		return model;
 	}
 

@@ -12,7 +12,7 @@ import elm.sim.metamodel.SimModelEvent;
 import elm.sim.metamodel.SimModelListener;
 import elm.sim.model.Flow;
 import elm.sim.model.TapPoint;
-import elm.sim.model.Status;
+import elm.sim.model.SimStatus;
 import elm.sim.model.Temperature;
 import elm.sim.model.impl.TapPointImpl;
 
@@ -83,7 +83,7 @@ public class SimTapPointUI extends AbstractTapPointUI {
 						updateReferenceTemperatureEnablement();
 						break;
 					case STATUS:
-						setStatus((Status) event.getNewValue());
+						setStatus((SimStatus) event.getNewValue());
 						updateReferenceTemperatureEnablement();
 						break;
 					case WAITING_TIME_PERCENT:

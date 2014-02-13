@@ -3,10 +3,11 @@ package elm.sim.metamodel;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class AbstractSimObject implements SimObject {
+public abstract class AbstractSimObject implements SimObject, SimChangeNotifier {
 
 	private List<SimModelListener> modelListeners;
 	
+	@Override
 	public void addModelListener(SimModelListener listener) {
 		if (modelListeners == null) {
 			modelListeners = new ArrayList<SimModelListener>();
@@ -16,6 +17,7 @@ public abstract class AbstractSimObject implements SimObject {
 		}
 	}
 	
+	@Override
 	public void removeModelListener(SimModelListener listener) {
 		if (modelListeners != null) {
 			modelListeners.remove(listener);
