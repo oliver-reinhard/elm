@@ -24,13 +24,14 @@ import org.mockito.Mockito;
 
 import elm.hs.api.model.Device;
 import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
-import elm.scheduler.ElmStatus;
 import elm.scheduler.model.DeviceInfo.UpdateResult;
 import elm.scheduler.model.impl.DeviceInfoImpl;
+import elm.ui.api.ElmStatus;
 
 public class DeviceInfoTest {
 
 	static final String ID = "d1";
+	static final int EXPECTED_WAITING_TIME = 5_000;
 
 	HomeServer hs1;
 	DeviceInfoImpl di1;
@@ -134,11 +135,11 @@ public class DeviceInfoTest {
 		di1.update(createDeviceWithStatus(1, 1, 10_000));
 		assertEquals(CONSUMPTION_STARTED, di1.getStatus());
 		//
-		di1.updateMaximumPowerConsumption(UNLIMITED_POWER, ElmStatus.ON);
+		di1.updateMaximumPowerConsumption(UNLIMITED_POWER, ElmStatus.ON, 0);
 		assertEquals(CONSUMPTION_APPROVED, di1.getStatus());
 		assertEquals(DeviceModel.SIM.getPowerMaxWatt(), di1.getApprovedPowerWatt());
 		assertEquals(UNDEFINED_TEMPERATURE, di1.getScaldProtectionTemperature());
-		verify(hs1).putDeviceUpdate(Mockito.<SetScaldProtectionTemperature> any());
+		verify(hs1).putDeviceUpdate(Mockito.<AsynchronousPhysicalDeviceUpdate> any());
 	}
 
 	@Test
@@ -150,11 +151,11 @@ public class DeviceInfoTest {
 		assertEquals(CONSUMPTION_STARTED, di1.getStatus());
 
 		// APPROVED = 5_000
-		di1.updateMaximumPowerConsumption(5_000, ElmStatus.OVERLOAD);
+		di1.updateMaximumPowerConsumption(5_000, ElmStatus.OVERLOAD, EXPECTED_WAITING_TIME);
 		assertEquals(CONSUMPTION_LIMITED, di1.getStatus());
 		assertEquals(5_000, di1.getApprovedPowerWatt());
 		assertEquals(242, di1.getScaldProtectionTemperature());
-		verify(hs1).putDeviceUpdate(Mockito.<SetScaldProtectionTemperature> any());
+		verify(hs1).putDeviceUpdate(Mockito.<AsynchronousPhysicalDeviceUpdate> any());
 		// next poll returns setpoint = scald-protection temperature:
 		d.status.setpoint = 242;
 		di1.update(d);
@@ -162,11 +163,11 @@ public class DeviceInfoTest {
 		assertEquals(referenceTemperature, di1.getUserDemandTemperature());
 
 		// APPROVED = Unlimited
-		di1.updateMaximumPowerConsumption(UNLIMITED_POWER, ElmStatus.SATURATION);
+		di1.updateMaximumPowerConsumption(UNLIMITED_POWER, ElmStatus.SATURATION, 0);
 		assertEquals(CONSUMPTION_APPROVED, di1.getStatus());
 		assertEquals(DeviceModel.SIM.getPowerMaxWatt(), di1.getApprovedPowerWatt());
 		assertEquals(UNDEFINED_TEMPERATURE, di1.getScaldProtectionTemperature());
-		verify(hs1, times(2)).putDeviceUpdate(Mockito.<AsynchronousDeviceUpdate> any());
+		verify(hs1, times(2)).putDeviceUpdate(Mockito.<AsynchronousPhysicalDeviceUpdate> any());
 		// next poll returns restored setpoint temperature:
 		d.status.setpoint = referenceTemperature;
 		di1.update(d);
@@ -181,12 +182,12 @@ public class DeviceInfoTest {
 		di1.update(d);
 		assertEquals(CONSUMPTION_STARTED, di1.getStatus());
 		//
-		di1.updateMaximumPowerConsumption(NO_POWER, ElmStatus.OVERLOAD);
+		di1.updateMaximumPowerConsumption(NO_POWER, ElmStatus.OVERLOAD, EXPECTED_WAITING_TIME);
 		assertEquals(CONSUMPTION_DENIED, di1.getStatus());
 		assertEquals(0, di1.getApprovedPowerWatt());
 		final short minScaldTemp = DeviceModel.SIM.getScaldProtectionTemperatureMin();
 		assertEquals(minScaldTemp, di1.getScaldProtectionTemperature());
-		verify(hs1).putDeviceUpdate(Mockito.<SetScaldProtectionTemperature> any());
+		verify(hs1).putDeviceUpdate(Mockito.<AsynchronousPhysicalDeviceUpdate> any());
 		// next poll returns setpoint = scald-protection temperature:
 		d.status.setpoint = minScaldTemp;
 		di1.update(d);
@@ -194,11 +195,11 @@ public class DeviceInfoTest {
 		assertEquals(380, di1.getUserDemandTemperature());
 
 		// APPROVED = 5_000
-		di1.updateMaximumPowerConsumption(5_000, ElmStatus.OVERLOAD);
+		di1.updateMaximumPowerConsumption(5_000, ElmStatus.OVERLOAD, EXPECTED_WAITING_TIME);
 		assertEquals(CONSUMPTION_LIMITED, di1.getStatus());
 		assertEquals(5_000, di1.getApprovedPowerWatt());
 		assertEquals(242, di1.getScaldProtectionTemperature());
-		verify(hs1, times(2)).putDeviceUpdate(Mockito.<SetScaldProtectionTemperature> any());
+		verify(hs1, times(2)).putDeviceUpdate(Mockito.<AsynchronousPhysicalDeviceUpdate> any());
 		// next poll returns setpoint = scald-protection temperature:
 		d.status.setpoint = 242;
 		di1.update(d);
@@ -206,11 +207,11 @@ public class DeviceInfoTest {
 		assertEquals(380, di1.getUserDemandTemperature());
 
 		// APPROVED = Unlimited
-		di1.updateMaximumPowerConsumption(UNLIMITED_POWER, ElmStatus.SATURATION);
+		di1.updateMaximumPowerConsumption(UNLIMITED_POWER, ElmStatus.SATURATION, 0);
 		assertEquals(CONSUMPTION_APPROVED, di1.getStatus());
 		assertEquals(DeviceModel.SIM.getPowerMaxWatt(), di1.getApprovedPowerWatt());
 		assertEquals(UNDEFINED_TEMPERATURE, di1.getScaldProtectionTemperature());
-		verify(hs1, times(3)).putDeviceUpdate(Mockito.<AsynchronousDeviceUpdate> any());
+		verify(hs1, times(3)).putDeviceUpdate(Mockito.<AsynchronousPhysicalDeviceUpdate> any());
 		d.status.setpoint = 380;
 		di1.update(d);
 		assertEquals(380, di1.getActualDemandTemperature());

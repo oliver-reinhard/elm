@@ -8,6 +8,8 @@ import java.util.logging.Logger;
 import elm.hs.api.model.Device;
 import elm.scheduler.model.DeviceInfo;
 import elm.scheduler.model.HomeServer;
+import elm.scheduler.model.HomeServerChangeListener;
+import elm.ui.api.ElmStatus;
 
 /**
  * This class is the base for event-based ELM schedulers, i.e. the scheduler re-acts to external stimuli. However, it uses its own {@link Thread} to be

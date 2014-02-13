@@ -5,11 +5,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.logging.Logger;
 
-import elm.hs.api.client.HomeServerInternalApiClient;
 import elm.hs.api.model.Device;
 import elm.hs.api.model.Info;
 import elm.hs.api.model.Status;
-import elm.scheduler.HomeServerChangeListener;
 import elm.scheduler.HomeServerManager;
 
 public interface HomeServer {
@@ -74,10 +72,10 @@ public interface HomeServer {
 	 * @param updates
 	 *            cannot be {@code null}
 	 */
-	void putDeviceUpdate(AsynchronousDeviceUpdate update);
+	void putDeviceUpdate(AsynchronousPhysicalDeviceUpdate update);
 
 	/**
-	 * Device updates can be {@link #putDeviceUpdate(AsynchronousDeviceUpdate) put} one by one without the receiver even noticing. This method notifies all
+	 * Device updates can be {@link #putDeviceUpdate(AsynchronousPhysicalDeviceUpdate) put} one by one without the receiver even noticing. This method notifies all
 	 * {@link HomeServerChangeListener}s of these changes, notably the {@link HomeServerManager}.
 	 * <p>
 	 * <em>Note: </em>This method must not be long-running or blocking; this could delay the scheduler.
@@ -93,7 +91,7 @@ public interface HomeServer {
 	 * @param log
 	 *            never {@code null}
 	 */
-	void executePhysicalDeviceUpdates(HomeServerInternalApiClient client, Logger log);
+	void executePhysicalDeviceUpdates(PhysicalDeviceUpdateClient client, Logger log);
 
 	/**
 	 * Adds a listener.

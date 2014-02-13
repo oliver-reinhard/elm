@@ -4,7 +4,7 @@ import elm.hs.api.model.Device;
 import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
 import elm.hs.api.model.Info;
 import elm.hs.api.model.Status;
-import elm.scheduler.ElmStatus;
+import elm.ui.api.ElmStatus;
 
 /**
  * The {@link DeviceInfo} represents a physical {@link Device} in the scheduler.
@@ -32,7 +32,7 @@ public interface DeviceInfo {
 		INITIALIZING,
 		/** Device has been registered at the home server but there is currently no connection to it. */
 		NOT_CONNECTED,
-		/** Device is ready for hot-water consumption. */
+		/** Device is ready for hot-water consumption without power limit. */
 		READY,
 		/** Device has recently started a hot-water consumption that has not been approved by the scheduler yet. */
 		CONSUMPTION_STARTED,
@@ -136,8 +136,11 @@ public interface DeviceInfo {
 	 *            the power (in [W] the device may consume)
 	 * @param elmStatus
 	 *            the current {@link ElmStatus}, cannot be {@code null}
+	 * @param expectedWaitingTimeMillis
+	 *            expected waiting time for this device if ELM status is {@code OVERLOAD}, in [ms]
+	 * 
 	 */
-	void updateMaximumPowerConsumption(int approvedPowerWatt, ElmStatus elmStatus);
+	void updateMaximumPowerConsumption(int approvedPowerWatt, ElmStatus elmStatus, int expectedWaitingTimeMillis);
 
 	/**
 	 * The time the current consumption started, or {@link #NO_CONSUMPTION} if the device does not currently provide hot water.

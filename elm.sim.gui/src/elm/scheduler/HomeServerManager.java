@@ -11,8 +11,14 @@ import elm.hs.api.client.HomeServerInternalApiClient;
 import elm.hs.api.client.HomeServerPublicApiClient;
 import elm.hs.api.model.Device;
 import elm.hs.api.model.HomeServerResponse;
+import elm.hs.api.model.Info;
+import elm.hs.api.model.Status;
 import elm.scheduler.model.HomeServer;
+import elm.scheduler.model.HomeServerChangeListener;
+import elm.scheduler.model.PhysicalDeviceUpdateClient;
 import elm.scheduler.model.UnsupportedModelException;
+import elm.ui.api.ElmDeviceUserFeedback;
+import elm.ui.api.ElmUserFeedbackClient;
 
 /**
  * This manager is responsible for the connection to and the communication with a single Home Server server via HTTP and with the {@link Scheduler}. However, it
@@ -38,8 +44,11 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 	private final HomeServer homeServer;
 	private State state = State.NOT_CONNECTED;
 
+	private final ElmUserFeedbackClient userFeedbackClient;
 	private HomeServerPublicApiClient publicClient = null;
 	private HomeServerInternalApiClient internalClient = null;
+	private PhysicalDeviceUpdateClient deviceUpdateClient = null;
+
 	private ClientException lastClientException = null;
 	private Event event = Event.POLL_HOME_SERVER;
 	private Thread runner;
@@ -48,10 +57,18 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 	private int pollingIntervalMillis = POLLING_INTERVAL_MILLIS;
 	private final Logger log = Logger.getLogger(getClass().getName());
 
-	public HomeServerManager(HomeServer homeServer) {
+	/**
+	 * @param homeServer
+	 *            cannot be {@code null}
+	 * @param userFeedbackClient
+	 *            must be started, cannot be {@code null}
+	 */
+	public HomeServerManager(HomeServer homeServer, ElmUserFeedbackClient userFeedbackClient) {
 		assert homeServer != null;
+		assert userFeedbackClient != null;
 		this.homeServer = homeServer;
 		this.homeServer.addChangeListener(this);
+		this.userFeedbackClient = userFeedbackClient;
 	}
 
 	public State getState() {
@@ -73,6 +90,23 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 		internalClient = new HomeServerInternalApiClient(homeServer.getPassword(), publicClient);
 		// ClientUtil.initSslContextFactory(internalClient.getClient());
 
+		deviceUpdateClient = new PhysicalDeviceUpdateClient() {
+
+			@Override
+			public Short setScaldProtectionTemperature(String deviceID, int newTemp) throws ClientException {
+				return internalClient.setScaldProtectionTemperature(deviceID, newTemp);
+			}
+
+			@Override
+			public void clearScaldProtection(String deviceID, int previousTemp) throws ClientException {
+				internalClient.clearScaldProtection(deviceID, previousTemp);
+			}
+
+			@Override
+			public void updateUserFeedback(ElmDeviceUserFeedback feedback) throws ClientException {
+				userFeedbackClient.updateUserFeedback(feedback);
+			}
+		};
 		setState(State.OK);
 		runner = new Thread(this, HomeServerManager.class.getSimpleName());
 		event = Event.STOP;
@@ -156,7 +190,7 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 			}
 
 			if (event == Event.PROCESS_DEVICE_UPDATES) {
-				homeServer.executePhysicalDeviceUpdates(internalClient, log); // this may take many milliseconds and 'event' could change in the meantime
+				homeServer.executePhysicalDeviceUpdates(deviceUpdateClient, log); // this may take many milliseconds and 'event' could change in the meantime
 				synchronized (this) {
 					if (event == Event.STOP) {
 						break loop;
@@ -196,33 +230,33 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 			final HomeServerResponse response = publicClient.getRegisteredDevices();
 
 			pollingIntervalMillis = POLLING_INTERVAL_MILLIS;
-			if (response == null || response.devices == null) {
+			final List<Device> devices = response.devices;
+			if (response == null || devices == null) {
 				throw new ClientException(ClientException.Error.APPLICATION_DATA_ERROR);
 			}
 			if (response.success) {
 				setState(State.OK);
 				pollingFailureCount = 0;
 				try {
-					final List<String> devicesNeedingStatus = homeServer.updateDeviceInfos(response.devices);
+					final List<String> devicesNeedingStatus = homeServer.updateDeviceInfos(devices);
 					if (devicesNeedingStatus != null) { // some devices need the Status block for the device => poll again
 						for (String deviceID : devicesNeedingStatus) {
 
 							final HomeServerResponse deviceResponse = publicClient.getDeviceStatus(deviceID);
 
 							assert !deviceResponse.devices.isEmpty();
-							if (deviceResponse.devices.get(0).status == null) {
+							final Status status = deviceResponse.devices.get(0).status;
+							if (status == null) {
 								// this is not an assert statement because failure to check this condition (i.e. asserts not checked) would result in
 								// permanently missing information for a critical scheduler decision as the device update would re-request the Status block
 								throw new ClientException(ClientException.Error.APPLICATION_DATA_ERROR, "Status block missing", null);
 							}
-							for (Device device : response.devices) {
-								if (device.id.equals(deviceID)) {
-									// Set Status block
-									device.status = deviceResponse.devices.get(0).status;
-								}
-							}
+							updateDeviceEntry(devices, deviceID, status);
 						}
+						@SuppressWarnings("unused")
+						final List<String> ignored = homeServer.updateDeviceInfos(devices);
 					}
+
 				} catch (UnsupportedModelException ume) {
 					throw new ClientException(ClientException.Error.APPLICATION_DATA_ERROR, null, ume);
 				}
@@ -267,6 +301,27 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 				stop();
 			}
 		}
+	}
+
+	/**
+	 * Replace the {@link Info} block in the list entry with {@code deviceID} by the given {@link Status} block.
+	 * 
+	 * @param devices
+	 * @param deviceID
+	 * @param status
+	 */
+	private void updateDeviceEntry(final List<Device> devices, String deviceID, final Status status) {
+		assert deviceID != null;
+		assert status != null;
+		for (Device device : devices) {
+			if (deviceID.equals(device.id)) {
+				device.status = status;// set Status block
+				// ensure errors, flags, etc. in device.status and device.info are never out-of-synch:
+				device.info = null;
+				return;
+			}
+		}
+		throw new IllegalStateException("Device no longer in list: " + deviceID);
 	}
 
 	@Override

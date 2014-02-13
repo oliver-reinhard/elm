@@ -154,10 +154,10 @@ public class ModelTestUtil {
 		return map;
 	}
 
-	public static AsynchronousDeviceUpdate getDeviceUpdate(HomeServer server, Device device) {
+	public static AsynchronousPhysicalDeviceUpdate getDeviceUpdate(HomeServer server, Device device) {
 		assert server != null;
 		assert device != null;
-		for (AsynchronousDeviceUpdate upd : ((HomeServerImpl) server).getPendingUpdates()) {
+		for (AsynchronousPhysicalDeviceUpdate upd : ((HomeServerImpl) server).getPendingUpdates()) {
 			if (upd.getDevice().getId().equals(device.id)) {
 				return upd;
 			}
@@ -169,7 +169,7 @@ public class ModelTestUtil {
 		final DeviceInfo deviceInfo = server.getDeviceInfo(device.id);
 		assertEquals(expectedLimitWatt == DeviceInfo.UNLIMITED_POWER ? deviceInfo.getDeviceModel().getPowerMaxWatt() : expectedLimitWatt,
 				deviceInfo.getApprovedPowerWatt());
-		final AsynchronousDeviceUpdate deviceUpdate = getDeviceUpdate(server, device);
+		final AsynchronousPhysicalDeviceUpdate deviceUpdate = getDeviceUpdate(server, device);
 		assertNotNull(deviceUpdate);
 	}
 }

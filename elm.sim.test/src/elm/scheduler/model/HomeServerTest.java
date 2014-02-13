@@ -22,18 +22,17 @@ import org.junit.Before;
 import org.junit.Test;
 
 import elm.hs.api.client.ClientException;
-import elm.hs.api.client.HomeServerInternalApiClient;
 import elm.hs.api.model.Device;
-import elm.scheduler.ElmStatus;
-import elm.scheduler.HomeServerChangeListener;
 import elm.scheduler.model.impl.DeviceInfoImpl;
 import elm.scheduler.model.impl.HomeServerImpl;
+import elm.ui.api.ElmStatus;
 
 public class HomeServerTest {
 
 	static final int HS_ID = 1;
 	static final int NUM_DEVICES = 2;
 	static final int ACTUAL_POWER_WATT = 20_000;
+	static final int EXPECTED_WAITING_TIME = 5_000;
 
 	final Logger log = Logger.getLogger(getClass().getName());
 
@@ -137,12 +136,12 @@ public class HomeServerTest {
 			hs1.updateDeviceInfos(devices);
 			assertNull(hs1.getPendingUpdates());
 			// there should be no client invocations while there are no device updates:
-			HomeServerInternalApiClient client = mock(HomeServerInternalApiClient.class);
+			PhysicalDeviceUpdateClient client = mock(PhysicalDeviceUpdateClient.class);
 			hs1.executePhysicalDeviceUpdates(client, log);
 			verifyNoMoreInteractions(client);
 			
 			// Scheduler approves only LIMITED power:
-			di1_2.updateMaximumPowerConsumption(ACTUAL_POWER_WATT, ElmStatus.OVERLOAD);
+			di1_2.updateMaximumPowerConsumption(ACTUAL_POWER_WATT, ElmStatus.OVERLOAD, EXPECTED_WAITING_TIME);
 			assertEquals(1, hs1.getPendingUpdates().size());
 			//
 			hs1.fireDeviceChangesPending();
@@ -160,7 +159,7 @@ public class HomeServerTest {
 			assertNull(hs1.getPendingUpdates());
 
 			// Scheduler approves UNLIMITED power:
-			di1_2.updateMaximumPowerConsumption(DeviceInfo.UNLIMITED_POWER, ElmStatus.OVERLOAD);
+			di1_2.updateMaximumPowerConsumption(DeviceInfo.UNLIMITED_POWER, ElmStatus.OVERLOAD, EXPECTED_WAITING_TIME);
 			assertEquals(1, hs1.getPendingUpdates().size());
 			//
 			hs1.executePhysicalDeviceUpdates(client, log);

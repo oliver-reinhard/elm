@@ -1,8 +1,5 @@
-package elm.scheduler;
+package elm.scheduler.model;
 
-import elm.scheduler.model.AsynchronousDeviceUpdate;
-import elm.scheduler.model.DeviceInfo;
-import elm.scheduler.model.HomeServer;
 
 public interface HomeServerChangeListener {
 
@@ -21,10 +18,10 @@ public interface HomeServerChangeListener {
 	void deviceInfosUpdated(HomeServer server, boolean urgent);
 
 	/**
-	 * Notification that {@link AsynchronousDeviceUpdate}s that await processing have been added to the {@link HomeServer} .
+	 * Notification that {@link AsynchronousPhysicalDeviceUpdate}s that await processing have been added to the {@link HomeServer} .
 	 * <p>
 	 * <em>Note: </em>This method must not be long-running or blocking; this could delay the scheduler. Especially it should not process the
-	 * {@link AsynchronousDeviceUpdate}s itself.
+	 * {@link AsynchronousPhysicalDeviceUpdate}s itself.
 	 * </p>
 	 * 
 	 * @param server

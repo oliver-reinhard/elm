@@ -1,5 +1,6 @@
 package elm.scheduler;
 
+import elm.ui.api.ElmStatus;
 
 /**
  * <p>
@@ -9,6 +10,15 @@ package elm.scheduler;
  */
 public interface SchedulerChangeListener {
 
+	/**
+	 * The status of the scheduler has changed.
+	 * <p>
+	 * <em>Note: </em>This method must not be long-running or blocking; this could delay the scheduler.
+	 * </p>
+	 * 
+	 * @param oldStatus
+	 * @param newStatus
+	 */
 	void statusChanged(ElmStatus oldStatus, ElmStatus newStatus);
 
 }

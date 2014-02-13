@@ -1,10 +1,5 @@
 package elm.scheduler;
 
-import static elm.scheduler.ElmStatus.ERROR;
-import static elm.scheduler.ElmStatus.OFF;
-import static elm.scheduler.ElmStatus.ON;
-import static elm.scheduler.ElmStatus.OVERLOAD;
-import static elm.scheduler.ElmStatus.SATURATION;
 import static elm.scheduler.model.DeviceInfo.DeviceStatus.CONSUMPTION_APPROVED;
 import static elm.scheduler.model.DeviceInfo.DeviceStatus.CONSUMPTION_DENIED;
 import static elm.scheduler.model.DeviceInfo.DeviceStatus.CONSUMPTION_STARTED;
@@ -14,6 +9,11 @@ import static elm.scheduler.model.ModelTestUtil.createDevicesWithStatus;
 import static elm.scheduler.model.ModelTestUtil.createHomeServer;
 import static elm.scheduler.model.ModelTestUtil.sleep;
 import static elm.scheduler.model.ModelTestUtil.toPowerUnits;
+import static elm.ui.api.ElmStatus.ERROR;
+import static elm.ui.api.ElmStatus.OFF;
+import static elm.ui.api.ElmStatus.ON;
+import static elm.ui.api.ElmStatus.OVERLOAD;
+import static elm.ui.api.ElmStatus.SATURATION;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -29,10 +29,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import elm.hs.api.client.HomeServerInternalApiClient;
 import elm.hs.api.model.Device;
 import elm.scheduler.model.DeviceInfo;
 import elm.scheduler.model.HomeServer;
+import elm.scheduler.model.HomeServerChangeListener;
+import elm.scheduler.model.PhysicalDeviceUpdateClient;
 import elm.scheduler.model.UnsupportedModelException;
 import elm.scheduler.model.impl.HomeServerImpl;
 
@@ -137,7 +138,7 @@ public class SchedulerTest {
 			checkDeviceUpdate(hs1, d1_2, DeviceInfo.UNLIMITED_POWER);
 			//
 			// home server 1: process device updates => "execute" (and clear) the device updates
-			HomeServerInternalApiClient client = mock(HomeServerInternalApiClient.class);
+			PhysicalDeviceUpdateClient client = mock(PhysicalDeviceUpdateClient.class);
 			hs1.executePhysicalDeviceUpdates(client, log);
 
 			// ON --> SATURATION

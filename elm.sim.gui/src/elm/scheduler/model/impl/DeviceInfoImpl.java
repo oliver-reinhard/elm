@@ -14,19 +14,28 @@ import java.util.Date;
 
 import elm.hs.api.model.Device;
 import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
-import elm.scheduler.ElmStatus;
-import elm.scheduler.model.ClearScaldProtection;
+import elm.scheduler.Scheduler;
+import elm.scheduler.model.AsynchronousPhysicalDeviceUpdate;
 import elm.scheduler.model.DeviceInfo;
 import elm.scheduler.model.HomeServer;
-import elm.scheduler.model.SetScaldProtectionTemperature;
 import elm.scheduler.model.UnsupportedModelException;
+import elm.ui.api.ElmDeviceUserFeedback;
+import elm.ui.api.ElmStatus;
 
+/**
+ * This device info implementation is close to <em>stateless</em> in that, each time it runs, it performs a full analysis of all {@link Device} fields and
+ * {@link Scheduler} input. It keeps a minimum of state and status information. It thus depend only lightly on a previous state from which it might never
+ * recover. </p>
+ */
 public class DeviceInfoImpl implements DeviceInfo {
 
 	private static final int LOWEST_INTAKE_WATER_TEMPERATURE = 50;
 
 	/** Changes in intake-water temperature (in 1/10°C) below this threshold are ignored. */
 	private static final int INTAKE_WATER_TEMP_CHANGE_IGNORE_DELTA = 20;
+
+	/** The minimum delay between ELM status notifications if no status change is involved. */
+	private static final int ELM_STATUS_NOTIFICATION_MIN_DELAY_MILLIS = 5000;
 
 	private final String id;
 	private final HomeServer homeServer;
@@ -63,6 +72,12 @@ public class DeviceInfoImpl implements DeviceInfo {
 	/** Temperature [1/10°C] of the device intake water. A value of {@value #UNDEFINED_TEMPERATURE} means undefined. */
 	private short intakeWaterTemperature = UNDEFINED_TEMPERATURE;
 
+	/** The last {@link ElmStatus} communicated to the physical device. */
+	private ElmStatus lastElmStatus = null;
+
+	/** Unix time of last {@link ElmStatus} communicated to the physical device. */
+	private long lastElmStatusNotificationTime = 0;
+
 	public DeviceInfoImpl(HomeServer server, Device device) throws UnsupportedModelException {
 		this(server, device, null);
 	}
@@ -76,6 +91,7 @@ public class DeviceInfoImpl implements DeviceInfo {
 
 		deviceModel = DeviceModel.getModel(device);
 		if (!deviceModel.getType().isRemoteControllable()) {
+			setStatus(ERROR);
 			throw new UnsupportedModelException(device.id);
 		}
 	}
@@ -103,7 +119,7 @@ public class DeviceInfoImpl implements DeviceInfo {
 	public synchronized UpdateResult update(Device device) {
 		assert device != null;
 		assert device.info != null || device.status != null;
-		
+
 		// The Info block of the device only contains information about heater on/off. For the actual power value, the Status block is required,
 		// however, the Status block must be requested individually for each device.
 		if (device.status == null) {
@@ -120,12 +136,12 @@ public class DeviceInfoImpl implements DeviceInfo {
 		} else if (!device.connected && status != ERROR) {
 			setStatus(NOT_CONNECTED);
 		}
-		
+
 		UpdateResult result = UpdateResult.NO_UPDATES;
 
 		if (device.status != null) {
 			powerMaxUnits = device.status.powerMax;
-			
+
 			final int newDemandPowerWatt = toPowerWatt(device.status.power);
 			if (newDemandPowerWatt != demandPowerWatt) {
 				if (demandPowerWatt == 0) {
@@ -158,7 +174,7 @@ public class DeviceInfoImpl implements DeviceInfo {
 	}
 
 	/**
-	 * Invoked by the actual physical device.
+	 * Invocation prompted by the actual physical device.
 	 * 
 	 * @param demandPowerUnits
 	 *            the power needed to satisfy the user demand (temperature, flow).
@@ -170,12 +186,15 @@ public class DeviceInfoImpl implements DeviceInfo {
 		setStatus(CONSUMPTION_STARTED); // needs approval by scheduler
 	}
 
+	/**
+	 * Invocation prompted by the actual physical device.
+	 */
 	void waterConsumptionChanged(final int newDemandPowerWatt) {
 		demandPowerWatt = newDemandPowerWatt;
 	}
 
 	/**
-	 * Invoked by the actual physical device.
+	 * Invocation prompted by the actual physical device.
 	 */
 	void waterConsumptionEnded() {
 		demandPowerWatt = 0;
@@ -184,11 +203,15 @@ public class DeviceInfoImpl implements DeviceInfo {
 	}
 
 	@Override
-	public synchronized void updateMaximumPowerConsumption(int approvedPowerWatt, ElmStatus elmStatus) {
+	public synchronized void updateMaximumPowerConsumption(int approvedPowerWatt, ElmStatus elmStatus, int expectedWaitingTimeMillis) {
+		if (status == NOT_CONNECTED) {
+			return;
+		}
 		assert approvedPowerWatt >= 0 && approvedPowerWatt <= deviceModel.getPowerMaxWatt() || approvedPowerWatt == UNLIMITED_POWER;
 		final int newApprovedPowerWatt = approvedPowerWatt == deviceModel.getPowerMaxWatt() ? UNLIMITED_POWER : approvedPowerWatt;
 		if (internalApprovedPowerWatt != newApprovedPowerWatt || status == CONSUMPTION_STARTED) {
-			setApprovedPowerWatt(newApprovedPowerWatt);
+			AsynchronousPhysicalDeviceUpdate deviceUpdate = new AsynchronousPhysicalDeviceUpdate(this);
+			setApprovedPowerWatt(newApprovedPowerWatt, deviceUpdate);
 			if (status.isConsuming()) {
 				if (newApprovedPowerWatt == 0) {
 					setStatus(CONSUMPTION_DENIED);
@@ -198,17 +221,20 @@ public class DeviceInfoImpl implements DeviceInfo {
 					setStatus(CONSUMPTION_LIMITED);
 				}
 			}
+			putElmStatus(deviceUpdate, status, elmStatus, expectedWaitingTimeMillis);
+			if (!deviceUpdate.isVoid()) {
+				getHomeServer().putDeviceUpdate(deviceUpdate);
+			}
 		}
 	}
 
-	private void setApprovedPowerWatt(final int newApprovedPowerWatt) {
+	void setApprovedPowerWatt(final int newApprovedPowerWatt, AsynchronousPhysicalDeviceUpdate deviceUpdate) {
 		internalApprovedPowerWatt = newApprovedPowerWatt;
 		// scald protection
 		if (internalApprovedPowerWatt == UNLIMITED_POWER) {
 			scaldProtectionTemperature = UNDEFINED_TEMPERATURE;
 			// restore user-defined demand temperature (ASYNCHRONOUS device update):
-			getHomeServer().putDeviceUpdate(
-					new ClearScaldProtection(this, userDemandTemperature == UNDEFINED_TEMPERATURE ? actualDemandTemperature : userDemandTemperature));
+			deviceUpdate.clearScaldProtection(userDemandTemperature == UNDEFINED_TEMPERATURE ? actualDemandTemperature : userDemandTemperature);
 			userDemandTemperature = UNDEFINED_TEMPERATURE;
 
 		} else { // limited power
@@ -218,7 +244,7 @@ public class DeviceInfoImpl implements DeviceInfo {
 				userDemandTemperature = actualDemandTemperature;
 			}
 			// ASYNCHRONOUS device update:
-			getHomeServer().putDeviceUpdate(new SetScaldProtectionTemperature(this, scaldProtectionTemperature));
+			deviceUpdate.setScaldProtectionTemperature(scaldProtectionTemperature);
 		}
 	}
 
@@ -226,7 +252,7 @@ public class DeviceInfoImpl implements DeviceInfo {
 	 * @param approvedPowerWatt
 	 * @return the temperature in [1/10°C] that requires the given amount of power
 	 */
-	private short toTemperatureLimit(final int approvedPowerWatt) {
+	short toTemperatureLimit(final int approvedPowerWatt) {
 		if (getDemandPowerWatt() > 0) {
 			// dPowerDemand [W] = flow [kg/sec] * dTDemand [°K] * heatCapacity [J/kg/K].
 			// Assume flow and heatCapacity are constant =>
@@ -245,6 +271,42 @@ public class DeviceInfoImpl implements DeviceInfo {
 			// Interpolate from maximum device heating power and maximum temperature difference:
 			return (short) (deviceModel.getScaldProtectionTemperatureMin() + (deviceModel.getScaldProtectionTemperatureMax() - LOWEST_INTAKE_WATER_TEMPERATURE)
 					* approvedPowerWatt / deviceModel.getPowerMaxWatt());
+		}
+	}
+
+	/** Used for testing. */
+	public void putElmStatus(AsynchronousPhysicalDeviceUpdate deviceUpdate, DeviceStatus currentStatus, ElmStatus schedulerStatus, int expectedWaitingTimeMillis) {
+		ElmStatus feedbackStatus = null;
+		switch (currentStatus) {
+		case READY:
+			feedbackStatus = schedulerStatus;
+			break;
+		case CONSUMPTION_STARTED:
+		case CONSUMPTION_APPROVED:
+			feedbackStatus = ElmStatus.ON;
+			break;
+		case CONSUMPTION_LIMITED:
+			feedbackStatus = ElmStatus.SATURATION;
+			break;
+		case CONSUMPTION_DENIED:
+			feedbackStatus = ElmStatus.OVERLOAD;
+			break;
+		case ERROR:
+			feedbackStatus = ElmStatus.ERROR;
+			break;
+		case INITIALIZING:
+		case NOT_CONNECTED:
+		default:
+			throw new IllegalArgumentException(currentStatus.toString());
+		}
+		final long time = System.currentTimeMillis();
+		if (feedbackStatus != lastElmStatus
+				|| (expectedWaitingTimeMillis > 0 && (time - lastElmStatusNotificationTime) >= ELM_STATUS_NOTIFICATION_MIN_DELAY_MILLIS)) {
+			ElmDeviceUserFeedback feedback = new ElmDeviceUserFeedback(id, feedbackStatus);
+			feedback.expectedWaitingTimeMillis = expectedWaitingTimeMillis;
+			deviceUpdate.setFeedback(feedback);
+			lastElmStatus = feedbackStatus;
+			lastElmStatusNotificationTime = time;
 		}
 	}
 
