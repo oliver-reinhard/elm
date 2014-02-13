@@ -71,7 +71,7 @@ public class HomeServerTest {
 	}
 
 	@Test
-	public void addRemoveDeviceInfoUpdates() {
+	public void addRemoveDeviceManagerUpdates() {
 		try {
 			// add 2 more
 			hs1.updateDeviceManagers(createDevicesWithStatus(HS_ID, 4, 0));
@@ -99,7 +99,7 @@ public class HomeServerTest {
 	}
 
 	@Test
-	public void deviceInfoUpdates() {
+	public void deviceManagerUpdates() {
 		try {
 			// Turn a tap on
 			List<Device> devices = createDevicesWithStatus(HS_ID, NUM_DEVICES, 0);
@@ -126,8 +126,8 @@ public class HomeServerTest {
 	@Test
 	public void deviceUpdates() {
 		try {
-			DeviceManager[] deviceInfos = hs1.getDeviceManagers().toArray(new DeviceManager[] {});
-			DeviceManager di1_2 = deviceInfos[1];
+			DeviceManager[] deviceManagers = hs1.getDeviceManagers().toArray(new DeviceManager[] {});
+			DeviceManager di1_2 = deviceManagers[1];
 			
 			List<Device> devices = createDevicesWithStatus(1, NUM_DEVICES, 0);
 			Device d1_2 = devices.get(1);

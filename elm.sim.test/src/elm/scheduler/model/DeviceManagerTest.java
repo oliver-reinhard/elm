@@ -104,7 +104,7 @@ public class DeviceManagerTest {
 	public void updateIntakeTemperature() {
 		final Device d = createDeviceWithStatus(1, 1, 0);
 		assert d.status.tIn == 100; // 10°C
-		// initialize DeviceInfo:
+		// initialize DeviceManager:
 		UpdateResult result = di1.update(d);
 		assertEquals(100, di1.getIntakeWaterTemperature());
 		assertEquals(UpdateResult.MINOR_UPDATES, result);
