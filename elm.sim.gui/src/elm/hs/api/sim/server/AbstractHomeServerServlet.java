@@ -22,9 +22,18 @@ public abstract class AbstractHomeServerServlet extends HttpServlet {
 
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		sendSingleMessage(response, getHomeServerResponse(request));
+		try {
+			HomeServerResponse homeServerResponse = getHomeServerResponse(request);
+			sendSingleMessage(response, homeServerResponse);
+		} catch (RuntimeException e) {
+			e.printStackTrace();
+			response.sendError(HttpStatus.INTERNAL_SERVER_ERROR_500, "Server error: " + e.getMessage());
+		}
 	}
 
+	/**
+	 * @return  {@code null} if request could not be satisfied; this causes an error {@code 400} to be returned to the caller
+	 */
 	protected abstract HomeServerResponse getHomeServerResponse(HttpServletRequest request);
 
 	protected void sendSingleMessage(HttpServletResponse response, HomeServerResponse data) throws IOException {

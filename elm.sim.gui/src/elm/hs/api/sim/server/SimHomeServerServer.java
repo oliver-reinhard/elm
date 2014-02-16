@@ -117,7 +117,7 @@ public class SimHomeServerServer {
 			String id = path.startsWith("/") ? path.substring(1) : path;
 			try {
 				short value = extractShort(request, id, false, log); // mandatory
-				return getDatabase().processSetScaldProtectionFlag(id, value == 0);
+				return getDatabase().processSetScaldProtectionFlag(id, value == 1);
 			} catch (IOException | IllegalArgumentException e) {
 				// already logged
 			}

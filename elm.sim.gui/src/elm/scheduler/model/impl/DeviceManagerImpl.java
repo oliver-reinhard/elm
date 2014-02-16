@@ -298,7 +298,7 @@ public class DeviceManagerImpl implements DeviceManager {
 			lastElmStatus = deviceFeedbackStatus;
 			lastElmStatusNotificationTime = time;
 
-			System.out.println("update " + id + ": device  " + deviceFeedbackStatus);
+			System.out.println("update " + id + ": device status " + deviceFeedbackStatus);
 		}
 	}
 
