@@ -53,8 +53,6 @@ public interface TapPoint extends SimChangeNotifier {
 
 	Flow getReferenceFlow();
 
-	void setActualFlow(Flow newValue);
-
 	Flow getActualFlow();
 
 	void setReferenceTemperature(Temperature newValue);

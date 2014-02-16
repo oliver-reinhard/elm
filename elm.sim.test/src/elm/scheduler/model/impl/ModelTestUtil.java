@@ -1,4 +1,4 @@
-package elm.scheduler.model;
+package elm.scheduler.model.impl;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -15,6 +15,10 @@ import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
 import elm.hs.api.model.Error;
 import elm.hs.api.model.Info;
 import elm.hs.api.model.Status;
+import elm.scheduler.model.AsynchronousPhysicalDeviceUpdate;
+import elm.scheduler.model.DeviceManager;
+import elm.scheduler.model.HomeServer;
+import elm.scheduler.model.UnsupportedModelException;
 import elm.scheduler.model.impl.HomeServerImpl;
 
 public class ModelTestUtil {
@@ -74,9 +78,16 @@ public class ModelTestUtil {
 		return result;
 	}
 
-	public static Device createDeviceWithStatus(int homeServerId, int deviceId, int powerWatt) {
-		assert deviceId > 0 && deviceId < 100;
-		Device d = createDeviceWithInfo(homeServerId, deviceId);
+	/**
+	 * 
+	 * @param homeServerNr
+	 * @param deviceNr
+	 * @param powerWatt currently used power [W]
+	 * @return
+	 */
+	public static Device createDeviceWithStatus(int homeServerNr, int deviceNr, int powerWatt) {
+		assert deviceNr > 0 && deviceNr < 100;
+		Device d = createDeviceWithInfo(homeServerNr, deviceNr);
 		d.status = new Status();
 		d.status.setpoint = 380; // 38°C
 		d.status.tIn = 100; // 10°C

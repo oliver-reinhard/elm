@@ -77,13 +77,25 @@ public class DeviceCharacteristics {
 		/**
 		 * Returns the {@link DeviceModel} from the {@link Device#id}.
 		 * 
-		 * @param deviceId
-		 * @return {@code null} if device is not remote-controllable
+		 * @param device
+		 *            cannot be {@code null}
+		 * @return {@code null} if device id does not reference a known device model
 		 */
 		public static DeviceModel getModel(Device device) {
 			assert device != null;
-			assert device.id != null && device.id.length() == 10;
-			String typeIdStr = device.id.substring(0, 4);
+			return getModel(device.id);
+		}
+
+		/**
+		 * Returns the {@link DeviceModel} from the given {@link Device#id}.
+		 * 
+		 * @param deviceId
+		 *            cannot be {@code null}
+		 * @return {@code null} if device id does not reference a known device model
+		 */
+		public static DeviceModel getModel(String deviceId) {
+			assert deviceId != null && deviceId.length() == 10;
+			String typeIdStr = deviceId.substring(0, 4);
 			int typeId = Integer.parseInt(typeIdStr, 16);
 			int deviceClassId = typeId >> 13;
 			@SuppressWarnings("unused")

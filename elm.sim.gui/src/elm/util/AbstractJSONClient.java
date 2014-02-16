@@ -48,6 +48,8 @@ public abstract class AbstractJSONClient {
 		String realm = "ELM-Realm";
 		AuthenticationStore authStore = client.getAuthenticationStore();
 		authStore.addAuthentication(new BasicAuthentication(baseUri, realm, user, pass));
+		
+		log.setLevel(Level.SEVERE);
 	}
 
 	public URI getBaseUri() {

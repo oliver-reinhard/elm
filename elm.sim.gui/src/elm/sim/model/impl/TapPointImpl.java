@@ -4,10 +4,6 @@ import static elm.sim.model.SimStatus.OFF;
 import static elm.sim.model.SimStatus.ON;
 import static elm.sim.model.SimStatus.OVERLOAD;
 import static elm.sim.model.SimStatus.SATURATION;
-
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import elm.sim.metamodel.AbstractSimObject;
 import elm.sim.metamodel.SimAttribute;
 import elm.sim.model.Flow;
@@ -20,12 +16,6 @@ import elm.ui.api.ElmStatus;
  * Apart from the name, which is mandatory, all fields are optional.
  */
 public class TapPointImpl extends AbstractSimObject implements TapPoint {
-
-	private static final Logger LOG = Logger.getLogger(TapPointImpl.class.getName());
-
-	{
-		LOG.setLevel(Level.WARNING);
-	}
 
 	/** Outlet identification within group. */
 	private final String name;
@@ -52,7 +42,7 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 	private int waitingTimePercent = NO_WAITING_PERCENT;
 
 	/** Mirror of the scheduler's status. */
-	private SimStatus schedulerStatus = OFF;
+	private SimStatus schedulerStatus = null;
 
 	public TapPointImpl(String name, Temperature referenceTemperature) {
 		assert name != null && !name.isEmpty();
@@ -94,8 +84,7 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 		return referenceFlow;
 	}
 
-	@Override
-	public synchronized void setActualFlow(Flow newValue) {
+	private void setActualFlow(Flow newValue) {
 		assert newValue != null;
 		Flow oldValue = actualFlow;
 		if (oldValue != newValue) {
@@ -127,14 +116,11 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 
 	private void setActualTemperature(Temperature newValue) {
 		assert newValue != null;
-		if (newValue.lessOrEqualThan(getScaldProtectionTemperature())) {
-			Temperature oldValue = actualTemperature;
-			if (oldValue != newValue) {
-				actualTemperature = newValue;
-				fireModelChanged(Attribute.ACTUAL_TEMPERATURE, oldValue, newValue);
-			}
-		} else {
-			LOG.warning("actual temperature cannot exceed scald temperature");
+		assert newValue.lessOrEqualThan(getScaldProtectionTemperature()) : "actual temperature exceeds scald temperature";
+		Temperature oldValue = actualTemperature;
+		if (oldValue != newValue) {
+			actualTemperature = newValue;
+			fireModelChanged(Attribute.ACTUAL_TEMPERATURE, oldValue, newValue);
 		}
 	}
 
@@ -150,7 +136,7 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 
 	/**
 	 * @param newValue
-	 *            cannot be {@code null} 
+	 *            cannot be {@code null}
 	 * @param updateDerived
 	 *            update derived values on true status change
 	 */
@@ -196,6 +182,9 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 
 	@Override
 	public void setStatus(ElmStatus deviceStatus) {
+		if (schedulerStatus != null) {
+			throw new IllegalStateException("Cannot use setStatus() after setSchedulerStatus() has been invoked. Consistently use one XOR the other.");
+		}
 		setInternalStatus(SimStatus.fromElmStatus(deviceStatus), true);
 	}
 
@@ -204,68 +193,55 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 		assert schedulerStatus != null;
 		// remember the scheduler status
 		this.schedulerStatus = schedulerStatus;
-
-		// infer scald-protection temperature
-		if (actualFlow.isOn() || schedulerStatus.in(ON, SATURATION)) {
-			setInternalScaldProtectionTemperature(Temperature.TEMP_MAX, false);
-		} else {
-			setInternalScaldProtectionTemperature(Temperature.TEMP_MIN, false);
-		}
 		updateDerived();
 	}
 
-	/**
-	 * Updates the following derived values
-	 * <ul>
-	 * <li>status</li>
-	 * <li>actualFlow</li>
-	 * <li>referenceEnabled</li>
-	 * </ul>
-	 * on the basis of these values
-	 * <ul>
-	 * <li>schedulerStatus</li>
-	 * <li>referenceFlow</li>
-	 * <li>referenceTemperature</li>
-	 * <li>scaldTemperature</li>
-	 * </ul>
-	 */
 	protected void updateDerived() {
 		// currently, the actual flow is unconstrained and always follows the reference flow
 		setActualFlow(referenceFlow);
-
-		// Are we in the middle of an actual flow?
-		if (actualFlow.isOn()) {
-			// Yes => interfere as little as possible with the user's reference temperature;
-			if (schedulerStatus.in(ON, SATURATION)) {
-				setInternalStatus(ON, false);
-				// allow to increase or decrease the reference temperature:
-				LOG.info("A1 — user can freely change temperature");
+		
+		if (schedulerStatus == null) {
+			if (status == OFF) {
+				setActualTemperature(Temperature.TEMP_MIN);
+			}else {
 				setActualTemperature(referenceTemperature);
-
-			} else if (schedulerStatus == OVERLOAD && scaldProtectionTemperature != Temperature.TEMP_MIN) {
-				setInternalStatus(ON, false);
-				// allow to increase or decrease the reference temperature:
-				LOG.info("A2 — user can freely change temperature");
-				setActualTemperature(referenceTemperature);
-
-			} else { // schedulerStatus.in(OFF, ERROR)
-				setInternalStatus(schedulerStatus, false); // user can see why reference-flow increase is disabled
-				// allow only to decrease the reference with respect to current actual temp.:
-				LOG.info("A3 — user can only reduce temperature");
-				setActualTemperature(Temperature.min(actualTemperature, referenceTemperature, scaldProtectionTemperature));
 			}
+			
+		} else {
+			// Are we in the middle of an actual flow?
+			if (actualFlow.isOn()) {
+				// Yes => interfere as little as possible with the user's reference temperature;
+				if (schedulerStatus.in(ON, SATURATION)) {
+					setInternalStatus(ON, false);
+					setInternalScaldProtectionTemperature(Temperature.TEMP_MAX, false);
+					// allow to increase or decrease the reference temperature:
+					setActualTemperature(referenceTemperature);
 
-		} else if (schedulerStatus.in(ON, SATURATION)) {
-			// No, there is no actual flow:
-			setInternalStatus(schedulerStatus, false);
-			LOG.info("B - enable reference temperature change up or down");
-			// allow to increase or decrease the reference
-			setActualTemperature(referenceTemperature);
+				} else if (schedulerStatus == OVERLOAD && scaldProtectionTemperature != Temperature.TEMP_MIN) {
+					setInternalStatus(ON, false);
+					setInternalScaldProtectionTemperature(Temperature.TEMP_MAX, false);
+					// allow to increase or decrease the reference temperature:
+					setActualTemperature(referenceTemperature);
 
-		} else { // schedulerStatus.in(OFF, OVERLOAD, ERROR)
-			setInternalStatus(schedulerStatus, false);
-			LOG.info("C - cold water only");
-			setActualTemperature(Temperature.TEMP_MIN);
+				} else { // schedulerStatus.in(OFF, ERROR)
+					setInternalStatus(schedulerStatus, false); // user can see why reference-flow increase is disabled
+					setInternalScaldProtectionTemperature(actualTemperature, false);
+					// allow only to decrease the reference with respect to current actual temp.:
+					setActualTemperature(Temperature.min(actualTemperature, referenceTemperature));
+				}
+
+			} else if (schedulerStatus.in(ON, SATURATION)) {
+				// No, there is no actual flow:
+				setInternalStatus(schedulerStatus, false);
+				setInternalScaldProtectionTemperature(Temperature.TEMP_MAX, false);
+				// allow to increase or decrease the reference
+				setActualTemperature(referenceTemperature);
+
+			} else { // schedulerStatus.in(OFF, OVERLOAD, ERROR)
+				setInternalStatus(schedulerStatus, false);
+				setInternalScaldProtectionTemperature(Temperature.TEMP_MIN, false);
+				setActualTemperature(Temperature.TEMP_MIN);
+			}
 		}
 	}
 

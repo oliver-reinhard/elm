@@ -18,7 +18,8 @@ import org.apache.commons.cli.ParseException;
 public abstract class AbstractCommandLineClient {
 
 	protected static final String OPT_PASSWD = "p";
-	protected static final String OPT_URL = "uri";
+	protected static final String OPT_PUBLIC_URI = "publicUri";
+	protected static final String OPT_INTERNAL_URI = "internalUri";
 	protected static final String OPT_DEVICE = "d";
 	protected static final String OPT_NO_INTERNAL = "noint";
 	protected static final String OPT_VERBOSE = "v";
@@ -27,7 +28,8 @@ public abstract class AbstractCommandLineClient {
 
 	protected String user = HomeServerPublicApiClient.HOME_SERVER_ADMIN_USER;
 	protected String password = HomeServerPublicApiClient.HOME_SERVER_DEFAULT_PASSWORD;
-	protected URI baseUri = HomeServerPublicApiClient.DEFAULT_HOME_SERVER_URI;
+	protected URI publicBaseUri = HomeServerPublicApiClient.DEFAULT_HOME_SERVER_URI;
+	protected URI internalBaseUri = HomeServerInternalApiClient.DEFAULT_HOME_SERVER_INTERNAL_URI;
 	protected String deviceID;
 	protected boolean useInternalClient;
 	protected boolean verbose;
@@ -41,7 +43,8 @@ public abstract class AbstractCommandLineClient {
 	protected void addCommandLineOptions(Options options) {
 		assert options != null;
 		options.addOption(OPT_PASSWD, "password", true, null);
-		options.addOption(OPT_URL, "server_base_uri", true, "the server's base URI");
+		options.addOption(OPT_PUBLIC_URI, "public_api_server_base_uri", true, "the server's base URI for the public API");
+		options.addOption(OPT_INTERNAL_URI, "internal_api_server_base_uri", true, "the server's base URI for the public API");
 		options.addOption(OPT_DEVICE, "device", true, "the device ID");
 		options.addOption(OPT_NO_INTERNAL, "no_internal", false, "do not use the internal server API");
 		options.addOption(OPT_VERBOSE, "verbose", false, null);
@@ -57,12 +60,20 @@ public abstract class AbstractCommandLineClient {
 		if (line.hasOption(OPT_PASSWD)) {
 			password = line.getOptionValue(OPT_PASSWD);
 		}
-		if (line.hasOption(OPT_URL)) {
-			final String uri = line.getOptionValue(OPT_URL);
+		if (line.hasOption(OPT_PUBLIC_URI)) {
+			final String uri = line.getOptionValue(OPT_PUBLIC_URI);
 			try {
-				baseUri = new URI(uri);
+				publicBaseUri = new URI(uri);
 			} catch (URISyntaxException e) {
-				throw new ParseException("Illegal " + OPT_URL + ": " + uri);
+				throw new ParseException("Illegal " + OPT_PUBLIC_URI + ": " + uri);
+			}
+		}
+		if (line.hasOption(OPT_INTERNAL_URI)) {
+			final String uri = line.getOptionValue(OPT_INTERNAL_URI);
+			try {
+				internalBaseUri = new URI(uri);
+			} catch (URISyntaxException e) {
+				throw new ParseException("Illegal " + OPT_INTERNAL_URI + ": " + uri);
 			}
 		}
 		if (line.hasOption(OPT_DEVICE)) {

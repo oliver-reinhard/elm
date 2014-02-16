@@ -1,6 +1,6 @@
 package elm.scheduler.model;
 
-import elm.ui.api.ElmDeviceUserFeedback;
+import elm.ui.api.ElmUserFeedback;
 import elm.util.ClientException;
 
 public interface PhysicalDeviceUpdateClient {
@@ -24,6 +24,6 @@ public interface PhysicalDeviceUpdateClient {
 	 */
 	void clearScaldProtection(String deviceID, int previousTemp) throws ClientException;
 	
-	void updateUserFeedback(ElmDeviceUserFeedback feedback) throws ClientException;
+	void updateUserFeedback(ElmUserFeedback feedback) throws ClientException;
 
 }

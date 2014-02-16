@@ -4,11 +4,11 @@ import static elm.scheduler.model.DeviceManager.DeviceStatus.CONSUMPTION_APPROVE
 import static elm.scheduler.model.DeviceManager.DeviceStatus.CONSUMPTION_DENIED;
 import static elm.scheduler.model.DeviceManager.DeviceStatus.CONSUMPTION_STARTED;
 import static elm.scheduler.model.DeviceManager.DeviceStatus.READY;
-import static elm.scheduler.model.ModelTestUtil.checkDeviceUpdate;
-import static elm.scheduler.model.ModelTestUtil.createDevicesWithStatus;
-import static elm.scheduler.model.ModelTestUtil.createHomeServer;
-import static elm.scheduler.model.ModelTestUtil.sleep;
-import static elm.scheduler.model.ModelTestUtil.toPowerUnits;
+import static elm.scheduler.model.impl.ModelTestUtil.checkDeviceUpdate;
+import static elm.scheduler.model.impl.ModelTestUtil.createDevicesWithStatus;
+import static elm.scheduler.model.impl.ModelTestUtil.createHomeServer;
+import static elm.scheduler.model.impl.ModelTestUtil.sleep;
+import static elm.scheduler.model.impl.ModelTestUtil.toPowerUnits;
 import static elm.ui.api.ElmStatus.ERROR;
 import static elm.ui.api.ElmStatus.OFF;
 import static elm.ui.api.ElmStatus.ON;
@@ -18,6 +18,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
 import java.util.List;
@@ -263,7 +264,8 @@ public class SchedulerTest {
 			assertNull(((HomeServerImpl)hs3).getPendingUpdates());
 
 		} catch (UnsupportedModelException e) {
-			assertTrue(false);
+			fail(e.toString());
+			e.printStackTrace();
 		}
 
 	}

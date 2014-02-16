@@ -6,6 +6,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import elm.hs.api.model.Device;
+import elm.scheduler.model.AsynchronousPhysicalDeviceUpdate;
 import elm.scheduler.model.DeviceManager;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.HomeServerChangeListener;
@@ -99,12 +100,16 @@ public abstract class AbstractScheduler implements HomeServerChangeListener {
 		if (!homeServers.contains(server)) {
 			homeServers.add(server);
 			server.addChangeListener(this);
+			server.putDeviceUpdate(new AsynchronousPhysicalDeviceUpdate(getStatus()));
+			server.fireDeviceChangesPending();
 		}
 	}
 
 	public synchronized void removeHomeServer(HomeServer server) {
 		if (homeServers.remove(server)) {
 			server.removeChangeListener(this);
+			server.putDeviceUpdate(new AsynchronousPhysicalDeviceUpdate(ElmStatus.OFF));
+			server.fireDeviceChangesPending();
 		}
 	}
 
@@ -117,42 +122,50 @@ public abstract class AbstractScheduler implements HomeServerChangeListener {
 	}
 
 	protected void setStatus(ElmStatus newStatus, String logMsg) {
-		if (newStatus != status) {
-			ElmStatus oldStatus = status;
+		final ElmStatus oldStatus = status;
+		if (newStatus != oldStatus) {
 			status = newStatus;
-			for (SchedulerChangeListener listener : listeners) {
-				listener.statusChanged(oldStatus, newStatus);
-			}
-			if (log.isLoggable(Level.INFO)) {
-				String txt = "status change: " + oldStatus + " -> " + newStatus;
-				if (logMsg != null && !logMsg.isEmpty()) {
-					txt = txt + " (" + logMsg + ")";
-				}
-				log.info(txt);
-			}
+			statusChanged(oldStatus, newStatus, logMsg);
 		}
 	}
 
-	/** 
+	protected void statusChanged(ElmStatus oldStatus, ElmStatus newStatus, String logMsg) {
+		for (SchedulerChangeListener listener : listeners) {
+			listener.statusChanged(oldStatus, newStatus);
+		}
+		if (log.isLoggable(Level.INFO)) {
+			String txt = "status change: " + oldStatus + " -> " + newStatus;
+			if (logMsg != null && !logMsg.isEmpty()) {
+				txt = txt + " (" + logMsg + ")";
+			}
+			log.info(txt);
+		}
+	}
+
+	/**
 	 * This method is invoked by a dedicated event-processor {@link Thread}.
 	 */
 	protected synchronized void eventLoop() {
-		setStatus(ElmStatus.ON);
-		while (!shouldStop) {
-			try {
-				if (devicesUpdated) {
-					devicesUpdated = false;
-					schedulingRunCount++;
-					processDevices();
+		try {
+			setStatus(ElmStatus.ON);
+			while (!shouldStop) {
+				try {
+					if (devicesUpdated) {
+						devicesUpdated = false;
+						schedulingRunCount++;
+						processDevices();
+					}
+					// non-urgent device updates are processed after at most SCHEDULING_INTERVAL_MILLIS:
+					log.info("wait " + schedulingIntervalMillis);
+					wait(schedulingIntervalMillis);
+
+				} catch (InterruptedException e) {
+					break; // => exit
 				}
-				// non-urgent device updates are processed after at most SCHEDULING_INTERVAL_MILLIS:
-				wait(schedulingIntervalMillis);
-				
-			} catch (InterruptedException e) {
-				break; // => exit
 			}
+		} finally {
+			setStatus(ElmStatus.OFF);
 		}
-		setStatus(ElmStatus.OFF);
 	}
 
 	/**

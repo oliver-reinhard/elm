@@ -15,7 +15,7 @@ import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.HomeServerChangeListener;
 import elm.scheduler.model.PhysicalDeviceUpdateClient;
 import elm.scheduler.model.UnsupportedModelException;
-import elm.ui.api.ElmDeviceUserFeedback;
+import elm.ui.api.ElmUserFeedback;
 import elm.ui.api.ElmUserFeedbackClient;
 import elm.util.ClientException;
 import elm.util.ClientUtil;
@@ -30,8 +30,7 @@ import elm.util.ClientUtil;
  */
 public class HomeServerManager implements Runnable, HomeServerChangeListener {
 
-	private static final int POLLING_INTERVAL_MILLIS = 1000;
-	private static final int EXCENDED_POLLING_INTERVAL_MILLIS = 5000;
+	private static final int DEFAULT_POLLING_INTERVAL_MILLIS = 1000;
 
 	public enum State {
 		NOT_CONNECTED, OK, TIMEOUT, STOPPED, ERROR
@@ -54,7 +53,7 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 	private Thread runner;
 
 	private int pollingFailureCount = 0;
-	private int pollingIntervalMillis = POLLING_INTERVAL_MILLIS;
+	private int pollingIntervalMillis = DEFAULT_POLLING_INTERVAL_MILLIS;
 	private final Logger log = Logger.getLogger(getClass().getName());
 
 	/**
@@ -69,6 +68,18 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 		this.homeServer = homeServer;
 		this.homeServer.addChangeListener(this);
 		this.userFeedbackClient = userFeedbackClient;
+	}
+	
+	public int getPollingIntervalMillis() {
+		return pollingIntervalMillis;
+	}
+
+	public void setPollingIntervalMillis(int pollingIntervalMillis) {
+		this.pollingIntervalMillis = pollingIntervalMillis;
+	}
+
+	public void setLogLevel(Level level) {
+		log.setLevel(level);
 	}
 
 	public State getState() {
@@ -87,7 +98,8 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 		publicClient = new HomeServerPublicApiClient(homeServer.getUri(), homeServer.getPassword());
 		ClientUtil.initSslContextFactory(publicClient.getClient());
 
-		internalClient = new HomeServerInternalApiClient(homeServer.getPassword(), publicClient);
+		internalClient = new HomeServerInternalApiClient(homeServer.getUri(), "admin", homeServer.getPassword(), publicClient);
+//		internalClient = new HomeServerInternalApiClient(homeServer.getPassword(), publicClient);
 		// ClientUtil.initSslContextFactory(internalClient.getClient());
 
 		deviceUpdateClient = new PhysicalDeviceUpdateClient() {
@@ -103,13 +115,13 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 			}
 
 			@Override
-			public void updateUserFeedback(ElmDeviceUserFeedback feedback) throws ClientException {
+			public void updateUserFeedback(ElmUserFeedback feedback) throws ClientException {
 				userFeedbackClient.updateUserFeedback(feedback);
 			}
 		};
 		setState(State.OK);
 		runner = new Thread(this, HomeServerManager.class.getSimpleName());
-		event = Event.STOP;
+		event = Event.POLL_HOME_SERVER;
 		runner.start();
 	}
 
@@ -125,7 +137,7 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 		try {
 			try {
 				publicClient.start();
-				// internalClient.start();
+				internalClient.start();
 			} catch (Exception e) {
 				log(Level.SEVERE, "Cannot start HTTP client", e);
 				setState(State.ERROR);
@@ -176,6 +188,7 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 		loop: while (true) {
 
 			if (event == Event.POLL_HOME_SERVER) {
+				info("poll");
 				pollHomeServer(); // this may take many milliseconds and 'event' could change in the meantime
 				pollingCycleStartTime = System.currentTimeMillis();
 				synchronized (this) {
@@ -190,6 +203,7 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 			}
 
 			if (event == Event.PROCESS_DEVICE_UPDATES) {
+				info("process device updates");
 				homeServer.executePhysicalDeviceUpdates(deviceUpdateClient, log); // this may take many milliseconds and 'event' could change in the meantime
 				synchronized (this) {
 					if (event == Event.STOP) {
@@ -208,7 +222,9 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 
 			synchronized (this) {
 				if (event == Event.WAIT) {
-
+					info("wait " + waitIntervalMillis);
+					event = Event.POLL_HOME_SERVER;  // default action after wait (may be changed during wait period)
+					
 					wait(waitIntervalMillis); // "sleep"
 
 					if (event == Event.STOP) {
@@ -229,7 +245,6 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 
 			final HomeServerResponse response = publicClient.getRegisteredDevices();
 
-			pollingIntervalMillis = POLLING_INTERVAL_MILLIS;
 			final List<Device> devices = response.devices;
 			if (response == null || devices == null) {
 				throw new ClientException(ClientException.Error.APPLICATION_DATA_ERROR);
@@ -256,6 +271,7 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 						@SuppressWarnings("unused")
 						final List<String> ignored = homeServer.updateDeviceManagers(devices);
 					}
+					return;
 
 				} catch (UnsupportedModelException ume) {
 					throw new ClientException(ClientException.Error.APPLICATION_DATA_ERROR, null, ume);
@@ -264,6 +280,7 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 			throw new ClientException(ClientException.Error.APPLICATION_FAILURE_RESPONSE);
 
 		} catch (ClientException e) {
+			log(Level.SEVERE, "Exception in event loop", e);
 			lastClientException = e;
 			switch (e.getError()) {
 			case INTERRUPTED:
@@ -291,9 +308,7 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 
 			// Retry mechanism:
 			pollingFailureCount++;
-			if (pollingFailureCount == 3) {
-				pollingFailureCount = EXCENDED_POLLING_INTERVAL_MILLIS;
-			} else if (pollingFailureCount > 5) {
+			if (pollingFailureCount > 5) {
 				shouldStop = true; // give up => exit
 			}
 
@@ -342,6 +357,10 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 		return lastClientException;
 	}
 
+	private void info(String message) {
+		log(Level.INFO, message, null);
+	}
+	
 	private void log(Level level, String message, Throwable ex) {
 		log.log(level, homeServer.getUri().toString() + ": " + message, ex);
 	}

@@ -146,6 +146,14 @@ public interface DeviceManager {
 	void updateMaximumPowerConsumption(int approvedPowerWatt, ElmStatus elmStatus, int expectedWaitingTimeMillis);
 
 	/**
+	 * Invoked only by the scheduler on scheduler status changes unless {@link #updateMaximumPowerConsumption(int, ElmStatus, int)} has already been invoked for
+	 * this device.
+	 * 
+	 * @param elmStatus
+	 */
+	void updateUserFeedback(ElmStatus newStatus);
+
+	/**
 	 * The time the current consumption started, or {@link #NO_CONSUMPTION} if the device does not currently provide hot water.
 	 * 
 	 * @return Unix time in milliseconds

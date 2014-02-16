@@ -10,9 +10,6 @@ import elm.util.ClientException;
 
 public class HomeServerPublicApiClient extends AbstractHomeServerClient {
 
-	/** The default URI according to API v1.0 documentation. */
-	public static final URI DEFAULT_HOME_SERVER_URI = URI.create("http://192.168.204.204");
-
 	/**
 	 * Use the default server URI and administration user.
 	 * 
@@ -25,7 +22,6 @@ public class HomeServerPublicApiClient extends AbstractHomeServerClient {
 	}
 
 	/**
-	 * 
 	 * @param baseUri
 	 *            the server URI including an optional port argument, but without any resource path elements, cannot be {@code null}
 	 * @param pass
@@ -34,8 +30,8 @@ public class HomeServerPublicApiClient extends AbstractHomeServerClient {
 	public HomeServerPublicApiClient(URI baseUri, String pass) {
 		super(baseUri, pass);
 	}
+
 	/**
-	 * 
 	 * @param baseUri
 	 *            the server URI including an optional port argument, but without any resource path elements, cannot be {@code null}
 	 * @param user
@@ -49,7 +45,8 @@ public class HomeServerPublicApiClient extends AbstractHomeServerClient {
 
 	/**
 	 * @return never {@code null}
-	 * @throws ClientException if the operation ended in a status {@code != 200} or if the execution threw an exception
+	 * @throws ClientException
+	 *             if the operation ended in a status {@code != 200} or if the execution threw an exception
 	 */
 	public HomeServerResponse getServerStatus() throws ClientException {
 		return doGet("", HomeServerResponse.class);
@@ -59,35 +56,11 @@ public class HomeServerPublicApiClient extends AbstractHomeServerClient {
 	 * Returns all devices registered at this Home Server, regardless of whether they are currently turned on or off.
 	 * 
 	 * @return never {@code null}
-	 * @throws ClientException if the operation ended in a status {@code != 200} or if the execution threw an exception
+	 * @throws ClientException
+	 *             if the operation ended in a status {@code != 200} or if the execution threw an exception
 	 */
 	public HomeServerResponse getRegisteredDevices() throws ClientException {
 		return doGet("/devices", HomeServerResponse.class);
-	}
-
-	/**
-	 * Returns all devices that the Home Server ever contacted since its last reboot. This includes devices that are not registered at this Home Server.
-	 * <p>
-	 * <b>Note: </b>this method does not need to be called. It would be used to (manually) register new devices at the Home Server.
-	 * </p>
-	 * <p>
-	 * 
-	 * @return never {@code null}
-	 * @throws ClientException 
-	 */
-	public HomeServerResponse getAllDevices() throws ClientException {
-		return doGet("/devices?showCache=true", HomeServerResponse.class);
-	}
-
-	/**
-	 * 
-	 * @param deviceID
-	 * @return never {@code null}
-	 * @throws ClientException if the operation ended in a status {@code != 200} or if the execution threw an exception
-	 */
-	public HomeServerResponse getDeviceStatus(String deviceID) throws ClientException {
-		assert deviceID != null && !deviceID.isEmpty();
-		return doGet("/devices/status/" + deviceID, HomeServerResponse.class);
 	}
 
 	/**
@@ -100,25 +73,63 @@ public class HomeServerPublicApiClient extends AbstractHomeServerClient {
 	 * before that period has expired.
 	 * </p>
 	 * 
-	 * @throws ClientException if the operation ended in a status {@code != 202} or if the execution threw an exception
+	 * @throws ClientException
+	 *             if the operation ended in a status {@code != 202} or if the execution threw an exception
 	 */
 	public void discoverDevices() throws ClientException {
-		 doPost("/devices", "autoConnect=false", new int[] { HttpStatus.ACCEPTED_202 });
+		doPost("/devices", "autoConnect=false", new int[] { HttpStatus.ACCEPTED_202 });
 	}
 
-	public short getReferenceTemperature(String deviceID) throws ClientException {
-		assert deviceID != null && !deviceID.isEmpty();
-		HomeServerResponse result = doGet("/devices/setpoint/" + deviceID, HomeServerResponse.class);
-			return result.devices.get(0).status.setpoint;
+	/**
+	 * Returns all devices that the Home Server ever contacted since its last reboot. This includes devices that are not registered at this Home Server.
+	 * <p>
+	 * <b>Note: </b>this method does not need to be called. It would be used to (manually) register new devices at the Home Server.
+	 * </p>
+	 * <p>
+	 * 
+	 * @return never {@code null}
+	 * @throws ClientException
+	 */
+	public HomeServerResponse getAllDevices() throws ClientException {
+		return doGet("/devices?showCache=true", HomeServerResponse.class);
 	}
 
 	/**
 	 * 
-	 * @param newTemp
-	 *            in 1/10 degree Celsius, cannot be {@code < 0}
+	 * @param deviceID
+	 * @return never {@code null}
+	 * @throws ClientException
+	 *             if the operation ended in a status {@code != 200} or if the execution threw an exception
+	 */
+	public HomeServerResponse getDeviceStatus(String deviceID) throws ClientException {
+		assert deviceID != null && !deviceID.isEmpty();
+		return doGet("/devices/status/" + deviceID, HomeServerResponse.class);
+	}
+
+	/**
+	 * Returns the current reference temperature for the given device.
+	 * 
 	 * @param deviceID
 	 *            cannot be {@code null} or empty
-	 * @throws ClientException if the operation ended in a status {@code != 200} or if the execution threw an exception
+	 * @return temperature in [1/10°C]
+	 * @throws ClientException
+	 *             if the operation ended in a status {@code != 200} or if the execution threw an exception
+	 */
+	public short getReferenceTemperature(String deviceID) throws ClientException {
+		assert deviceID != null && !deviceID.isEmpty();
+		HomeServerResponse result = doGet("/devices/setpoint/" + deviceID, HomeServerResponse.class);
+		return result.devices.get(0).status.setpoint;
+	}
+
+	/**
+	 * Sets the reference temperature (a.k.a <em>setpoint</em)> for the given device.
+	 * 
+	 * @param newTemp
+	 *            in [1/10°C], cannot be {@code < 0}
+	 * @param deviceID
+	 *            cannot be {@code null} or empty
+	 * @throws ClientException
+	 *             if the operation ended in a status {@code != 200} or if the execution threw an exception
 	 */
 	public void setReferenceTemperature(String deviceID, int newTemp) throws ClientException {
 		assert newTemp >= 0;

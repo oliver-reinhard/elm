@@ -1,193 +1,183 @@
 package elm.sim.model;
 
-import static org.junit.Assert.*;
+import static elm.sim.model.Flow.MEDIUM;
+import static elm.sim.model.Flow.NONE;
+import static elm.sim.model.SimStatus.ERROR;
+import static elm.sim.model.SimStatus.OFF;
+import static elm.sim.model.SimStatus.ON;
+import static elm.sim.model.SimStatus.OVERLOAD;
+import static elm.sim.model.SimStatus.SATURATION;
+import static elm.sim.model.Temperature.TEMP_1;
+import static elm.sim.model.Temperature.TEMP_2;
+import static elm.sim.model.Temperature.TEMP_3;
+import static elm.sim.model.Temperature.TEMP_4;
+import static elm.sim.model.Temperature.TEMP_MIN;
+import static org.junit.Assert.assertEquals;
 
 import org.junit.Before;
 import org.junit.Test;
 
-import elm.sim.model.Flow;
-import static elm.sim.model.Flow.*;
-import elm.sim.model.TapPoint;
-import elm.sim.model.SimStatus;
-import static elm.sim.model.SimStatus.*;
-import elm.sim.model.Temperature;
-import static elm.sim.model.Temperature.*;
 import elm.sim.model.impl.TapPointImpl;
 
 public class TapPointTest {
 
 	private static final Temperature INITIAL_REFERENCE_TEMP = TEMP_3;
 
-	private TapPoint o;
+	private TapPoint point;
 
 	@Before
 	public void setup() {
-		o = new TapPointImpl("Name", INITIAL_REFERENCE_TEMP);
+		point = new TapPointImpl("Name", INITIAL_REFERENCE_TEMP);
+		point.setSchedulerStatus(OFF);
+		assertStatus(OFF, TEMP_MIN, NONE);
 
 	}
-
+	
+	//
+	// -------- Changing the SCHEDULER status: --------
+	//
 	@Test
-	public void setSchedulerStatusNoActualFlow() {
-		o.setSchedulerStatus(OFF);
-		assertStatus(OFF, TEMP_MIN, NONE);
+	public void setSchedulerStatus_NoActualFlow() {
 		// Full life cycle:
-		o.setSchedulerStatus(ON); // turn on
+		point.setSchedulerStatus(ON); // turn on
 		assertStatus(ON, INITIAL_REFERENCE_TEMP, NONE);
 
-		o.setSchedulerStatus(SATURATION);
+		point.setSchedulerStatus(SATURATION);
 		assertStatus(SATURATION, INITIAL_REFERENCE_TEMP, NONE);
 
-		o.setSchedulerStatus(OVERLOAD);
+		point.setSchedulerStatus(OVERLOAD);
 		assertStatus(OVERLOAD, TEMP_MIN, NONE);
 
-		o.setSchedulerStatus(ERROR);
+		point.setSchedulerStatus(ERROR);
 		assertStatus(ERROR, TEMP_MIN, NONE);
 
-		o.setSchedulerStatus(OVERLOAD);
+		point.setSchedulerStatus(OVERLOAD);
 		assertStatus(OVERLOAD, TEMP_MIN, NONE);
 
-		o.setSchedulerStatus(SATURATION);
+		point.setSchedulerStatus(SATURATION);
 		assertStatus(SATURATION, INITIAL_REFERENCE_TEMP, NONE);
 
-		o.setSchedulerStatus(OFF); // turn OFF
+		point.setSchedulerStatus(OFF); // turn OFF
 		assertStatus(OFF, TEMP_MIN, NONE);
 	}
 
 	@Test
-	public void setSchedulerStatusDuringActualFlow() {
-		o.setSchedulerStatus(OFF);
-		assertStatus(OFF, TEMP_MIN, NONE);
-
-		o.setReferenceFlow(MEDIUM); // turn on
+	public void setSchedulerStatus_DuringActualFlow() {
+		point.setReferenceFlow(MEDIUM); // turn on
 		assertStatus(OFF, TEMP_MIN, MEDIUM); // stays cold
 
 		// Full life cycle:
-		o.setSchedulerStatus(ON);
+		point.setSchedulerStatus(ON);
 		assertStatus(ON, INITIAL_REFERENCE_TEMP, MEDIUM);  // now warm
 
-		o.setSchedulerStatus(SATURATION);
+		point.setSchedulerStatus(SATURATION);
 		assertStatus(ON, INITIAL_REFERENCE_TEMP, MEDIUM);
 
-		o.setSchedulerStatus(OVERLOAD);
+		point.setSchedulerStatus(OVERLOAD);
 		assertStatus(ON, INITIAL_REFERENCE_TEMP, MEDIUM);
 
-		o.setSchedulerStatus(ERROR);
+		point.setSchedulerStatus(ERROR);
 		assertStatus(ERROR, INITIAL_REFERENCE_TEMP, MEDIUM);
 
-		o.setSchedulerStatus(OVERLOAD);
+		point.setSchedulerStatus(OVERLOAD);
 		assertStatus(ON, INITIAL_REFERENCE_TEMP, MEDIUM);
 
-		o.setSchedulerStatus(SATURATION);
+		point.setSchedulerStatus(SATURATION);
 		assertStatus(ON, INITIAL_REFERENCE_TEMP, MEDIUM);
 
-		o.setSchedulerStatus(OFF);
+		point.setSchedulerStatus(OFF);
 		assertStatus(OFF, INITIAL_REFERENCE_TEMP, MEDIUM);
 
-		o.setReferenceFlow(NONE); // turn OFF
+		point.setReferenceFlow(NONE); // turn OFF
 		assertStatus(OFF, TEMP_MIN, NONE);
 	}
 
 	@Test
 	public void setSchedulerStatus_EndActualFlow_Off() {
-		o.setSchedulerStatus(OFF);
-		assertStatus(OFF, TEMP_MIN, NONE);
-
-		o.setReferenceFlow(MEDIUM); // turn on
+		point.setReferenceFlow(MEDIUM); // turn on
 		assertStatus(OFF, TEMP_MIN, MEDIUM); // stays cold
 
-		o.setReferenceFlow(NONE); // turn OFF
+		point.setReferenceFlow(NONE); // turn OFF
 		assertStatus(OFF, TEMP_MIN, NONE);
 	}
 
 	@Test
 	public void setSchedulerStatus_EndActualFlow_On() {
-		o.setSchedulerStatus(OFF);
-		assertStatus(OFF, TEMP_MIN, NONE);
-
-		o.setSchedulerStatus(ON);
-		o.setReferenceFlow(MEDIUM); // turn on
+		point.setSchedulerStatus(ON);
+		point.setReferenceFlow(MEDIUM); // turn on
 		assertStatus(ON, INITIAL_REFERENCE_TEMP, MEDIUM);
 
-		o.setReferenceFlow(NONE); // turn OFF
+		point.setReferenceFlow(NONE); // turn OFF
 		assertStatus(ON, INITIAL_REFERENCE_TEMP, NONE);
 	}
 
 	@Test
 	public void setSchedulerStatus_EndActualFlow_Saturation() {
-		o.setSchedulerStatus(OFF);
-		assertStatus(OFF, TEMP_MIN, NONE);
-
-		o.setSchedulerStatus(SATURATION);
-		o.setReferenceFlow(MEDIUM); // turn on
+		point.setSchedulerStatus(SATURATION);
+		point.setReferenceFlow(MEDIUM); // turn on
 		assertStatus(ON, INITIAL_REFERENCE_TEMP, MEDIUM);
 
-		o.setReferenceTemperature(TEMP_4);
+		point.setReferenceTemperature(TEMP_4);
 		assertStatus(ON, TEMP_4, MEDIUM);
 
-		o.setReferenceTemperature(TEMP_3);
+		point.setReferenceTemperature(TEMP_3);
 		assertStatus(ON, TEMP_3, MEDIUM);
 
-		o.setReferenceFlow(NONE); // turn OFF
+		point.setReferenceFlow(NONE); // turn OFF
 		assertStatus(SATURATION, INITIAL_REFERENCE_TEMP, NONE);
 	}
 
 	@Test
 	public void setSchedulerStatus_EndActualFlow_Overload() {
-		o.setSchedulerStatus(OFF);
-		assertStatus(OFF, TEMP_MIN, NONE);
-
-		o.setSchedulerStatus(SATURATION);
-		o.setReferenceFlow(MEDIUM); // turn on
+		point.setSchedulerStatus(SATURATION);
+		point.setReferenceFlow(MEDIUM); // turn on
 		assertStatus(ON, INITIAL_REFERENCE_TEMP, MEDIUM);
 
-		o.setSchedulerStatus(OVERLOAD);
+		point.setSchedulerStatus(OVERLOAD);
 		assertStatus(ON, INITIAL_REFERENCE_TEMP, MEDIUM);
 
-		o.setReferenceTemperature(TEMP_4);
+		point.setReferenceTemperature(TEMP_4);
 		assertStatus(ON, TEMP_4, MEDIUM);
 
-		o.setReferenceTemperature(TEMP_3);
+		point.setReferenceTemperature(TEMP_3);
 		assertStatus(ON, TEMP_3, MEDIUM);
 
-		o.setReferenceFlow(NONE); // turn OFF
+		point.setReferenceFlow(NONE); // turn OFF
 		assertStatus(OVERLOAD, TEMP_MIN, NONE);
 	}
 
 	@Test
 	public void setSchedulerStatus_EndActualFlow_Error() {
-		o.setSchedulerStatus(OFF);
-		assertStatus(OFF, TEMP_MIN, NONE);
-
-		o.setSchedulerStatus(SATURATION);
-		o.setReferenceFlow(MEDIUM); // turn ON
-		o.setReferenceTemperature(TEMP_3);
+		point.setSchedulerStatus(SATURATION);
+		point.setReferenceFlow(MEDIUM); // turn ON
+		point.setReferenceTemperature(TEMP_3);
 		assertStatus(ON, TEMP_3, MEDIUM);
 
-		o.setSchedulerStatus(ERROR);
+		point.setSchedulerStatus(ERROR);
 		assertStatus(ERROR, TEMP_3, MEDIUM);
 
-		o.setReferenceTemperature(TEMP_4);
+		point.setReferenceTemperature(TEMP_4);
 		assertStatus(ERROR, TEMP_3, MEDIUM);
 
-		o.setReferenceTemperature(TEMP_3);
+		point.setReferenceTemperature(TEMP_3);
 		assertStatus(ERROR, TEMP_3, MEDIUM);
 
-		o.setReferenceTemperature(TEMP_2);
+		point.setReferenceTemperature(TEMP_2);
 		assertStatus(ERROR, TEMP_2, MEDIUM);
 
-		o.setReferenceTemperature(TEMP_3);
+		point.setReferenceTemperature(TEMP_3);
 		assertStatus(ERROR, TEMP_2, MEDIUM);
 
-		o.setReferenceTemperature(TEMP_1);
+		point.setReferenceTemperature(TEMP_1);
 		assertStatus(ERROR, TEMP_1, MEDIUM);
 
-		o.setReferenceFlow(NONE); // turn OFF
+		point.setReferenceFlow(NONE); // turn OFF
 		assertStatus(ERROR, TEMP_MIN, NONE);
 	}
 
 	private void assertStatus(SimStatus expectedStatus, Temperature expectedActualTemp, Flow expectedActualFlow) {
-		assertEquals(expectedStatus, o.getStatus());
-		assertEquals(expectedActualTemp, o.getActualTemperature());
-		assertEquals(expectedActualFlow, o.getActualFlow());
+		assertEquals(expectedStatus, point.getStatus());
+		assertEquals(expectedActualTemp, point.getActualTemperature());
+		assertEquals(expectedActualFlow, point.getActualFlow());
 	}
 }

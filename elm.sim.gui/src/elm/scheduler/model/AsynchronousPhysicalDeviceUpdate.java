@@ -2,25 +2,47 @@ package elm.scheduler.model;
 
 import java.util.logging.Logger;
 
-import elm.ui.api.ElmDeviceUserFeedback;
+import elm.ui.api.ElmStatus;
+import elm.ui.api.ElmUserFeedback;
 import elm.util.ClientException;
 
 public class AsynchronousPhysicalDeviceUpdate {
 
-	private final DeviceManager device;
-	private ElmDeviceUserFeedback feedback;
+	private DeviceManager device;
+	private ElmUserFeedback feedback;
 	/** The new scald-protection temperature, in [1/10°C]. */
 	private Short scaldProtectionTemperature;
 	/** The temperature before scald protection became effective, in [1/10°C]. */
-	private Short previousDemandTemperature;;
+	private Short previousDemandTemperature;
 
 	/**
 	 * @param device
-	 *            device that should have its power limit changed
+	 *            device that should have its parameters changed, cannot be {@code null}
 	 */
 	public AsynchronousPhysicalDeviceUpdate(DeviceManager device) {
 		assert device != null;
 		this.device = device;
+	}
+
+	/**
+	 * @param device
+	 *            device that should have its parameters changed, cannot be {@code null}
+	 * @param deviceStatus
+	 *            new device status, cannot be {@code null}
+	 */
+	public AsynchronousPhysicalDeviceUpdate(DeviceManager device, ElmStatus deviceStatus) {
+		this(device);
+		feedback = new ElmUserFeedback(device.getId(), deviceStatus);
+	}
+
+	/**
+	 * Updates the user feedback for all the devices managed by the {@link HomeServer}.
+	 * 
+	 * @param schedulerStatus
+	 *            cannot be {@code null}
+	 */
+	public AsynchronousPhysicalDeviceUpdate(ElmStatus schedulerStatus) {
+		feedback = new ElmUserFeedback(schedulerStatus);
 	}
 
 	public DeviceManager getDevice() {
@@ -31,8 +53,12 @@ public class AsynchronousPhysicalDeviceUpdate {
 		return scaldProtectionTemperature != null || previousDemandTemperature != null;
 	}
 
-	public void setFeedback(ElmDeviceUserFeedback feedback) {
+	public void setFeedback(ElmUserFeedback feedback) {
 		this.feedback = feedback;
+	}
+
+	public ElmUserFeedback getFeedback() {
+		return feedback;
 	}
 
 	/**

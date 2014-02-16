@@ -1,14 +1,15 @@
-package elm.scheduler.model;
+package elm.scheduler.model.impl;
 
-import static elm.scheduler.model.ModelTestUtil.createDevicesWithStatus;
-import static elm.scheduler.model.ModelTestUtil.createHomeServer;
-import static elm.scheduler.model.ModelTestUtil.getDeviceMap;
-import static elm.scheduler.model.ModelTestUtil.sleep;
-import static elm.scheduler.model.ModelTestUtil.toPowerUnits;
+import static elm.scheduler.model.impl.ModelTestUtil.createDevicesWithStatus;
+import static elm.scheduler.model.impl.ModelTestUtil.createHomeServer;
+import static elm.scheduler.model.impl.ModelTestUtil.getDeviceMap;
+import static elm.scheduler.model.impl.ModelTestUtil.sleep;
+import static elm.scheduler.model.impl.ModelTestUtil.toPowerUnits;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -22,6 +23,10 @@ import org.junit.Before;
 import org.junit.Test;
 
 import elm.hs.api.model.Device;
+import elm.scheduler.model.DeviceManager;
+import elm.scheduler.model.HomeServerChangeListener;
+import elm.scheduler.model.PhysicalDeviceUpdateClient;
+import elm.scheduler.model.UnsupportedModelException;
 import elm.scheduler.model.impl.DeviceManagerImpl;
 import elm.scheduler.model.impl.HomeServerImpl;
 import elm.ui.api.ElmStatus;
@@ -119,7 +124,8 @@ public class HomeServerTest {
 			verifyNoMoreInteractions(hsL1);
 
 		} catch (UnsupportedModelException e) {
-			assertTrue(false);
+			fail(e.toString());
+			e.printStackTrace();
 		}
 	}
 
@@ -168,8 +174,8 @@ public class HomeServerTest {
 			verify(client).clearScaldProtection(di1_2.getId(), referenceTemperature);
 			
 		} catch (ClientException | UnsupportedModelException e) {
+			fail(e.toString());
 			e.printStackTrace();
-			assertTrue(false);
 		}
 	}
 }

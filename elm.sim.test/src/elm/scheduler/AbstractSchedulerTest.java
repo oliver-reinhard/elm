@@ -1,7 +1,7 @@
 package elm.scheduler;
 
-import static elm.scheduler.model.ModelTestUtil.createHomeServer;
-import static elm.scheduler.model.ModelTestUtil.sleep;
+import static elm.scheduler.model.impl.ModelTestUtil.createHomeServer;
+import static elm.scheduler.model.impl.ModelTestUtil.sleep;
 import static elm.ui.api.ElmStatus.ERROR;
 import static elm.ui.api.ElmStatus.OFF;
 import static elm.ui.api.ElmStatus.ON;

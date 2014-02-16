@@ -1,14 +1,18 @@
-package elm.hs.api.client;
+package elm.apps;
 
 import java.net.URISyntaxException;
+import java.util.logging.Level;
 
 import org.apache.commons.cli.Options;
 
+import elm.hs.api.client.AbstractCommandLineClient;
+import elm.hs.api.client.HomeServerInternalApiClient;
+import elm.hs.api.client.HomeServerPublicApiClient;
 import elm.hs.api.model.Device;
 import elm.hs.api.model.HomeServerResponse;
 import elm.util.ClientUtil;
 
-public class DemoClient extends AbstractCommandLineClient {
+public class HomeServerTestClient extends AbstractCommandLineClient {
 
 	@Override
 	protected void addCommandLineOptions(Options options) {
@@ -18,12 +22,15 @@ public class DemoClient extends AbstractCommandLineClient {
 	}
 
 	protected void run() throws URISyntaxException {
-		HomeServerPublicApiClient publicClient = new HomeServerPublicApiClient(baseUri, user, password);
+		HomeServerPublicApiClient publicClient = new HomeServerPublicApiClient(publicBaseUri, user, password);
 		ClientUtil.initSslContextFactory(publicClient.getClient());
+		publicClient.setLogLevel(verbose ? Level.INFO : Level.SEVERE);
 
 		HomeServerInternalApiClient internalClient = null;
 		if (useInternalClient) {
-			internalClient = new HomeServerInternalApiClient(baseUri, user, password, publicClient);
+			internalClient = new HomeServerInternalApiClient(internalBaseUri, user, password, publicClient);
+			//ClientUtil.initSslContextFactory(internalClient.getClient());
+			internalClient.setLogLevel(verbose ? Level.INFO : Level.SEVERE);
 		}
 
 		try {
@@ -54,7 +61,7 @@ public class DemoClient extends AbstractCommandLineClient {
 				}
 
 				// Change demand temperature:
-				int referenceTemperature = 190;
+				int referenceTemperature = 270;
 				publicClient.setReferenceTemperature(deviceID, referenceTemperature);
 				System.out.println("\n---- Set Reference Temperature (setpoint) := " + referenceTemperature + " ----");
 
@@ -63,9 +70,16 @@ public class DemoClient extends AbstractCommandLineClient {
 
 				if (useInternalClient) {
 					internalClient.start();
-					int scaldProtectionTemperature = 310;
+					int scaldProtectionTemperature = 190;
 					System.out.println("\n---- Set Scald-Protection Temperature = " + scaldProtectionTemperature + " ----");
-					internalClient.setScaldProtectionTemperature(deviceID, scaldProtectionTemperature);
+					int actualScaldProtectionTemperature = internalClient.setScaldProtectionTemperature(deviceID, scaldProtectionTemperature);
+					System.out.println("\n     => Actual Scald-Protection Temperature = " + actualScaldProtectionTemperature);
+
+					actualTemperature = publicClient.getReferenceTemperature(deviceID);
+					System.out.println("\n---- Get Reference Temperature (setpoint) = " + actualTemperature + " ----");
+					
+					System.out.println("\n---- Clear Scald-Protection = " + referenceTemperature + " ----");
+					internalClient.clearScaldProtection(deviceID, referenceTemperature);
 				}
 			}
 
@@ -91,7 +105,7 @@ public class DemoClient extends AbstractCommandLineClient {
 	}
 
 	public static void main(String[] args) throws Exception {
-		DemoClient client = new DemoClient();
+		HomeServerTestClient client = new HomeServerTestClient();
 		client.parseCommandLine(args);
 		client.run();
 	}

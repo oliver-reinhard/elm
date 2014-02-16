@@ -15,6 +15,9 @@ public class HomeServerInternalApiClient extends AbstractHomeServerClient {
 	/** The default port for internal Home Server access according to API v1.0 documentation. */
 	private static final int HOME_SERVER_INTERNAL_API_PORT = 8080;
 
+	/** The default URI according to API v1.0 documentation. */
+	public static final URI DEFAULT_HOME_SERVER_INTERNAL_URI = URI.create(DEFAULT_HOME_SERVER_URI.toString() + ":" + HOME_SERVER_INTERNAL_API_PORT);
+
 	protected final HomeServerPublicApiClient publicClient;
 
 	public HomeServerInternalApiClient(String pass, HomeServerPublicApiClient publicClient) throws URISyntaxException {
@@ -22,12 +25,13 @@ public class HomeServerInternalApiClient extends AbstractHomeServerClient {
 	}
 
 	public HomeServerInternalApiClient(String user, String pass, HomeServerPublicApiClient publicClient) throws URISyntaxException {
-		this(publicClient.getBaseUri(), user, pass, publicClient);
+		this(new URI(publicClient.getBaseUri().getScheme(), null, publicClient.getBaseUri().getHost(), HOME_SERVER_INTERNAL_API_PORT, null, null, null), user,
+				pass, publicClient);
 	}
 
 	/**
 	 * @param baseUri
-	 *            base URI <em>without</em> the port number, cannot be {@code null}
+	 *            the server URI including an optional port argument, but without any resource path elements, cannot be {@code null}
 	 * @param user
 	 *            cannot be {@code null}
 	 * @param pass
@@ -36,20 +40,21 @@ public class HomeServerInternalApiClient extends AbstractHomeServerClient {
 	 *            cannot be {@code null} and is assumed to be started when the first invocation of {@link HomeServerInternalApiClient} method is made.
 	 * @throws URISyntaxException
 	 */
-	public HomeServerInternalApiClient(URI baseUri, String user, String pass, HomeServerPublicApiClient publicClient) throws URISyntaxException {
-		super(new URI(baseUri.getScheme(), null, baseUri.getHost(),  HOME_SERVER_INTERNAL_API_PORT, null, null, null), user, pass);
+	public HomeServerInternalApiClient(URI uri, String user, String pass, HomeServerPublicApiClient publicClient) throws URISyntaxException {
+		super(uri, user, pass);
 		assert publicClient != null;
 		this.publicClient = publicClient;
 	}
 
 	/**
 	 * 
-	 * @param newTemp
-	 *            in 1/10 degree Celsius, cannot be {@code < 0}
 	 * @param deviceID
 	 *            cannot be {@code null} or empty
+	 * @param newTemp
+	 *            in 1/10 degree Celsius, cannot be {@code < 0}
 	 * @return the new scald temperature in in 1/10 degree Celsius, or {@code null}; never {@code null} (the value is a {@link Short} for mocking purposes)
-	 * @throws ClientException if the operation ended in a status {@code != 200} or if the execution threw an exception
+	 * @throws ClientException
+	 *             if the operation ended in a status {@code != 200} or if the execution threw an exception
 	 */
 	public Short setScaldProtectionTemperature(String deviceID, int newTemp) throws ClientException {
 		assert newTemp >= 0;
@@ -67,8 +72,8 @@ public class HomeServerInternalApiClient extends AbstractHomeServerClient {
 				throw new ClientException(ClientException.Error.APPLICATION_DATA_ERROR);
 			}
 			final String confirmedTemp = result.response.data;
-			short value = Short.parseShort(confirmedTemp.substring(2));
-			System.out.println("New scald temperature = " + value);
+			short value = Short.parseShort(confirmedTemp);
+			log.log(Level.INFO, "New scald temperature = " + value);
 			return value;
 		}
 		throw new ClientException(ClientException.Error.APPLICATION_DATA_ERROR);
@@ -77,8 +82,11 @@ public class HomeServerInternalApiClient extends AbstractHomeServerClient {
 	/**
 	 * 
 	 * @param deviceID
+	 *            cannot be {@code null} or empty
 	 * @param previousTemp
-	 * @throws ClientException if the operation ended in a status {@code != 200} or if the execution threw an exception
+	 *            in 1/10 degree Celsius, cannot be {@code < 0}
+	 * @throws ClientException
+	 *             if the operation ended in a status {@code != 200} or if the execution threw an exception
 	 */
 	public void clearScaldProtection(String deviceID, int previousTemp) throws ClientException {
 		assert previousTemp >= 0;

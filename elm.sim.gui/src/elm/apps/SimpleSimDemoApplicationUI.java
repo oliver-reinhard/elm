@@ -1,4 +1,4 @@
-package elm.sim.ui;
+package elm.apps;
 
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -15,9 +15,13 @@ import elm.sim.model.SimStatus;
 import elm.sim.model.Temperature;
 import elm.sim.model.impl.TapPointImpl;
 import elm.sim.model.impl.SimpleSchedulerImpl;
+import elm.sim.ui.AbstractTapPointUI;
+import elm.sim.ui.RealTapPointUI;
+import elm.sim.ui.SimTapPointUI;
+import elm.sim.ui.SimpleSchedulerUI;
 
 @SuppressWarnings("serial")
-public class SimpleSimulationUI extends JFrame {
+public class SimpleSimDemoApplicationUI extends JFrame {
 	
 	private AbstractTapPointUI tapPoint_1;
 	private AbstractTapPointUI tapPoint_2;
@@ -25,7 +29,7 @@ public class SimpleSimulationUI extends JFrame {
 	private AbstractTapPointUI tapPoint_4;
 	private SimpleSchedulerUI scheduler;
 
-	public SimpleSimulationUI() {
+	public SimpleSimDemoApplicationUI() {
 		setTitle("Dusche");
 		setSize(800, 600);
 		setLocationRelativeTo(null);
@@ -107,7 +111,7 @@ public class SimpleSimulationUI extends JFrame {
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
 			public void run() {
-				SimpleSimulationUI ex = new SimpleSimulationUI();
+				SimpleSimDemoApplicationUI ex = new SimpleSimDemoApplicationUI();
 				ex.setVisible(true);
 			}
 		});

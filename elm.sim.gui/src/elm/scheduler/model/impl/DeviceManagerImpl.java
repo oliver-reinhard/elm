@@ -19,7 +19,7 @@ import elm.scheduler.model.AsynchronousPhysicalDeviceUpdate;
 import elm.scheduler.model.DeviceManager;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.UnsupportedModelException;
-import elm.ui.api.ElmDeviceUserFeedback;
+import elm.ui.api.ElmUserFeedback;
 import elm.ui.api.ElmStatus;
 
 /**
@@ -116,6 +116,17 @@ public class DeviceManagerImpl implements DeviceManager {
 	}
 
 	@Override
+	public DeviceStatus getStatus() {
+		return status;
+	}
+
+	/** Also used for testing. */
+	void setStatus(DeviceStatus status) {
+		this.status = status;
+		System.out.println("Device " + id + ": " + status); // TODO remove
+	}
+
+	@Override
 	public synchronized UpdateResult update(Device device) {
 		assert device != null;
 		assert device.info != null || device.status != null;
@@ -125,8 +136,8 @@ public class DeviceManagerImpl implements DeviceManager {
 		if (device.status == null) {
 			// device.info != null as per assertion, above
 			final boolean deviceHeaterOn = device.info.flags == 0;
-			if ((deviceHeaterOn || status.isConsuming()) || status == INITIALIZING) {
-				// The heater is turned ON or it is OFF because of denied or limited power
+			if (deviceHeaterOn || status.isConsuming() || status == INITIALIZING) {
+				// The heater is turned ON, or it is OFF because of denied or limited power, or this is the first invocation of update()
 				return UpdateResult.DEVICE_STATUS_REQUIRED;
 			}
 		}
@@ -151,7 +162,7 @@ public class DeviceManagerImpl implements DeviceManager {
 				} else {
 					waterConsumptionChanged(newDemandPowerWatt);
 				}
-				result = result.and(newDemandPowerWatt > 0 ? UpdateResult.URGENT_UPDATES : UpdateResult.MINOR_UPDATES);
+				result = result.and(UpdateResult.URGENT_UPDATES);
 			}
 
 			actualDemandTemperature = device.status.setpoint;
@@ -162,15 +173,6 @@ public class DeviceManagerImpl implements DeviceManager {
 			}
 		}
 		return result;
-	}
-
-	@Override
-	public DeviceStatus getStatus() {
-		return status;
-	}
-
-	protected void setStatus(DeviceStatus status) {
-		this.status = status;
 	}
 
 	/**
@@ -203,15 +205,25 @@ public class DeviceManagerImpl implements DeviceManager {
 	}
 
 	@Override
+	public void updateUserFeedback(ElmStatus schedulerStatus) {
+		// propagate scheduler status as device status:
+		getHomeServer().putDeviceUpdate(new AsynchronousPhysicalDeviceUpdate(this, schedulerStatus));
+	}
+
+	@Override
 	public synchronized void updateMaximumPowerConsumption(int approvedPowerWatt, ElmStatus elmStatus, int expectedWaitingTimeMillis) {
+		System.out.println("update " + id + ": demand " + demandPowerWatt / 1000 + " kW, approved " + (approvedPowerWatt == UNLIMITED_POWER ? deviceModel.getPowerMaxWatt() : approvedPowerWatt) / 1000 + " kW, elm " + elmStatus);
 		if (status == NOT_CONNECTED) {
 			return;
 		}
 		assert approvedPowerWatt >= 0 && approvedPowerWatt <= deviceModel.getPowerMaxWatt() || approvedPowerWatt == UNLIMITED_POWER;
 		final int newApprovedPowerWatt = approvedPowerWatt == deviceModel.getPowerMaxWatt() ? UNLIMITED_POWER : approvedPowerWatt;
+		
 		if (internalApprovedPowerWatt != newApprovedPowerWatt || status == CONSUMPTION_STARTED) {
+			
 			AsynchronousPhysicalDeviceUpdate deviceUpdate = new AsynchronousPhysicalDeviceUpdate(this);
 			setApprovedPowerWatt(newApprovedPowerWatt, deviceUpdate);
+			
 			if (status.isConsuming()) {
 				if (newApprovedPowerWatt == 0) {
 					setStatus(CONSUMPTION_DENIED);
@@ -221,6 +233,7 @@ public class DeviceManagerImpl implements DeviceManager {
 					setStatus(CONSUMPTION_LIMITED);
 				}
 			}
+			
 			putElmStatus(deviceUpdate, status, elmStatus, expectedWaitingTimeMillis);
 			if (!deviceUpdate.isVoid()) {
 				getHomeServer().putDeviceUpdate(deviceUpdate);
@@ -248,34 +261,8 @@ public class DeviceManagerImpl implements DeviceManager {
 		}
 	}
 
-	/**
-	 * @param approvedPowerWatt
-	 * @return the temperature in [1/10°C] that requires the given amount of power
-	 */
-	short toTemperatureLimit(final int approvedPowerWatt) {
-		if (getDemandPowerWatt() > 0) {
-			// dPowerDemand [W] = flow [kg/sec] * dTDemand [°K] * heatCapacity [J/kg/K].
-			// Assume flow and heatCapacity are constant =>
-			// dTnew = dPowerApproved / (demandPower / dTDemand)
-			int flowTimesHeatCapacity = getDemandPowerWatt() / (getDemandTemperature() - getIntakeWaterTemperature());
-			short temperature = (short) (approvedPowerWatt / flowTimesHeatCapacity + getIntakeWaterTemperature());
-			if (temperature < deviceModel.getScaldProtectionTemperatureMin()) {
-				return deviceModel.getScaldProtectionTemperatureMin();
-			}
-			if (temperature > deviceModel.getScaldProtectionTemperatureMax()) {
-				return deviceModel.getScaldProtectionTemperatureMax();
-			}
-			return temperature;
-
-		} else {
-			// Interpolate from maximum device heating power and maximum temperature difference:
-			return (short) (deviceModel.getScaldProtectionTemperatureMin() + (deviceModel.getScaldProtectionTemperatureMax() - LOWEST_INTAKE_WATER_TEMPERATURE)
-					* approvedPowerWatt / deviceModel.getPowerMaxWatt());
-		}
-	}
-
 	/** Used for testing. */
-	public void putElmStatus(AsynchronousPhysicalDeviceUpdate deviceUpdate, DeviceStatus currentStatus, ElmStatus schedulerStatus, int expectedWaitingTimeMillis) {
+	void putElmStatus(AsynchronousPhysicalDeviceUpdate deviceUpdate, DeviceStatus currentStatus, ElmStatus schedulerStatus, int expectedWaitingTimeMillis) {
 		ElmStatus deviceFeedbackStatus = null;
 		switch (currentStatus) {
 		case READY:
@@ -301,13 +288,43 @@ public class DeviceManagerImpl implements DeviceManager {
 		}
 		final long time = System.currentTimeMillis();
 		if (deviceFeedbackStatus != lastElmStatus
+				// do not propagate status notifications too often:
 				|| (expectedWaitingTimeMillis > 0 && (time - lastElmStatusNotificationTime) >= ELM_STATUS_NOTIFICATION_MIN_DELAY_MILLIS)) {
-			ElmDeviceUserFeedback feedback = new ElmDeviceUserFeedback(id, deviceFeedbackStatus);
+			ElmUserFeedback feedback = new ElmUserFeedback(id, deviceFeedbackStatus);
 			feedback.schedulerStatus = schedulerStatus;
 			feedback.expectedWaitingTimeMillis = expectedWaitingTimeMillis;
+			
 			deviceUpdate.setFeedback(feedback);
 			lastElmStatus = deviceFeedbackStatus;
 			lastElmStatusNotificationTime = time;
+
+			System.out.println("update " + id + ": device  " + deviceFeedbackStatus);
+		}
+	}
+
+	/**
+	 * @param approvedPowerWatt
+	 * @return the temperature in [1/10°C] that requires the given amount of power
+	 */
+	short toTemperatureLimit(final int approvedPowerWatt) {
+		if (getDemandPowerWatt() > 0) {
+			// dPowerDemand [W] = flow [kg/sec] * dTDemand [°K] * heatCapacity [J/kg/K].
+			// Assume flow and heatCapacity are constant =>
+			// dTnew = dPowerApproved / (demandPower / dTDemand)
+			int flowTimesHeatCapacity = getDemandPowerWatt() / (getDemandTemperature() - getIntakeWaterTemperature());
+			short temperature = (short) (approvedPowerWatt / flowTimesHeatCapacity + getIntakeWaterTemperature());
+			if (temperature < deviceModel.getScaldProtectionTemperatureMin()) {
+				return deviceModel.getScaldProtectionTemperatureMin();
+			}
+			if (temperature > deviceModel.getScaldProtectionTemperatureMax()) {
+				return deviceModel.getScaldProtectionTemperatureMax();
+			}
+			return temperature;
+
+		} else {
+			// Interpolate from maximum device heating power and maximum temperature difference:
+			return (short) (deviceModel.getScaldProtectionTemperatureMin() + (deviceModel.getScaldProtectionTemperatureMax() - LOWEST_INTAKE_WATER_TEMPERATURE)
+					* approvedPowerWatt / deviceModel.getPowerMaxWatt());
 		}
 	}
 
@@ -345,21 +362,22 @@ public class DeviceManagerImpl implements DeviceManager {
 	}
 
 	/** Used for testing. */
-	public short getActualDemandTemperature() {
+	short getActualDemandTemperature() {
 		return actualDemandTemperature;
 	}
 
 	/** Used for testing. */
-	public short getUserDemandTemperature() {
+	short getUserDemandTemperature() {
 		return userDemandTemperature;
 	}
 
-	int toPowerWatt(short powerUnits) {
+	private int toPowerWatt(short powerUnits) {
 		assert powerMaxUnits != 0;
 		return deviceModel.getPowerMaxWatt() * powerUnits / powerMaxUnits;
 	}
 
-	short toPowerUnits(int powerWatt) {
+	@SuppressWarnings("unused")
+	private short toPowerUnits(int powerWatt) {
 		assert powerMaxUnits != 0;
 		return (short) (powerWatt * powerMaxUnits / deviceModel.getPowerMaxWatt());
 	}
