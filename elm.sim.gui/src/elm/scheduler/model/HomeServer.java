@@ -72,10 +72,10 @@ public interface HomeServer {
 	 * @param updates
 	 *            cannot be {@code null}
 	 */
-	void putDeviceUpdate(AsynchronousPhysicalDeviceUpdate update);
+	void putDeviceUpdate(AsynchRemoteDeviceUpdate update);
 
 	/**
-	 * Device updates can be {@link #putDeviceUpdate(AsynchronousPhysicalDeviceUpdate) put} one by one without the receiver even noticing. This method notifies all
+	 * Device updates can be {@link #putDeviceUpdate(AsynchRemoteDeviceUpdate) put} one by one without the receiver even noticing. This method notifies all
 	 * {@link HomeServerChangeListener}s of these changes, notably the {@link HomeServerManager}.
 	 * <p>
 	 * <em>Note: </em>This method must not be long-running or blocking; this could delay the scheduler.
@@ -91,7 +91,7 @@ public interface HomeServer {
 	 * @param log
 	 *            never {@code null}
 	 */
-	void executePhysicalDeviceUpdates(PhysicalDeviceUpdateClient client, Logger log);
+	void executeRemoteDeviceUpdates(RemoteDeviceUpdateClient client, Logger log);
 
 	/**
 	 * Adds a listener.

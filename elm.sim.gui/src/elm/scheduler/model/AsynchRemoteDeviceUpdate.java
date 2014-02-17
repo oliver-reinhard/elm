@@ -6,7 +6,7 @@ import elm.ui.api.ElmStatus;
 import elm.ui.api.ElmUserFeedback;
 import elm.util.ClientException;
 
-public class AsynchronousPhysicalDeviceUpdate {
+public class AsynchRemoteDeviceUpdate {
 
 	private DeviceManager device;
 	private ElmUserFeedback feedback;
@@ -19,7 +19,7 @@ public class AsynchronousPhysicalDeviceUpdate {
 	 * @param device
 	 *            device that should have its parameters changed, cannot be {@code null}
 	 */
-	public AsynchronousPhysicalDeviceUpdate(DeviceManager device) {
+	public AsynchRemoteDeviceUpdate(DeviceManager device) {
 		assert device != null;
 		this.device = device;
 	}
@@ -30,7 +30,7 @@ public class AsynchronousPhysicalDeviceUpdate {
 	 * @param deviceStatus
 	 *            new device status, cannot be {@code null}
 	 */
-	public AsynchronousPhysicalDeviceUpdate(DeviceManager device, ElmStatus deviceStatus) {
+	public AsynchRemoteDeviceUpdate(DeviceManager device, ElmStatus deviceStatus) {
 		this(device);
 		feedback = new ElmUserFeedback(device.getId(), deviceStatus);
 	}
@@ -41,7 +41,7 @@ public class AsynchronousPhysicalDeviceUpdate {
 	 * @param schedulerStatus
 	 *            cannot be {@code null}
 	 */
-	public AsynchronousPhysicalDeviceUpdate(ElmStatus schedulerStatus) {
+	public AsynchRemoteDeviceUpdate(ElmStatus schedulerStatus) {
 		feedback = new ElmUserFeedback(schedulerStatus);
 	}
 
@@ -98,7 +98,7 @@ public class AsynchronousPhysicalDeviceUpdate {
 	 * @param log
 	 *            cannot be {@code null}
 	 */
-	public void execute(PhysicalDeviceUpdateClient client, Logger log) throws ClientException {
+	public void execute(RemoteDeviceUpdateClient client, Logger log) throws ClientException {
 		if (scaldProtectionTemperature != null) {
 			short actualValue = (short) client.setScaldProtectionTemperature(getDevice().getId(), scaldProtectionTemperature);
 			log.info("Device " + getDevice().getId() + ": scald-protection temperature set to: " + (actualValue / 10) + "°C");

@@ -33,7 +33,7 @@ import elm.hs.api.model.Device;
 import elm.scheduler.model.DeviceManager;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.HomeServerChangeListener;
-import elm.scheduler.model.PhysicalDeviceUpdateClient;
+import elm.scheduler.model.RemoteDeviceUpdateClient;
 import elm.scheduler.model.UnsupportedModelException;
 import elm.scheduler.model.impl.HomeServerImpl;
 
@@ -137,8 +137,8 @@ public class SchedulerTest {
 			checkDeviceUpdate(hs1, d1_2, DeviceManager.UNLIMITED_POWER);
 			//
 			// home server 1: process device updates => "execute" (and clear) the device updates
-			PhysicalDeviceUpdateClient client = mock(PhysicalDeviceUpdateClient.class);
-			hs1.executePhysicalDeviceUpdates(client, log);
+			RemoteDeviceUpdateClient client = mock(RemoteDeviceUpdateClient.class);
+			hs1.executeRemoteDeviceUpdates(client, log);
 
 			// ON --> SATURATION
 			List<Device> hs2_Devices = createDevicesWithStatus(2, NUM_DEVICES, 0);
@@ -160,7 +160,7 @@ public class SchedulerTest {
 			checkDeviceUpdate(hs2, d2_2, DeviceManager.UNLIMITED_POWER);
 			//
 			// home server 2: execute & clear device updates
-			hs2.executePhysicalDeviceUpdates(client, log);
+			hs2.executeRemoteDeviceUpdates(client, log);
 
 			// SATURATION --> OVERLOAD
 			List<Device> hs3_Devices = createDevicesWithStatus(2, NUM_DEVICES, 0);
@@ -186,14 +186,14 @@ public class SchedulerTest {
 			checkDeviceUpdate(hs1, d1_1, DeviceManager.NO_POWER);
 			//
 			// home server 1: execute & clear device updates
-			hs1.executePhysicalDeviceUpdates(client, log);
+			hs1.executeRemoteDeviceUpdates(client, log);
 			//
 			// check device updates at home server 2:
 			assertEquals(1, ((HomeServerImpl)hs2).getPendingUpdates().size());
 			checkDeviceUpdate(hs2, d2_1, DeviceManager.NO_POWER);
 			//
 			// home server 2: execute & clear device updates
-			hs2.executePhysicalDeviceUpdates(client, log);
+			hs2.executeRemoteDeviceUpdates(client, log);
 			//
 			// check device updates at home server 3:
 			assertEquals(2, ((HomeServerImpl)hs3).getPendingUpdates().size());
@@ -201,7 +201,7 @@ public class SchedulerTest {
 			checkDeviceUpdate(hs3, d3_2, DeviceManager.NO_POWER); // No power!
 			//
 			// home server 3: execute & clear device updates
-			hs3.executePhysicalDeviceUpdates(client, log);
+			hs3.executeRemoteDeviceUpdates(client, log);
 			
 			// OVERLOAD --> SATURATION
 			d1_2.status.power = toPowerUnits(10_000); // Reduce tap 1-2 power => tap 3-2 can run as well
@@ -223,14 +223,14 @@ public class SchedulerTest {
 			checkDeviceUpdate(hs1, d1_1, DeviceManager.UNLIMITED_POWER);
 			//
 			// home server 1: execute & clear device updates
-			hs1.executePhysicalDeviceUpdates(client, log);
+			hs1.executeRemoteDeviceUpdates(client, log);
 			assertNull(((HomeServerImpl)hs1).getPendingUpdates());
 			//
 			// check device updates at home server 2:
 			checkDeviceUpdate(hs2, d2_1, DeviceManager.UNLIMITED_POWER);
 			//
 			// home server 2: execute & clear device updates
-			hs2.executePhysicalDeviceUpdates(client, log);
+			hs2.executeRemoteDeviceUpdates(client, log);
 			assertNull(((HomeServerImpl)hs2).getPendingUpdates());
 			//
 			// check device updates at home server 3:
@@ -238,7 +238,7 @@ public class SchedulerTest {
 			checkDeviceUpdate(hs3, d3_2, DeviceManager.UNLIMITED_POWER); // Consuming now!
 			//
 			// home server 3: execute & clear device updates
-			hs3.executePhysicalDeviceUpdates(client, log);
+			hs3.executeRemoteDeviceUpdates(client, log);
 			assertNull(((HomeServerImpl)hs3).getPendingUpdates());
 			
 			// SATURATION --> ON

@@ -31,25 +31,36 @@ public interface DeviceManager {
 	public static final short UNDEFINED_TEMPERATURE = -1;
 
 	public enum DeviceStatus {
+
 		/** Initial status. */
-		INITIALIZING,
+		INITIALIZING(false, false),
 		/** Device has been registered at the home server but there is currently no connection to it. */
-		NOT_CONNECTED,
+		NOT_CONNECTED(false, false),
 		/** Device is ready for hot-water consumption without power limit. */
-		READY,
+		READY(false, false),
 		/** Device has recently started a hot-water consumption that has not been approved by the scheduler yet. */
-		CONSUMPTION_STARTED,
+		CONSUMPTION_STARTED(true, true),
 		/** Device is currently consuming hot water after approval by the scheduler; the power consumption will not be interrupted. */
-		CONSUMPTION_APPROVED,
+		CONSUMPTION_APPROVED(true, false),
 		/**
 		 * Device is currently consuming hot water and the scheduler has approved, however, with a power limit lower than requested by the user; the power
 		 * consumption will not be interrupted.
 		 */
-		CONSUMPTION_LIMITED,
+		CONSUMPTION_LIMITED(true, false),
 		/** Consumer has started a consumption but was denied the power consumption by the scheduler; the heater is off and cold water runs. */
-		CONSUMPTION_DENIED,
+		CONSUMPTION_DENIED(true, false),
+		/** Device has ended started a hot-water consumption that has not been approved by the scheduler yet. */
+		CONSUMPTION_ENDED(false, true),
 		/** Device is in a technical error condition. */
-		ERROR;
+		ERROR(false, false);
+
+		private final boolean consuming;
+		private final boolean transitioning;
+
+		private DeviceStatus(boolean consuming, boolean transitioning) {
+			this.consuming = consuming;
+			this.transitioning = transitioning;
+		}
 
 		public boolean in(DeviceStatus... other) {
 			for (DeviceStatus value : other) {
@@ -59,7 +70,11 @@ public interface DeviceManager {
 		}
 
 		public boolean isConsuming() {
-			return this.in(CONSUMPTION_STARTED, CONSUMPTION_APPROVED, CONSUMPTION_LIMITED, CONSUMPTION_DENIED);
+			return consuming;
+		}
+
+		public boolean isTransitioning() {
+			return transitioning;
 		}
 	}
 

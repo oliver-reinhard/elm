@@ -2,6 +2,7 @@ package elm.scheduler.model.impl;
 
 import static elm.scheduler.model.DeviceManager.DeviceStatus.CONSUMPTION_APPROVED;
 import static elm.scheduler.model.DeviceManager.DeviceStatus.CONSUMPTION_DENIED;
+import static elm.scheduler.model.DeviceManager.DeviceStatus.CONSUMPTION_ENDED;
 import static elm.scheduler.model.DeviceManager.DeviceStatus.CONSUMPTION_LIMITED;
 import static elm.scheduler.model.DeviceManager.DeviceStatus.CONSUMPTION_STARTED;
 import static elm.scheduler.model.DeviceManager.DeviceStatus.ERROR;
@@ -17,12 +18,12 @@ import java.util.logging.Logger;
 import elm.hs.api.model.Device;
 import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
 import elm.scheduler.Scheduler;
-import elm.scheduler.model.AsynchronousPhysicalDeviceUpdate;
+import elm.scheduler.model.AsynchRemoteDeviceUpdate;
 import elm.scheduler.model.DeviceManager;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.UnsupportedModelException;
-import elm.ui.api.ElmUserFeedback;
 import elm.ui.api.ElmStatus;
+import elm.ui.api.ElmUserFeedback;
 
 /**
  * This device-manager implementation is close to <em>stateless</em> in that, each time it runs, it performs a full analysis of all locally stored
@@ -125,9 +126,12 @@ public class DeviceManagerImpl implements DeviceManager {
 	}
 
 	/** Also used for testing. */
-	void setStatus(DeviceStatus status) {
-		this.status = status;
-		System.out.println("Device " + id + ": " + status); // TODO remove
+	void setStatus(DeviceStatus newStatus) {
+		DeviceStatus oldStatus = status;
+		if (oldStatus != newStatus) {
+			status = newStatus;
+			info("new status: " + newStatus);
+		}
 	}
 
 	@Override
@@ -159,6 +163,7 @@ public class DeviceManagerImpl implements DeviceManager {
 
 			final int newDemandPowerWatt = toPowerWatt(device.status.power);
 			if (newDemandPowerWatt != demandPowerWatt) {
+				info("demand power change: " + newDemandPowerWatt/1000 + " kW");
 				if (demandPowerWatt == 0) {
 					waterConsumptionStarted(newDemandPowerWatt);
 				} else if (newDemandPowerWatt == 0) {
@@ -173,6 +178,7 @@ public class DeviceManagerImpl implements DeviceManager {
 
 			if (intakeWaterTemperature == UNDEFINED_TEMPERATURE || Math.abs(intakeWaterTemperature - device.status.tIn) > INTAKE_WATER_TEMP_CHANGE_IGNORE_DELTA) {
 				intakeWaterTemperature = device.status.tIn;
+				info("intake water temperature change: " + intakeWaterTemperature/10 + "°C");
 				result = result.and(status.isConsuming() ? UpdateResult.URGENT_UPDATES : UpdateResult.MINOR_UPDATES);
 			}
 		}
@@ -189,7 +195,7 @@ public class DeviceManagerImpl implements DeviceManager {
 		assert demandPowerWatt >= 0 && demandPowerWatt <= deviceModel.getPowerMaxWatt();
 		this.demandPowerWatt = demandPowerWatt;
 		consumptionStartTime = System.currentTimeMillis();
-		setStatus(CONSUMPTION_STARTED); // needs approval by scheduler
+		setStatus(CONSUMPTION_STARTED); // requires approval by scheduler
 	}
 
 	/**
@@ -205,28 +211,31 @@ public class DeviceManagerImpl implements DeviceManager {
 	void waterConsumptionEnded() {
 		demandPowerWatt = 0;
 		consumptionStartTime = NO_CONSUMPTION;
-		setStatus(DeviceStatus.READY);
+		setStatus(DeviceStatus.CONSUMPTION_ENDED);  // requires approval by scheduler
 	}
 
 	@Override
 	public void updateUserFeedback(ElmStatus schedulerStatus) {
+		info("feedback status == scheduler status: " + schedulerStatus);
 		// propagate scheduler status as device status:
-		getHomeServer().putDeviceUpdate(new AsynchronousPhysicalDeviceUpdate(this, schedulerStatus));
+		getHomeServer().putDeviceUpdate(new AsynchRemoteDeviceUpdate(this, schedulerStatus));
 	}
 
 	@Override
 	public synchronized void updateMaximumPowerConsumption(int approvedPowerWatt, ElmStatus elmStatus, int expectedWaitingTimeMillis) {
-		System.out.println("update " + id + ": demand " + demandPowerWatt / 1000 + " kW, approved "
+		if (LOG.isLoggable(Level.INFO)) {
+			info("power consumption: demand " + demandPowerWatt / 1000 + " kW, approved "
 				+ (approvedPowerWatt == UNLIMITED_POWER ? deviceModel.getPowerMaxWatt() : approvedPowerWatt) / 1000 + " kW, elm " + elmStatus);
+		}
 		if (status == NOT_CONNECTED) {
 			return;
 		}
 		assert approvedPowerWatt >= 0 && approvedPowerWatt <= deviceModel.getPowerMaxWatt() || approvedPowerWatt == UNLIMITED_POWER;
 		final int newApprovedPowerWatt = approvedPowerWatt == deviceModel.getPowerMaxWatt() ? UNLIMITED_POWER : approvedPowerWatt;
 
-		if (internalApprovedPowerWatt != newApprovedPowerWatt || status == CONSUMPTION_STARTED) {
+		if (internalApprovedPowerWatt != newApprovedPowerWatt || status.isTransitioning()) {
 
-			AsynchronousPhysicalDeviceUpdate deviceUpdate = new AsynchronousPhysicalDeviceUpdate(this);
+			AsynchRemoteDeviceUpdate deviceUpdate = new AsynchRemoteDeviceUpdate(this);
 			setApprovedPowerWatt(newApprovedPowerWatt, deviceUpdate);
 
 			if (status.isConsuming()) {
@@ -237,6 +246,8 @@ public class DeviceManagerImpl implements DeviceManager {
 				} else {
 					setStatus(CONSUMPTION_LIMITED);
 				}
+			} else if (status == CONSUMPTION_ENDED) {
+				setStatus(READY);
 			}
 
 			putElmStatus(deviceUpdate, status, elmStatus, expectedWaitingTimeMillis);
@@ -246,7 +257,7 @@ public class DeviceManagerImpl implements DeviceManager {
 		}
 	}
 
-	void setApprovedPowerWatt(final int newApprovedPowerWatt, AsynchronousPhysicalDeviceUpdate deviceUpdate) {
+	void setApprovedPowerWatt(final int newApprovedPowerWatt, AsynchRemoteDeviceUpdate deviceUpdate) {
 		internalApprovedPowerWatt = newApprovedPowerWatt;
 		// scald protection
 		if (internalApprovedPowerWatt == UNLIMITED_POWER) {
@@ -267,7 +278,7 @@ public class DeviceManagerImpl implements DeviceManager {
 	}
 
 	/** Used for testing. */
-	void putElmStatus(AsynchronousPhysicalDeviceUpdate deviceUpdate, DeviceStatus currentStatus, ElmStatus schedulerStatus, int expectedWaitingTimeMillis) {
+	void putElmStatus(AsynchRemoteDeviceUpdate deviceUpdate, DeviceStatus currentStatus, ElmStatus schedulerStatus, int expectedWaitingTimeMillis) {
 		ElmStatus deviceFeedbackStatus = null;
 		switch (currentStatus) {
 		case READY:
@@ -303,7 +314,7 @@ public class DeviceManagerImpl implements DeviceManager {
 			lastElmStatus = deviceFeedbackStatus;
 			lastElmStatusNotificationTime = time;
 
-			System.out.println("update " + id + ": device status " + deviceFeedbackStatus);
+			info("feedback status " + deviceFeedbackStatus);
 		}
 	}
 

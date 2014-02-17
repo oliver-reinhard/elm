@@ -18,10 +18,10 @@ public interface HomeServerChangeListener {
 	void devicesManagersUpdated(HomeServer server, boolean urgent);
 
 	/**
-	 * Notification that {@link AsynchronousPhysicalDeviceUpdate}s that await processing have been added to the {@link HomeServer} .
+	 * Notification that {@link AsynchRemoteDeviceUpdate}s that await processing have been added to the {@link HomeServer} .
 	 * <p>
 	 * <em>Note: </em>This method must not be long-running or blocking; this could delay the scheduler. Especially it should not process the
-	 * {@link AsynchronousPhysicalDeviceUpdate}s itself.
+	 * {@link AsynchRemoteDeviceUpdate}s itself.
 	 * </p>
 	 * 
 	 * @param server

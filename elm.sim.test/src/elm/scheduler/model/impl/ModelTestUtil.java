@@ -15,7 +15,7 @@ import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
 import elm.hs.api.model.Error;
 import elm.hs.api.model.Info;
 import elm.hs.api.model.Status;
-import elm.scheduler.model.AsynchronousPhysicalDeviceUpdate;
+import elm.scheduler.model.AsynchRemoteDeviceUpdate;
 import elm.scheduler.model.DeviceManager;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.UnsupportedModelException;
@@ -165,10 +165,10 @@ public class ModelTestUtil {
 		return map;
 	}
 
-	public static AsynchronousPhysicalDeviceUpdate getDeviceUpdate(HomeServer server, Device device) {
+	public static AsynchRemoteDeviceUpdate getDeviceUpdate(HomeServer server, Device device) {
 		assert server != null;
 		assert device != null;
-		for (AsynchronousPhysicalDeviceUpdate upd : ((HomeServerImpl) server).getPendingUpdates()) {
+		for (AsynchRemoteDeviceUpdate upd : ((HomeServerImpl) server).getPendingUpdates()) {
 			if (upd.getDevice().getId().equals(device.id)) {
 				return upd;
 			}
@@ -180,7 +180,7 @@ public class ModelTestUtil {
 		final DeviceManager deviceManager = server.getDeviceManager(device.id);
 		assertEquals(expectedLimitWatt == DeviceManager.UNLIMITED_POWER ? deviceManager.getDeviceModel().getPowerMaxWatt() : expectedLimitWatt,
 				deviceManager.getApprovedPowerWatt());
-		final AsynchronousPhysicalDeviceUpdate deviceUpdate = getDeviceUpdate(server, device);
+		final AsynchRemoteDeviceUpdate deviceUpdate = getDeviceUpdate(server, device);
 		assertNotNull(deviceUpdate);
 	}
 }

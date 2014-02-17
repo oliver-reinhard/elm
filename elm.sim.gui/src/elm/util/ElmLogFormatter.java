@@ -17,7 +17,7 @@ public class ElmLogFormatter extends Formatter {
 	public static final String ELM_LOGGING_CONFIG_FILE_NAME = "elm.logging";
 
 	final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-	int classNameWidth = 32; // field with for class name; this grows if longer class names are encountered
+	int classNameWidth = 0; // field with for class name; this grows if longer class names are encountered
 
 	@Override
 	public String format(LogRecord record) {

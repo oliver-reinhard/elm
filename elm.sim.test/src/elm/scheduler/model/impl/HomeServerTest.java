@@ -25,7 +25,7 @@ import org.junit.Test;
 import elm.hs.api.model.Device;
 import elm.scheduler.model.DeviceManager;
 import elm.scheduler.model.HomeServerChangeListener;
-import elm.scheduler.model.PhysicalDeviceUpdateClient;
+import elm.scheduler.model.RemoteDeviceUpdateClient;
 import elm.scheduler.model.UnsupportedModelException;
 import elm.scheduler.model.impl.DeviceManagerImpl;
 import elm.scheduler.model.impl.HomeServerImpl;
@@ -142,8 +142,8 @@ public class HomeServerTest {
 			hs1.updateDeviceManagers(devices);
 			assertNull(hs1.getPendingUpdates());
 			// there should be no client invocations while there are no device updates:
-			PhysicalDeviceUpdateClient client = mock(PhysicalDeviceUpdateClient.class);
-			hs1.executePhysicalDeviceUpdates(client, log);
+			RemoteDeviceUpdateClient client = mock(RemoteDeviceUpdateClient.class);
+			hs1.executeRemoteDeviceUpdates(client, log);
 			verifyNoMoreInteractions(client);
 			
 			// Scheduler approves only LIMITED power:
@@ -155,7 +155,7 @@ public class HomeServerTest {
 			//
 			short scaldProtectionTemperature = ((DeviceManagerImpl) di1_2).getScaldProtectionTemperature();
 			when(client.setScaldProtectionTemperature(di1_2.getId(), scaldProtectionTemperature)).thenReturn(scaldProtectionTemperature);
-			hs1.executePhysicalDeviceUpdates(client, log);
+			hs1.executeRemoteDeviceUpdates(client, log);
 			assertNull(hs1.getPendingUpdates());
 			verify(client).setScaldProtectionTemperature(di1_2.getId(), scaldProtectionTemperature);
 
@@ -168,7 +168,7 @@ public class HomeServerTest {
 			di1_2.updateMaximumPowerConsumption(DeviceManager.UNLIMITED_POWER, ElmStatus.OVERLOAD, EXPECTED_WAITING_TIME);
 			assertEquals(1, hs1.getPendingUpdates().size());
 			//
-			hs1.executePhysicalDeviceUpdates(client, log);
+			hs1.executeRemoteDeviceUpdates(client, log);
 			assertNull(hs1.getPendingUpdates());
 			// ensure the original reference Temperature is restored:
 			verify(client).clearScaldProtection(di1_2.getId(), referenceTemperature);

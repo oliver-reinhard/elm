@@ -1,4 +1,5 @@
 handlers= java.util.logging.ConsoleHandler
+#handlers= java.util.logging.ConsoleHandler, java.util.logging.FileHandler
  
 .level= SEVERE
  
@@ -15,5 +16,6 @@ java.util.logging.FileHandler.limit = 50000
 java.util.logging.FileHandler.count = 1
 java.util.logging.FileHandler.formatter = java.util.logging.XMLFormatter
 
-elm.sim.level = INFO
+elm.sim.level = WARNING
+elm.scheduler.level = INFO
  

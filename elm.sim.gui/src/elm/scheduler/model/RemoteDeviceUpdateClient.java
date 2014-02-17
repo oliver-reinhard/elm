@@ -3,7 +3,7 @@ package elm.scheduler.model;
 import elm.ui.api.ElmUserFeedback;
 import elm.util.ClientException;
 
-public interface PhysicalDeviceUpdateClient {
+public interface RemoteDeviceUpdateClient {
 
 	/**
 	 * 

@@ -17,12 +17,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import elm.hs.api.model.Device;
-import elm.scheduler.model.AsynchronousPhysicalDeviceUpdate;
+import elm.scheduler.model.AsynchRemoteDeviceUpdate;
 import elm.scheduler.model.DeviceManager;
 import elm.scheduler.model.DeviceManager.UpdateResult;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.HomeServerChangeListener;
-import elm.scheduler.model.PhysicalDeviceUpdateClient;
+import elm.scheduler.model.RemoteDeviceUpdateClient;
 import elm.scheduler.model.UnsupportedModelException;
 
 public class HomeServerImpl implements HomeServer {
@@ -36,7 +36,7 @@ public class HomeServerImpl implements HomeServer {
 	private long pollTimeToleranceMillis = POLL_TIME_TOLERANCE_MILLIS_DEFAULT;
 
 	private final Map<String, DeviceManager> deviceManagers = new HashMap<String, DeviceManager>();
-	private List<AsynchronousPhysicalDeviceUpdate> pendingUpdates;
+	private List<AsynchRemoteDeviceUpdate> pendingUpdates;
 	private List<HomeServerChangeListener> listeners = new ArrayList<HomeServerChangeListener>();
 
 	public HomeServerImpl(URI uri, String password) {
@@ -136,10 +136,10 @@ public class HomeServerImpl implements HomeServer {
 	}
 
 	@Override
-	public synchronized void putDeviceUpdate(AsynchronousPhysicalDeviceUpdate update) {
+	public synchronized void putDeviceUpdate(AsynchRemoteDeviceUpdate update) {
 		assert update != null;
 		if (pendingUpdates == null) {
-			pendingUpdates = new ArrayList<AsynchronousPhysicalDeviceUpdate>();
+			pendingUpdates = new ArrayList<AsynchRemoteDeviceUpdate>();
 		}
 		pendingUpdates.add(update);
 	}
@@ -147,15 +147,15 @@ public class HomeServerImpl implements HomeServer {
 	/**
 	 * Used for testing.
 	 */
-	public synchronized List<AsynchronousPhysicalDeviceUpdate> getPendingUpdates() {
+	public synchronized List<AsynchRemoteDeviceUpdate> getPendingUpdates() {
 		return pendingUpdates == null ? null : Collections.unmodifiableList(pendingUpdates);
 	}
 
 	@Override
-	public void executePhysicalDeviceUpdates(PhysicalDeviceUpdateClient client, Logger log) {
+	public void executeRemoteDeviceUpdates(RemoteDeviceUpdateClient client, Logger log) {
 		assert client != null;
 		assert log != null;
-		List<AsynchronousPhysicalDeviceUpdate> updates;
+		List<AsynchRemoteDeviceUpdate> updates;
 		// we don't want to hold the lock during the update execution
 		synchronized (this) {
 			if (pendingUpdates == null) {
@@ -164,7 +164,7 @@ public class HomeServerImpl implements HomeServer {
 			updates = pendingUpdates;
 			pendingUpdates = null;
 		}
-		for (AsynchronousPhysicalDeviceUpdate update : updates) {
+		for (AsynchRemoteDeviceUpdate update : updates) {
 			try {
 				update.execute(client, log);
 			} catch (Exception e) {
@@ -208,7 +208,7 @@ public class HomeServerImpl implements HomeServer {
 		synchronized (this) {
 			if (pendingUpdates != null) {
 				doUpdate = true;
-				for (AsynchronousPhysicalDeviceUpdate update : pendingUpdates) {
+				for (AsynchRemoteDeviceUpdate update : pendingUpdates) {
 					urgent = urgent || update.isUrgent();
 				}
 			}

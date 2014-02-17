@@ -13,7 +13,7 @@ import elm.hs.api.model.Info;
 import elm.hs.api.model.Status;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.HomeServerChangeListener;
-import elm.scheduler.model.PhysicalDeviceUpdateClient;
+import elm.scheduler.model.RemoteDeviceUpdateClient;
 import elm.scheduler.model.UnsupportedModelException;
 import elm.ui.api.ElmUserFeedback;
 import elm.ui.api.ElmUserFeedbackClient;
@@ -46,7 +46,7 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 	private final ElmUserFeedbackClient userFeedbackClient;
 	private HomeServerPublicApiClient publicClient = null;
 	private HomeServerInternalApiClient internalClient = null;
-	private PhysicalDeviceUpdateClient deviceUpdateClient = null;
+	private RemoteDeviceUpdateClient deviceUpdateClient = null;
 
 	private ClientException lastClientException = null;
 	private Event event = Event.POLL_HOME_SERVER;
@@ -98,7 +98,7 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 //		internalClient = new HomeServerInternalApiClient(homeServer.getPassword(), publicClient);
 		// ClientUtil.initSslContextFactory(internalClient.getClient());
 
-		deviceUpdateClient = new PhysicalDeviceUpdateClient() {
+		deviceUpdateClient = new RemoteDeviceUpdateClient() {
 
 			@Override
 			public Short setScaldProtectionTemperature(String deviceID, int newTemp) throws ClientException {
@@ -184,7 +184,7 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 		loop: while (true) {
 
 			if (event == Event.POLL_HOME_SERVER) {
-				info("poll");
+				log(Level.FINE, "poll devices", null);
 				pollHomeServer(); // this may take many milliseconds and 'event' could change in the meantime
 				pollingCycleStartTime = System.currentTimeMillis();
 				synchronized (this) {
@@ -199,8 +199,8 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 			}
 
 			if (event == Event.PROCESS_DEVICE_UPDATES) {
-				info("process device updates");
-				homeServer.executePhysicalDeviceUpdates(deviceUpdateClient, log); // this may take many milliseconds and 'event' could change in the meantime
+				log(Level.FINE, "process device updates", null);
+				homeServer.executeRemoteDeviceUpdates(deviceUpdateClient, log); // this may take many milliseconds and 'event' could change in the meantime
 				synchronized (this) {
 					if (event == Event.STOP) {
 						break loop;
@@ -218,7 +218,7 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 
 			synchronized (this) {
 				if (event == Event.WAIT) {
-					info("wait " + waitIntervalMillis);
+					log(Level.FINE, "wait " + waitIntervalMillis + " ms", null);
 					event = Event.POLL_HOME_SERVER;  // default action after wait (may be changed during wait period)
 					
 					wait(waitIntervalMillis); // "sleep"
@@ -351,10 +351,6 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 
 	public ClientException getLastClientException() {
 		return lastClientException;
-	}
-
-	private void info(String message) {
-		log(Level.INFO, message, null);
 	}
 	
 	private void log(Level level, String message, Throwable ex) {

@@ -13,7 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import elm.scheduler.model.AsynchronousPhysicalDeviceUpdate;
+import elm.scheduler.model.AsynchRemoteDeviceUpdate;
 import elm.scheduler.model.DeviceManager;
 import elm.scheduler.model.DeviceManager.DeviceStatus;
 import elm.scheduler.model.HomeServer;
@@ -74,7 +74,7 @@ public class Scheduler extends AbstractScheduler {
 		super.statusChanged(oldStatus, newStatus, logMsg);
 		if (newStatus.in(ON, OFF, ERROR)) {
 			for (HomeServer server : homeServers) {
-				server.putDeviceUpdate(new AsynchronousPhysicalDeviceUpdate(newStatus));
+				server.putDeviceUpdate(new AsynchRemoteDeviceUpdate(newStatus));
 				server.fireDeviceChangesPending();
 			}
 		}
@@ -206,7 +206,7 @@ public class Scheduler extends AbstractScheduler {
 			if (consumingDevices.isEmpty()) {
 				// optimization: no consuming devices => notify all devices via their home servers:
 				for (HomeServer server : homeServers) {
-					server.putDeviceUpdate(new AsynchronousPhysicalDeviceUpdate(newStatus));
+					server.putDeviceUpdate(new AsynchRemoteDeviceUpdate(newStatus));
 					server.fireDeviceChangesPending();
 				}
 			} else {
@@ -224,7 +224,7 @@ public class Scheduler extends AbstractScheduler {
 			// confirm started consumptions:
 			Set<HomeServer> affectedHomeServers = new HashSet<HomeServer>();
 			for (DeviceManager device : consumingDevices) {
-				if (device.getStatus() == DeviceStatus.CONSUMPTION_STARTED) {
+				if (device.getStatus().isTransitioning()) {
 					device.updateMaximumPowerConsumption(DeviceManager.UNLIMITED_POWER, newStatus, 0);
 					affectedHomeServers.add(device.getHomeServer());
 				}

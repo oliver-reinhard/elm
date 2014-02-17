@@ -6,7 +6,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import elm.hs.api.model.Device;
-import elm.scheduler.model.AsynchronousPhysicalDeviceUpdate;
+import elm.scheduler.model.AsynchRemoteDeviceUpdate;
 import elm.scheduler.model.DeviceManager;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.HomeServerChangeListener;
@@ -96,7 +96,7 @@ public abstract class AbstractScheduler implements HomeServerChangeListener {
 		if (!homeServers.contains(server)) {
 			homeServers.add(server);
 			server.addChangeListener(this);
-			server.putDeviceUpdate(new AsynchronousPhysicalDeviceUpdate(getStatus()));
+			server.putDeviceUpdate(new AsynchRemoteDeviceUpdate(getStatus()));
 			server.fireDeviceChangesPending();
 		}
 	}
@@ -104,7 +104,7 @@ public abstract class AbstractScheduler implements HomeServerChangeListener {
 	public synchronized void removeHomeServer(HomeServer server) {
 		if (homeServers.remove(server)) {
 			server.removeChangeListener(this);
-			server.putDeviceUpdate(new AsynchronousPhysicalDeviceUpdate(ElmStatus.OFF));
+			server.putDeviceUpdate(new AsynchRemoteDeviceUpdate(ElmStatus.OFF));
 			server.fireDeviceChangesPending();
 		}
 	}
@@ -152,7 +152,7 @@ public abstract class AbstractScheduler implements HomeServerChangeListener {
 						processDevices();
 					}
 					// non-urgent device updates are processed after at most SCHEDULING_INTERVAL_MILLIS:
-					log.info("wait " + schedulingIntervalMillis);
+					log.log(Level.FINE, "wait " + schedulingIntervalMillis + " ms");
 					wait(schedulingIntervalMillis);
 
 				} catch (InterruptedException e) {
