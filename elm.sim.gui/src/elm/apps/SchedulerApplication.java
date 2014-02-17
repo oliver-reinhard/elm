@@ -1,7 +1,7 @@
 package elm.apps;
 
+import java.io.IOException;
 import java.net.URI;
-import java.util.logging.Level;
 
 import elm.hs.api.client.AbstractCommandLineClient;
 import elm.scheduler.HomeServerManager;
@@ -9,10 +9,17 @@ import elm.scheduler.Scheduler;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.impl.HomeServerImpl;
 import elm.ui.api.ElmUserFeedbackClient;
+import elm.util.ElmLogFormatter;
 
 public class SchedulerApplication extends AbstractCommandLineClient {
 	
 	public static void main(String[] args) throws Exception {
+		try {
+			ElmLogFormatter.init();
+		} catch (SecurityException | IOException e) {
+			System.exit(1);
+		}
+		
 		final URI uri = URI.create("http://localhost:9090");
 		HomeServer hs = new HomeServerImpl(uri, "geheim");
 		
@@ -21,10 +28,8 @@ public class SchedulerApplication extends AbstractCommandLineClient {
 		
 		HomeServerManager hsManager = new HomeServerManager(hs, feedbackClient);
 //		hsManager.setPollingIntervalMillis(5_000);
-		hsManager.setLogLevel(Level.WARNING);
 		
 		Scheduler scheduler = new Scheduler(40_000);
-		scheduler.setLogLevel(Level.WARNING);
 		scheduler.setIsAliveCheckDisabled(true); // enable debugger
 //		scheduler.setSchedulingIntervalMillis(5_000);
 		scheduler.addHomeServer(hs);

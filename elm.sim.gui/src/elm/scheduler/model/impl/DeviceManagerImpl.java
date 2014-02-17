@@ -11,6 +11,8 @@ import static elm.scheduler.model.DeviceManager.DeviceStatus.READY;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import elm.hs.api.model.Device;
 import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
@@ -36,6 +38,8 @@ public class DeviceManagerImpl implements DeviceManager {
 
 	/** The minimum delay between ELM status notifications if no status change is involved. */
 	private static final int ELM_STATUS_NOTIFICATION_MIN_DELAY_MILLIS = 5000;
+
+	private static final Logger LOG = Logger.getLogger(DeviceManagerImpl.class.getName());
 
 	private final String id;
 	private final HomeServer homeServer;
@@ -212,18 +216,19 @@ public class DeviceManagerImpl implements DeviceManager {
 
 	@Override
 	public synchronized void updateMaximumPowerConsumption(int approvedPowerWatt, ElmStatus elmStatus, int expectedWaitingTimeMillis) {
-		System.out.println("update " + id + ": demand " + demandPowerWatt / 1000 + " kW, approved " + (approvedPowerWatt == UNLIMITED_POWER ? deviceModel.getPowerMaxWatt() : approvedPowerWatt) / 1000 + " kW, elm " + elmStatus);
+		System.out.println("update " + id + ": demand " + demandPowerWatt / 1000 + " kW, approved "
+				+ (approvedPowerWatt == UNLIMITED_POWER ? deviceModel.getPowerMaxWatt() : approvedPowerWatt) / 1000 + " kW, elm " + elmStatus);
 		if (status == NOT_CONNECTED) {
 			return;
 		}
 		assert approvedPowerWatt >= 0 && approvedPowerWatt <= deviceModel.getPowerMaxWatt() || approvedPowerWatt == UNLIMITED_POWER;
 		final int newApprovedPowerWatt = approvedPowerWatt == deviceModel.getPowerMaxWatt() ? UNLIMITED_POWER : approvedPowerWatt;
-		
+
 		if (internalApprovedPowerWatt != newApprovedPowerWatt || status == CONSUMPTION_STARTED) {
-			
+
 			AsynchronousPhysicalDeviceUpdate deviceUpdate = new AsynchronousPhysicalDeviceUpdate(this);
 			setApprovedPowerWatt(newApprovedPowerWatt, deviceUpdate);
-			
+
 			if (status.isConsuming()) {
 				if (newApprovedPowerWatt == 0) {
 					setStatus(CONSUMPTION_DENIED);
@@ -233,7 +238,7 @@ public class DeviceManagerImpl implements DeviceManager {
 					setStatus(CONSUMPTION_LIMITED);
 				}
 			}
-			
+
 			putElmStatus(deviceUpdate, status, elmStatus, expectedWaitingTimeMillis);
 			if (!deviceUpdate.isVoid()) {
 				getHomeServer().putDeviceUpdate(deviceUpdate);
@@ -288,12 +293,12 @@ public class DeviceManagerImpl implements DeviceManager {
 		}
 		final long time = System.currentTimeMillis();
 		if (deviceFeedbackStatus != lastElmStatus
-				// do not propagate status notifications too often:
+		// do not propagate status notifications too often:
 				|| (expectedWaitingTimeMillis > 0 && (time - lastElmStatusNotificationTime) >= ELM_STATUS_NOTIFICATION_MIN_DELAY_MILLIS)) {
 			ElmUserFeedback feedback = new ElmUserFeedback(id, deviceFeedbackStatus);
 			feedback.schedulerStatus = schedulerStatus;
 			feedback.expectedWaitingTimeMillis = expectedWaitingTimeMillis;
-			
+
 			deviceUpdate.setFeedback(feedback);
 			lastElmStatus = deviceFeedbackStatus;
 			lastElmStatusNotificationTime = time;
@@ -380,6 +385,14 @@ public class DeviceManagerImpl implements DeviceManager {
 	private short toPowerUnits(int powerWatt) {
 		assert powerMaxUnits != 0;
 		return (short) (powerWatt * powerMaxUnits / deviceModel.getPowerMaxWatt());
+	}
+
+	private void info(String message) {
+		log(Level.INFO, message, null);
+	}
+
+	private void log(Level level, String message, Throwable ex) {
+		LOG.log(level, "Device " + id + ": " + message, ex);
 	}
 
 	@Override

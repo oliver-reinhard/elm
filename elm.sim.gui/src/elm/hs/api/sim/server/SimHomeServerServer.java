@@ -149,7 +149,7 @@ public class SimHomeServerServer {
 					}
 				}
 			} catch (IOException e) {
-				log.log(Level.INFO, "Unexpected request data: \"" + buf + "\"", e);
+				log.log(Level.SEVERE, "Unexpected request data: \"" + buf + "\"", e);
 			}
 			response.sendError(HttpStatus.BAD_REQUEST_400, "ElmDeviceUserFeedback object expected");
 		}

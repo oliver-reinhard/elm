@@ -21,7 +21,6 @@ import com.google.gson.GsonBuilder;
 
 public abstract class AbstractJSONClient {
 
-
 	protected final Logger log = Logger.getLogger(getClass().getName());
 
 	private final URI baseUri;
@@ -48,8 +47,6 @@ public abstract class AbstractJSONClient {
 		String realm = "ELM-Realm";
 		AuthenticationStore authStore = client.getAuthenticationStore();
 		authStore.addAuthentication(new BasicAuthentication(baseUri, realm, user, pass));
-		
-		log.setLevel(Level.SEVERE);
 	}
 
 	public URI getBaseUri() {

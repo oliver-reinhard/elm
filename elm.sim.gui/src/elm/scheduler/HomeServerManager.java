@@ -78,10 +78,6 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 		this.pollingIntervalMillis = pollingIntervalMillis;
 	}
 
-	public void setLogLevel(Level level) {
-		log.setLevel(level);
-	}
-
 	public State getState() {
 		return state;
 	}

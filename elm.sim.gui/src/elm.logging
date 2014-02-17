@@ -1,0 +1,19 @@
+handlers= java.util.logging.ConsoleHandler
+ 
+.level= SEVERE
+ 
+# Messages  are printed on the console
+java.util.logging.ConsoleHandler.level = ALL
+java.util.logging.ConsoleHandler.formatter = elm.util.ElmLogFormatter
+ 
+# file output is in user's home directory.
+#
+# NOTE: this handler is not active (not mentioned in handlers, see above):
+#
+java.util.logging.FileHandler.pattern = %h/java%u.log
+java.util.logging.FileHandler.limit = 50000
+java.util.logging.FileHandler.count = 1
+java.util.logging.FileHandler.formatter = java.util.logging.XMLFormatter
+
+elm.sim.level = INFO
+ 

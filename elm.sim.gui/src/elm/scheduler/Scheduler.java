@@ -6,11 +6,9 @@ import static elm.ui.api.ElmStatus.ON;
 import static elm.ui.api.ElmStatus.OVERLOAD;
 import static elm.ui.api.ElmStatus.SATURATION;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -46,8 +44,6 @@ public class Scheduler extends AbstractScheduler {
 	private long overloadModeBeginTime = NOT_IN_OVERLOAD;
 
 	private boolean isAliveCheckDisabled;
-	
-	private final SimpleDateFormat dateFormat = new SimpleDateFormat();
 
 	/**
 	 * @param maxElectricalPowerWatt
@@ -129,7 +125,7 @@ public class Scheduler extends AbstractScheduler {
 		if (nextStatus == OVERLOAD) {
 			beginOverloadMode(consumingDevices, standbyDevices);
 		} else {
-			endOverloadMode(consumingDevices, standbyDevices, nextStatus);
+			handleNormalMode(consumingDevices, standbyDevices, nextStatus);
 		}
 	}
 
@@ -160,7 +156,7 @@ public class Scheduler extends AbstractScheduler {
 			device.updateMaximumPowerConsumption(approvedPowerLimit, OVERLOAD, expectedWaitingTimeMillis);
 		}
 		if (totalDemandPowerWatt > overloadPowerLimitWatt) {
-			log.severe("Overload power limit (" + dateFormat.format(new Date(overloadModeBeginTime)) + " W) overrun: " + totalDemandPowerWatt + " W");
+			log.severe("Overload power limit (" + overloadPowerLimitWatt + " W) overrun: " + totalDemandPowerWatt + " W");
 			// TODO should reduce the water flow of all consuming devices
 		}
 
@@ -186,7 +182,7 @@ public class Scheduler extends AbstractScheduler {
 	 * Also used for testing.
 	 * </p>
 	 */
-	void endOverloadMode(List<DeviceManager> consumingDevices, List<DeviceManager> standbyDevices, ElmStatus newStatus) {
+	void handleNormalMode(List<DeviceManager> consumingDevices, List<DeviceManager> standbyDevices, ElmStatus newStatus) {
 		ElmStatus oldStatus = getStatus();
 		setStatus(newStatus);
 		if (isInOverloadMode()) {
@@ -208,6 +204,7 @@ public class Scheduler extends AbstractScheduler {
 
 		} else if (newStatus != oldStatus) {
 			if (consumingDevices.isEmpty()) {
+				// optimization: no consuming devices => notify all devices via their home servers:
 				for (HomeServer server : homeServers) {
 					server.putDeviceUpdate(new AsynchronousPhysicalDeviceUpdate(newStatus));
 					server.fireDeviceChangesPending();

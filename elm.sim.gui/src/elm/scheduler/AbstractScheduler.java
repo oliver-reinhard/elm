@@ -47,10 +47,6 @@ public abstract class AbstractScheduler implements HomeServerChangeListener {
 
 	protected final Logger log = Logger.getLogger(getClass().getName());
 
-	public void setLogLevel(Level level) {
-		log.setLevel(level);
-	}
-
 	public synchronized void start() {
 		eventProcessor = new Thread(new Runnable() { // don't expose run() by making the AbstractScheduler a Runnable
 

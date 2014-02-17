@@ -3,6 +3,7 @@ package elm.apps;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.io.IOException;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -17,6 +18,7 @@ import elm.sim.ui.AbstractTapPointUI;
 import elm.sim.ui.RealTapPointUI;
 import elm.sim.ui.SimTapPointUI;
 import elm.sim.ui.SimpleSchedulerUI;
+import elm.util.ElmLogFormatter;
 
 @SuppressWarnings("serial")
 public class SimHomeServerApplicationUI extends JFrame {
@@ -70,6 +72,12 @@ public class SimHomeServerApplicationUI extends JFrame {
 	}
 
 	public static void main(String[] args) throws Exception {
+		try {
+			ElmLogFormatter.init();
+		} catch (SecurityException | IOException e) {
+			System.exit(1);
+		}
+		
 		final TapPointImpl point1 = new TapPointImpl("2 OG lk - Dusche", Temperature.TEMP_2);
 		final TapPointImpl point2 = new TapPointImpl("2 OG lk - Küche", Temperature.TEMP_2);
 		final TapPointImpl point3 = new TapPointImpl("1 OG lk - Dusche", Temperature.TEMP_2);

@@ -1,12 +1,20 @@
 package elm.apps;
 
+import java.io.IOException;
+
 import elm.hs.api.sim.server.SimHomeServer;
 import elm.hs.api.sim.server.SimHomeServerServer;
+import elm.util.ElmLogFormatter;
 
 
 public class SimHomeServerDemoServer {
 
 	public static void main(String[] args) throws Exception {
+		try {
+			ElmLogFormatter.init();
+		} catch (SecurityException | IOException e) {
+			System.exit(1);
+		}
 		// try {
 		// JmDNS jmDNS = JmDNS.create();
 		// ServiceInfo info = ServiceInfo.create("_clage-hs._tcp.local.", "Home Server Sim", 9090, "Home Server Simulation");

@@ -22,7 +22,6 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.junit.Before;
@@ -70,7 +69,6 @@ public class SchedulerTest {
 		hs3.addChangeListener(hsL3);
 
 		scheduler = new Scheduler(50_000, 30_000);
-		scheduler.setLogLevel(Level.SEVERE);
 		statusL = mock(SchedulerChangeListener.class);
 		scheduler.addChangeListener(statusL);
 	}

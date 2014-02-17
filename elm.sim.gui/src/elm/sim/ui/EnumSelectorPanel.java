@@ -7,7 +7,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.swing.BorderFactory;
@@ -29,10 +28,6 @@ import elm.sim.metamodel.SimEnum;
 public abstract class EnumSelectorPanel<E extends SimEnum> extends JPanel {
 
 	private static final Logger LOG = Logger.getLogger(EnumSelectorPanel.class.getName());
-
-	{
-		LOG.setLevel(Level.WARNING);
-	}
 
 	private final E[] literals;
 	private final List<JRadioButton> referenceValues = new ArrayList<JRadioButton>();

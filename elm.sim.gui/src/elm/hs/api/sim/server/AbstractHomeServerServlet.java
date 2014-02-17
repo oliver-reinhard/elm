@@ -77,7 +77,7 @@ public abstract class AbstractHomeServerServlet extends HttpServlet {
 			log.log(Level.SEVERE, "Unexpected request data: \"" + buf + "\"", e);
 			throw e;
 		}
-		log.log(Level.SEVERE, "Mandatory \"data\" content missing.");
+		log.severe("Mandatory \"data\" content missing.");
 		throw new IllegalArgumentException();
 	}
 }

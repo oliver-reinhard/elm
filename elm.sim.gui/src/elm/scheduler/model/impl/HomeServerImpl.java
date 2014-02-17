@@ -30,11 +30,11 @@ public class HomeServerImpl implements HomeServer {
 	private final String name;
 	private final URI uri;
 	private final String password;
-	
+
 	private long lastHomeServerPollTime = 0L;
 	private long isAliveCheckTime = System.currentTimeMillis();
 	private long pollTimeToleranceMillis = POLL_TIME_TOLERANCE_MILLIS_DEFAULT;
-	
+
 	private final Map<String, DeviceManager> deviceManagers = new HashMap<String, DeviceManager>();
 	private List<AsynchronousPhysicalDeviceUpdate> pendingUpdates;
 	private List<HomeServerChangeListener> listeners = new ArrayList<HomeServerChangeListener>();
@@ -66,12 +66,12 @@ public class HomeServerImpl implements HomeServer {
 	}
 
 	@Override
-	public List<String> updateDeviceManagers(List<Device> devices) throws UnsupportedModelException {
+	public synchronized List<String> updateDeviceManagers(List<Device> devices) throws UnsupportedModelException {
 		assert devices != null;
 		UpdateResult updated = NO_UPDATES;
 		List<String> idsToRemove = new LinkedList<String>(deviceManagers.keySet());
 		List<String> idsNeedingStatus = new ArrayList<String>();
-		
+
 		for (Device device : devices) {
 			final String id = device.id;
 			DeviceManager deviceManager = deviceManagers.get(id);
@@ -79,7 +79,7 @@ public class HomeServerImpl implements HomeServer {
 			if (deviceManager == null) {
 				deviceManager = new DeviceManagerImpl(this, device);
 				deviceManagers.put(id, deviceManager);
-			} 
+			}
 			final UpdateResult deviceManagerUpdate = deviceManager.update(device);
 			if (deviceManagerUpdate == DEVICE_STATUS_REQUIRED) {
 				// need Status block for this device
@@ -130,7 +130,8 @@ public class HomeServerImpl implements HomeServer {
 	public boolean isAlive() {
 		long oldIsAliveCheckTime = isAliveCheckTime;
 		isAliveCheckTime = System.currentTimeMillis();
-		// Either the home server has been polled since the last isAlive inquiry, or this inquiry is no later than POLL_TIME_TOLERANCE_MILLIS after the last poll
+		// Either the home server has been polled since the last isAlive inquiry, or this inquiry is no later than POLL_TIME_TOLERANCE_MILLIS after the last
+		// poll
 		return oldIsAliveCheckTime <= lastHomeServerPollTime || lastHomeServerPollTime + pollTimeToleranceMillis >= isAliveCheckTime;
 	}
 
@@ -142,11 +143,11 @@ public class HomeServerImpl implements HomeServer {
 		}
 		pendingUpdates.add(update);
 	}
-	
+
 	/**
 	 * Used for testing.
 	 */
-	public List<AsynchronousPhysicalDeviceUpdate> getPendingUpdates() {
+	public synchronized List<AsynchronousPhysicalDeviceUpdate> getPendingUpdates() {
 		return pendingUpdates == null ? null : Collections.unmodifiableList(pendingUpdates);
 	}
 
@@ -175,34 +176,50 @@ public class HomeServerImpl implements HomeServer {
 	@Override
 	public void addChangeListener(HomeServerChangeListener listener) {
 		assert listener != null;
-		if (!listeners.contains(listener)) {
-			listeners.add(listener);
+		synchronized (listeners) {
+			if (!listeners.contains(listener)) {
+				listeners.add(listener);
+			}
 		}
 	}
 
 	@Override
 	public void removeChangeListener(HomeServerChangeListener listener) {
-		listeners.remove(listener);
+		synchronized (listeners) {
+			listeners.remove(listener);
+		}
 	}
 
 	private void fireDeviceManagersChanged(UpdateResult updated) {
 		if (updated != NO_UPDATES) {
-			// The device-manager updates MUST NOT BE long-lasting or blocking!
-			for (HomeServerChangeListener listener : listeners) {
-				listener.devicesManagersUpdated(this, updated == URGENT_UPDATES);
+			synchronized (listeners) {
+				// The device-manager updates MUST NOT BE long-lasting or blocking!
+				for (HomeServerChangeListener listener : listeners) {
+					listener.devicesManagersUpdated(this, updated == URGENT_UPDATES);
+				}
 			}
 		}
 	}
 
 	public void fireDeviceChangesPending() {
-		if (pendingUpdates != null) {
-			boolean urgent = false;
-			for (AsynchronousPhysicalDeviceUpdate update : pendingUpdates) {
-				urgent = urgent || update.isUrgent();
+		// lock "this" as shortly as possible, particularly don't notify listeners:
+		boolean doUpdate = false;
+		boolean urgent = false;
+		synchronized (this) {
+			if (pendingUpdates != null) {
+				doUpdate = true;
+				for (AsynchronousPhysicalDeviceUpdate update : pendingUpdates) {
+					urgent = urgent || update.isUrgent();
+				}
 			}
-			// The device updates MUST NOT BE long-lasting or blocking!
-			for (HomeServerChangeListener listener : listeners) {
-				listener.deviceUpdatesPending(this, urgent);
+			// now release the lock
+		}
+		if (doUpdate) {
+			synchronized (listeners) {
+				// The device updates MUST NOT BE long-lasting or blocking!
+				for (HomeServerChangeListener listener : listeners) {
+					listener.deviceUpdatesPending(this, urgent);
+				}
 			}
 		}
 	}

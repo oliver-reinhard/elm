@@ -3,6 +3,7 @@ package elm.apps;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.io.IOException;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -10,15 +11,16 @@ import javax.swing.SwingUtilities;
 
 import elm.sim.metamodel.SimModelEvent;
 import elm.sim.metamodel.SimModelListener;
-import elm.sim.model.SimpleScheduler;
 import elm.sim.model.SimStatus;
+import elm.sim.model.SimpleScheduler;
 import elm.sim.model.Temperature;
-import elm.sim.model.impl.TapPointImpl;
 import elm.sim.model.impl.SimpleSchedulerImpl;
+import elm.sim.model.impl.TapPointImpl;
 import elm.sim.ui.AbstractTapPointUI;
 import elm.sim.ui.RealTapPointUI;
 import elm.sim.ui.SimTapPointUI;
 import elm.sim.ui.SimpleSchedulerUI;
+import elm.util.ElmLogFormatter;
 
 @SuppressWarnings("serial")
 public class SimpleSimDemoApplicationUI extends JFrame {
@@ -108,6 +110,12 @@ public class SimpleSimDemoApplicationUI extends JFrame {
 	}
 
 	public static void main(String[] args) {
+		try {
+			ElmLogFormatter.init();
+		} catch (SecurityException | IOException e) {
+			System.exit(1);
+		}
+		
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
 			public void run() {

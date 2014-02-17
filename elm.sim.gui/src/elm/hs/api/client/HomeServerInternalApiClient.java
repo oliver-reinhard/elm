@@ -2,7 +2,6 @@ package elm.hs.api.client;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.logging.Level;
 
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.http.HttpStatus;
@@ -68,12 +67,12 @@ public class HomeServerInternalApiClient extends AbstractHomeServerClient {
 		if (response != null) {
 			final HomeServerResponse result = getGson().fromJson(response.getContentAsString(), HomeServerResponse.class);
 			if (result.response == null || result.response.data == null) {
-				log.log(Level.SEVERE, "Setting scald temperature failed: no result returned");
+				log.severe("Setting scald temperature failed: no result returned");
 				throw new ClientException(ClientException.Error.APPLICATION_DATA_ERROR);
 			}
 			final String confirmedTemp = result.response.data;
 			short value = Short.parseShort(confirmedTemp);
-			log.log(Level.INFO, "New scald temperature = " + value);
+			log.info("New scald temperature = " + value);
 			return value;
 		}
 		throw new ClientException(ClientException.Error.APPLICATION_DATA_ERROR);

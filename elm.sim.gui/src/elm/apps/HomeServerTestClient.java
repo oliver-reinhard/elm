@@ -1,5 +1,6 @@
 package elm.apps;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.logging.Level;
 
@@ -11,6 +12,7 @@ import elm.hs.api.client.HomeServerPublicApiClient;
 import elm.hs.api.model.Device;
 import elm.hs.api.model.HomeServerResponse;
 import elm.util.ClientUtil;
+import elm.util.ElmLogFormatter;
 
 public class HomeServerTestClient extends AbstractCommandLineClient {
 
@@ -105,6 +107,11 @@ public class HomeServerTestClient extends AbstractCommandLineClient {
 	}
 
 	public static void main(String[] args) throws Exception {
+		try {
+			ElmLogFormatter.init();
+		} catch (SecurityException | IOException e) {
+			System.exit(1);
+		}
 		HomeServerTestClient client = new HomeServerTestClient();
 		client.parseCommandLine(args);
 		client.run();
