@@ -2,6 +2,7 @@ package elm.scheduler.model.impl;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -19,7 +20,7 @@ import elm.scheduler.model.AsynchRemoteDeviceUpdate;
 import elm.scheduler.model.DeviceManager;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.UnsupportedModelException;
-import elm.scheduler.model.impl.HomeServerImpl;
+import elm.ui.api.ElmStatus;
 
 public class ModelTestUtil {
 	private static final String SIM_TYPE_ID = "D012"; // Model SIM
@@ -82,7 +83,8 @@ public class ModelTestUtil {
 	 * 
 	 * @param homeServerNr
 	 * @param deviceNr
-	 * @param powerWatt currently used power [W]
+	 * @param powerWatt
+	 *            currently used power [W]
 	 * @return
 	 */
 	public static Device createDeviceWithStatus(int homeServerNr, int deviceNr, int powerWatt) {
@@ -169,6 +171,7 @@ public class ModelTestUtil {
 		assert server != null;
 		assert device != null;
 		for (AsynchRemoteDeviceUpdate upd : ((HomeServerImpl) server).getPendingUpdates()) {
+			assert upd.getDevice() != null : "expected a device update not a scheduler-state update";
 			if (upd.getDevice().getId().equals(device.id)) {
 				return upd;
 			}
@@ -176,11 +179,31 @@ public class ModelTestUtil {
 		return null;
 	}
 
-	public static void checkDeviceUpdate(HomeServer server, Device device, int expectedLimitWatt) {
+	public static void checkDeviceUpdatesSize(HomeServer server, int expectedSize) {
+		if (((HomeServerImpl) server).getPendingUpdates() == null) {
+			assertEquals(expectedSize, 0);
+		} else {
+			assertEquals(expectedSize, ((HomeServerImpl) server).getPendingUpdates().size());
+		}
+	}
+
+	public static void checkDeviceUpdate(HomeServer server, Device device, ElmStatus deviceStatus, int expectedLimitWatt) {
 		final DeviceManager deviceManager = server.getDeviceManager(device.id);
 		assertEquals(expectedLimitWatt == DeviceManager.UNLIMITED_POWER ? deviceManager.getDeviceModel().getPowerMaxWatt() : expectedLimitWatt,
 				deviceManager.getApprovedPowerWatt());
 		final AsynchRemoteDeviceUpdate deviceUpdate = getDeviceUpdate(server, device);
 		assertNotNull(deviceUpdate);
+		if (deviceStatus != null) {
+			assertNotNull(deviceUpdate.getFeedback());
+			assertEquals(deviceStatus, deviceUpdate.getFeedback().deviceStatus);
+		}
+	}
+
+	public static void checkDeviceUpdate(HomeServer server, ElmStatus schedulerStatus, int expectedLimitWatt) {
+		final AsynchRemoteDeviceUpdate deviceUpdate = ((HomeServerImpl) server).getPendingUpdates().get(0);
+		assertNotNull(deviceUpdate);
+		assertNotNull(deviceUpdate.getFeedback());
+		assertNull(deviceUpdate.getFeedback().id);
+		assertEquals(schedulerStatus, deviceUpdate.getFeedback().schedulerStatus);
 	}
 }

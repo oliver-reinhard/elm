@@ -72,7 +72,7 @@ public class Scheduler extends AbstractScheduler {
 	@Override
 	protected void statusChanged(ElmStatus oldStatus, ElmStatus newStatus, String logMsg) {
 		super.statusChanged(oldStatus, newStatus, logMsg);
-		if (newStatus.in(ON, OFF, ERROR)) {
+		if (newStatus.in(OFF, ERROR) || newStatus == ON && oldStatus.in(OFF, ERROR)) {
 			for (HomeServer server : homeServers) {
 				server.putDeviceUpdate(new AsynchRemoteDeviceUpdate(newStatus));
 				server.fireDeviceChangesPending();
@@ -214,16 +214,22 @@ public class Scheduler extends AbstractScheduler {
 					device.updateMaximumPowerConsumption(DeviceManager.UNLIMITED_POWER, newStatus, 0);
 				}
 				for (DeviceManager device : standbyDevices) {
-					device.updateUserFeedback(newStatus);
+					if (device.getStatus().isTransitioning()) {
+						device.updateMaximumPowerConsumption(DeviceManager.UNLIMITED_POWER, newStatus, 0);
+					} else {
+						device.updateUserFeedback(newStatus);
+					}
 				}
 				for (HomeServer server : homeServers) {
 					server.fireDeviceChangesPending();
 				}
 			}
 		} else {
-			// confirm started consumptions:
+			// confirm started or ended consumptions:
 			Set<HomeServer> affectedHomeServers = new HashSet<HomeServer>();
-			for (DeviceManager device : consumingDevices) {
+			List<DeviceManager> allDevices = new ArrayList<DeviceManager>(consumingDevices);
+			allDevices.addAll(standbyDevices);
+			for (DeviceManager device : allDevices) {
 				if (device.getStatus().isTransitioning()) {
 					device.updateMaximumPowerConsumption(DeviceManager.UNLIMITED_POWER, newStatus, 0);
 					affectedHomeServers.add(device.getHomeServer());

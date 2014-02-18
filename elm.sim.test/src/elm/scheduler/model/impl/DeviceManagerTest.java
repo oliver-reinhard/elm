@@ -5,6 +5,7 @@ import static elm.scheduler.model.DeviceManager.UNDEFINED_TEMPERATURE;
 import static elm.scheduler.model.DeviceManager.UNLIMITED_POWER;
 import static elm.scheduler.model.DeviceManager.DeviceStatus.CONSUMPTION_APPROVED;
 import static elm.scheduler.model.DeviceManager.DeviceStatus.CONSUMPTION_DENIED;
+import static elm.scheduler.model.DeviceManager.DeviceStatus.CONSUMPTION_ENDED;
 import static elm.scheduler.model.DeviceManager.DeviceStatus.CONSUMPTION_LIMITED;
 import static elm.scheduler.model.DeviceManager.DeviceStatus.CONSUMPTION_STARTED;
 import static elm.scheduler.model.DeviceManager.DeviceStatus.ERROR;
@@ -81,7 +82,7 @@ public class DeviceManagerTest {
 		d = createDeviceWithStatus(1, 1, 0);  // heater OFF
 		result = di1.update(d);
 		assertEquals(UpdateResult.URGENT_UPDATES, result);
-		assertEquals(READY, di1.getStatus());
+		assertEquals(CONSUMPTION_ENDED, di1.getStatus());
 		//
 	}
 
@@ -101,7 +102,7 @@ public class DeviceManagerTest {
 		assertEquals(0, di1.getDemandPowerWatt());
 		assertEquals(DeviceModel.SIM.getPowerMaxWatt(), di1.getApprovedPowerWatt());
 		assertEquals(UpdateResult.URGENT_UPDATES, result);
-		assertEquals(READY, di1.getStatus());
+		assertEquals(CONSUMPTION_ENDED, di1.getStatus());
 	}
 
 	@Test
@@ -138,7 +139,7 @@ public class DeviceManagerTest {
 	@Test
 	public void updatePowerConsumption_Unlimited() {
 		// updateMaximumPowerConsumption():
-		di1.update(createDeviceWithStatus(1, 1, 10_000));
+		di1.update(createDeviceWithStatus(1, 1, 10_000));  // turn ON
 		assertEquals(CONSUMPTION_STARTED, di1.getStatus());
 		//
 		di1.updateMaximumPowerConsumption(UNLIMITED_POWER, ElmStatus.ON, 0);
@@ -146,6 +147,12 @@ public class DeviceManagerTest {
 		assertEquals(DeviceModel.SIM.getPowerMaxWatt(), di1.getApprovedPowerWatt());
 		assertEquals(UNDEFINED_TEMPERATURE, di1.getScaldProtectionTemperature());
 		verify(hs1).putDeviceUpdate(Mockito.<AsynchRemoteDeviceUpdate> any());
+		//
+		di1.update(createDeviceWithStatus(1, 1, 0));  // turn OFF
+		assertEquals(CONSUMPTION_ENDED, di1.getStatus());
+		//
+		di1.updateMaximumPowerConsumption(UNLIMITED_POWER, ElmStatus.ON, 0);
+		assertEquals(READY, di1.getStatus());
 	}
 
 	@Test

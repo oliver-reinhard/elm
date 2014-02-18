@@ -65,7 +65,7 @@ public class RealTapPointUI extends AbstractTapPointUI {
 
 	@Override
 	protected void addPanelContent() {
-		ImageIcon deviceIcon = SimulationUtil.getIcon("clage-dlx");
+		ImageIcon deviceIcon = SimUtil.getIcon("clage-dlx");
 		assert deviceIcon != null;
 
 		JLabel label = new JLabel(deviceIcon);

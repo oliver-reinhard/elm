@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="create_elm_sim_server_jar" name="Create Runnable Jar for ELM Sim Server with Jar-in-Jar Loader">
+    <!--ANT 1.7 is required                                        -->
+
+    <property name="temp.dir"     value="${user.home}/Temp"/>
+	
+    <target name="create_elm_sim_server_jar">
+        <jar destfile="${temp.dir}/elm-sim-server-ui.jar">
+            <manifest>
+                <attribute name="Main-Class" value="org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader"/>
+                <attribute name="Rsrc-Main-Class" value="elm.apps.SimHomeServerApplicationUI"/>
+                <attribute name="Class-Path" value="."/>
+                <attribute name="Rsrc-Class-Path" value="./ gson-2.2.4.jar javax.servlet-3.0.0.v201112011016.jar jetty-all-9.0.6.v20130930.jar commons-cli-1.2.jar jmdns.jar"/>
+            </manifest>
+        	
+            <fileset dir="${basedir}/bin"/>
+            <fileset dir="${basedir}/resources"/>
+            <!--Add the required library jars into the generated jar (requires jar-in-jar)   -->
+            <zipfileset src="jar-in-jar-loader.zip"/>
+            <zipfileset dir="${basedir}/lib" includes="gson-2.2.4.jar"/>
+            <zipfileset dir="${basedir}/lib" includes="javax.servlet-3.0.0.v201112011016.jar"/>
+            <zipfileset dir="${basedir}/lib" includes="jetty-all-9.0.6.v20130930.jar"/>
+            <zipfileset dir="${basedir}/lib" includes="commons-cli-1.2.jar"/>
+            <zipfileset dir="${basedir}/lib" includes="jmdns.jar"/>
+        </jar>
+    </target>
+
+    <target name="create_elm_scheduler_jar">
+        <jar destfile="${temp.dir}/elm-scheduler.jar">
+            <manifest>
+                <attribute name="Main-Class" value="org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader"/>
+                <attribute name="Rsrc-Main-Class" value="elm.apps.SchedulerApplication"/>
+                <attribute name="Class-Path" value="."/>
+                <attribute name="Rsrc-Class-Path" value="./ gson-2.2.4.jar jetty-all-9.0.6.v20130930.jar commons-cli-1.2.jar jmdns.jar"/>
+            </manifest>
+        	
+            <fileset dir="${basedir}/bin"/>
+            <!--Add the required library jars into the generated jar (requires jar-in-jar)   -->
+            <zipfileset src="jar-in-jar-loader.zip"/>
+            <zipfileset dir="${basedir}/lib" includes="gson-2.2.4.jar"/>
+            <zipfileset dir="${basedir}/lib" includes="jetty-all-9.0.6.v20130930.jar"/>
+            <zipfileset dir="${basedir}/lib" includes="commons-cli-1.2.jar"/>
+            <zipfileset dir="${basedir}/lib" includes="jmdns.jar"/>
+        </jar>
+    </target>
+</project>

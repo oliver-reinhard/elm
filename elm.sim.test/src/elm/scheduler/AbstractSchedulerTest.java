@@ -11,8 +11,6 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-import java.util.logging.Level;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,7 +45,6 @@ public class AbstractSchedulerTest {
 				}
 			}
 		};
-		scheduler.setLogLevel(Level.SEVERE);
 		statusL = mock(SchedulerChangeListener.class);
 		scheduler.addChangeListener(statusL);
 	}

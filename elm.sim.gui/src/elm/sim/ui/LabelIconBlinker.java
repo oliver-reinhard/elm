@@ -16,8 +16,8 @@ public class LabelIconBlinker implements Runnable {
 	private final ImageIcon		iconOff;
 
 	public LabelIconBlinker(ImageIcon iconOn, ImageIcon iconOff) {
-		assert iconOn != null;
-		assert iconOff != null;
+		assert iconOn != null : "'on' icon is null";
+		assert iconOff != null : "'off' icon is null";;
 		this.iconOn = iconOn;
 		this.iconOff = iconOff;
 	}

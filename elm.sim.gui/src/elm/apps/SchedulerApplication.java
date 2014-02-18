@@ -20,7 +20,8 @@ public class SchedulerApplication extends AbstractCommandLineClient {
 			System.exit(1);
 		}
 		
-		final URI uri = URI.create("http://localhost:9090");
+//		final URI uri = URI.create("http://localhost:9090");
+		final URI uri = URI.create("http://192.168.178.25:9090");
 		HomeServer hs = new HomeServerImpl(uri, "geheim");
 		
 		ElmUserFeedbackClient feedbackClient = new ElmUserFeedbackClient(uri, "geheim");

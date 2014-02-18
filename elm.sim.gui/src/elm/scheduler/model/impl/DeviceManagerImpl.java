@@ -163,7 +163,7 @@ public class DeviceManagerImpl implements DeviceManager {
 
 			final int newDemandPowerWatt = toPowerWatt(device.status.power);
 			if (newDemandPowerWatt != demandPowerWatt) {
-				info("demand power change: " + newDemandPowerWatt/1000 + " kW");
+				info("demand power change: " + newDemandPowerWatt / 1000 + " kW");
 				if (demandPowerWatt == 0) {
 					waterConsumptionStarted(newDemandPowerWatt);
 				} else if (newDemandPowerWatt == 0) {
@@ -178,7 +178,7 @@ public class DeviceManagerImpl implements DeviceManager {
 
 			if (intakeWaterTemperature == UNDEFINED_TEMPERATURE || Math.abs(intakeWaterTemperature - device.status.tIn) > INTAKE_WATER_TEMP_CHANGE_IGNORE_DELTA) {
 				intakeWaterTemperature = device.status.tIn;
-				info("intake water temperature change: " + intakeWaterTemperature/10 + "°C");
+				info("intake water temperature change: " + intakeWaterTemperature / 10 + "°C");
 				result = result.and(status.isConsuming() ? UpdateResult.URGENT_UPDATES : UpdateResult.MINOR_UPDATES);
 			}
 		}
@@ -211,7 +211,7 @@ public class DeviceManagerImpl implements DeviceManager {
 	void waterConsumptionEnded() {
 		demandPowerWatt = 0;
 		consumptionStartTime = NO_CONSUMPTION;
-		setStatus(DeviceStatus.CONSUMPTION_ENDED);  // requires approval by scheduler
+		setStatus(DeviceStatus.CONSUMPTION_ENDED); // requires approval by scheduler
 	}
 
 	@Override
@@ -225,7 +225,7 @@ public class DeviceManagerImpl implements DeviceManager {
 	public synchronized void updateMaximumPowerConsumption(int approvedPowerWatt, ElmStatus elmStatus, int expectedWaitingTimeMillis) {
 		if (LOG.isLoggable(Level.INFO)) {
 			info("power consumption: demand " + demandPowerWatt / 1000 + " kW, approved "
-				+ (approvedPowerWatt == UNLIMITED_POWER ? deviceModel.getPowerMaxWatt() : approvedPowerWatt) / 1000 + " kW, elm " + elmStatus);
+					+ (approvedPowerWatt == UNLIMITED_POWER ? deviceModel.getPowerMaxWatt() : approvedPowerWatt) / 1000 + " kW, elm " + elmStatus);
 		}
 		if (status == NOT_CONNECTED) {
 			return;
@@ -236,7 +236,9 @@ public class DeviceManagerImpl implements DeviceManager {
 		if (internalApprovedPowerWatt != newApprovedPowerWatt || status.isTransitioning()) {
 
 			AsynchRemoteDeviceUpdate deviceUpdate = new AsynchRemoteDeviceUpdate(this);
-			setApprovedPowerWatt(newApprovedPowerWatt, deviceUpdate);
+			if (internalApprovedPowerWatt != newApprovedPowerWatt) {
+				setApprovedPowerWatt(newApprovedPowerWatt, deviceUpdate);
+			}
 
 			if (status.isConsuming()) {
 				if (newApprovedPowerWatt == 0) {

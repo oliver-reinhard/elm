@@ -19,7 +19,7 @@ import elm.sim.model.SimStatus;
 public abstract class AbstractTapPointUI extends JPanel {
 
 	/** A blinker instance shared between all outlets. */
-	protected static final LabelIconBlinker BLINKER = new LabelIconBlinker(SimulationUtil.getIcon(SimStatus.ERROR), SimulationUtil.getIcon(SimStatus.OFF));
+	protected static final LabelIconBlinker BLINKER = new LabelIconBlinker(SimUtil.getIcon(SimStatus.ERROR), SimUtil.getIcon(SimStatus.OFF));
 	
 	protected final TapPoint model;
 	protected JLabel statusLabel;
@@ -112,7 +112,7 @@ public abstract class AbstractTapPointUI extends JPanel {
 			BLINKER.start(statusLabel);
 		} else {
 			BLINKER.stop(statusLabel);
-			statusLabel.setIcon(SimulationUtil.getIcon(status));
+			statusLabel.setIcon(SimUtil.getIcon(status));
 		}
 		waitingTimePercent.setEnabled(status == SimStatus.OVERLOAD);
 		waitingTimePercent.setValue(0);
