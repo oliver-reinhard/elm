@@ -14,8 +14,8 @@ import java.util.List;
 import java.util.Set;
 
 import elm.scheduler.model.AsynchRemoteDeviceUpdate;
-import elm.scheduler.model.DeviceManager;
-import elm.scheduler.model.DeviceManager.DeviceStatus;
+import elm.scheduler.model.DeviceController;
+import elm.scheduler.model.DeviceController.DeviceStatus;
 import elm.scheduler.model.HomeServer;
 import elm.ui.api.ElmStatus;
 
@@ -89,13 +89,13 @@ public class Scheduler extends AbstractScheduler {
 	 */
 	protected void processDevices() {
 		int totalDemandPowerWatt = 0;
-		List<DeviceManager> consumingDevices = new ArrayList<DeviceManager>();
-		List<DeviceManager> standbyDevices = new ArrayList<DeviceManager>();
+		List<DeviceController> consumingDevices = new ArrayList<DeviceController>();
+		List<DeviceController> standbyDevices = new ArrayList<DeviceController>();
 
 		// Prepare device information:
 		for (HomeServer server : homeServers) {
 			if (server.isAlive() || isAliveCheckDisabled) {
-				for (DeviceManager device : server.getDeviceManagers()) {
+				for (DeviceController device : server.getDeviceControllers()) {
 					if (device.getDemandPowerWatt() > 0) {
 						totalDemandPowerWatt += device.getDemandPowerWatt();
 						consumingDevices.add(device);
@@ -135,7 +135,7 @@ public class Scheduler extends AbstractScheduler {
 	 * Also used for testing.
 	 * </p>
 	 */
-	void beginOverloadMode(List<DeviceManager> consumingDevices, List<DeviceManager> standbyDevices) {
+	void beginOverloadMode(List<DeviceController> consumingDevices, List<DeviceController> standbyDevices) {
 		setStatus(OVERLOAD);
 		if (!isInOverloadMode()) {
 			overloadModeBeginTime = System.currentTimeMillis();
@@ -147,11 +147,11 @@ public class Scheduler extends AbstractScheduler {
 		int expectedWaitingTimeMillis = TO_BE_DONE;
 		int totalDemandPowerWatt = 0;
 
-		for (DeviceManager device : consumingDevices) {
-			int approvedPowerLimit = DeviceManager.NO_POWER;
+		for (DeviceController device : consumingDevices) {
+			int approvedPowerLimit = DeviceController.NO_POWER;
 			if (device.getStatus() == DeviceStatus.CONSUMPTION_APPROVED || totalDemandPowerWatt + device.getDemandPowerWatt() <= overloadPowerLimitWatt) {
 				totalDemandPowerWatt += device.getDemandPowerWatt();
-				approvedPowerLimit = DeviceManager.UNLIMITED_POWER;
+				approvedPowerLimit = DeviceController.UNLIMITED_POWER;
 			}
 			device.updateMaximumPowerConsumption(approvedPowerLimit, OVERLOAD, expectedWaitingTimeMillis);
 		}
@@ -160,8 +160,8 @@ public class Scheduler extends AbstractScheduler {
 			// TODO should reduce the water flow of all consuming devices
 		}
 
-		for (DeviceManager device : standbyDevices) {
-			device.updateMaximumPowerConsumption(DeviceManager.NO_POWER, OVERLOAD, expectedWaitingTimeMillis);
+		for (DeviceController device : standbyDevices) {
+			device.updateMaximumPowerConsumption(DeviceController.NO_POWER, OVERLOAD, expectedWaitingTimeMillis);
 		}
 
 		for (HomeServer server : homeServers) {
@@ -182,18 +182,18 @@ public class Scheduler extends AbstractScheduler {
 	 * Also used for testing.
 	 * </p>
 	 */
-	void handleNormalMode(List<DeviceManager> consumingDevices, List<DeviceManager> standbyDevices, ElmStatus newStatus) {
+	void handleNormalMode(List<DeviceController> consumingDevices, List<DeviceController> standbyDevices, ElmStatus newStatus) {
 		ElmStatus oldStatus = getStatus();
 		setStatus(newStatus);
 		if (isInOverloadMode()) {
 			try {
 				log.info("Ending overload mode after " + (System.currentTimeMillis() - overloadModeBeginTime) + " ms");
 				// Notify consuming devices first as there may be some that had the Power level reduced earlier
-				for (DeviceManager device : consumingDevices) {
-					device.updateMaximumPowerConsumption(DeviceManager.UNLIMITED_POWER, newStatus, 0);
+				for (DeviceController device : consumingDevices) {
+					device.updateMaximumPowerConsumption(DeviceController.UNLIMITED_POWER, newStatus, 0);
 				}
-				for (DeviceManager device : standbyDevices) {
-					device.updateMaximumPowerConsumption(DeviceManager.UNLIMITED_POWER, newStatus, 0);
+				for (DeviceController device : standbyDevices) {
+					device.updateMaximumPowerConsumption(DeviceController.UNLIMITED_POWER, newStatus, 0);
 				}
 				for (HomeServer server : homeServers) {
 					server.fireDeviceChangesPending();
@@ -210,12 +210,12 @@ public class Scheduler extends AbstractScheduler {
 					server.fireDeviceChangesPending();
 				}
 			} else {
-				for (DeviceManager device : consumingDevices) {
-					device.updateMaximumPowerConsumption(DeviceManager.UNLIMITED_POWER, newStatus, 0);
+				for (DeviceController device : consumingDevices) {
+					device.updateMaximumPowerConsumption(DeviceController.UNLIMITED_POWER, newStatus, 0);
 				}
-				for (DeviceManager device : standbyDevices) {
+				for (DeviceController device : standbyDevices) {
 					if (device.getStatus().isTransitioning()) {
-						device.updateMaximumPowerConsumption(DeviceManager.UNLIMITED_POWER, newStatus, 0);
+						device.updateMaximumPowerConsumption(DeviceController.UNLIMITED_POWER, newStatus, 0);
 					} else {
 						device.updateUserFeedback(newStatus);
 					}
@@ -227,11 +227,11 @@ public class Scheduler extends AbstractScheduler {
 		} else {
 			// confirm started or ended consumptions:
 			Set<HomeServer> affectedHomeServers = new HashSet<HomeServer>();
-			List<DeviceManager> allDevices = new ArrayList<DeviceManager>(consumingDevices);
+			List<DeviceController> allDevices = new ArrayList<DeviceController>(consumingDevices);
 			allDevices.addAll(standbyDevices);
-			for (DeviceManager device : allDevices) {
+			for (DeviceController device : allDevices) {
 				if (device.getStatus().isTransitioning()) {
-					device.updateMaximumPowerConsumption(DeviceManager.UNLIMITED_POWER, newStatus, 0);
+					device.updateMaximumPowerConsumption(DeviceController.UNLIMITED_POWER, newStatus, 0);
 					affectedHomeServers.add(device.getHomeServer());
 				}
 			}
@@ -241,10 +241,10 @@ public class Scheduler extends AbstractScheduler {
 		}
 	}
 
-	private void sort(List<DeviceManager> consumingDevices) {
-		Collections.sort(consumingDevices, new Comparator<DeviceManager>() {
+	private void sort(List<DeviceController> consumingDevices) {
+		Collections.sort(consumingDevices, new Comparator<DeviceController>() {
 			@Override
-			public int compare(DeviceManager d1, DeviceManager d2) {
+			public int compare(DeviceController d1, DeviceController d2) {
 				if (d1.getConsumptionStartTime() == d2.getConsumptionStartTime()) {
 					// if two consumptions started at the same time, then we favor the one with the lower power consumption:
 					return Integer.compare(d1.getDemandPowerWatt(), d2.getDemandPowerWatt());

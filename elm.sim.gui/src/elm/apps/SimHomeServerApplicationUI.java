@@ -1,6 +1,5 @@
 package elm.apps;
 
-import elm.hs.api.sim.server.SimHomeServerImpl;
 import elm.hs.api.sim.server.SimHomeServerServer;
 
 public class SimHomeServerApplicationUI {
@@ -12,7 +11,7 @@ public class SimHomeServerApplicationUI {
 		ui.setSize(700, 600);
 		ui.setVisible(true);
 
-		SimHomeServerServer httpServer = new SimHomeServerServer((SimHomeServerImpl) ui.getServer());
+		SimHomeServerServer httpServer = new SimHomeServerServer(ui.getServer());
 		httpServer.start();
 		// try {
 		// JmDNS jmDNS = JmDNS.create();

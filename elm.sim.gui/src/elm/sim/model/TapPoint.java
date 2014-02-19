@@ -2,7 +2,7 @@ package elm.sim.model;
 
 import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
 import elm.scheduler.Scheduler;
-import elm.scheduler.model.DeviceManager;
+import elm.scheduler.model.DeviceController;
 import elm.sim.metamodel.SimAttribute;
 import elm.sim.metamodel.SimChangeNotifier;
 import elm.sim.ui.SimpleSchedulerUI;
@@ -78,7 +78,7 @@ public interface TapPoint extends SimChangeNotifier {
 	 * This method is used by the real ELM {@link Scheduler}.
 	 * 
 	 * @param deviceStatus
-	 *            the actual ELM {@link DeviceManager}'s status, cannot be {@code null}
+	 *            the actual ELM {@link DeviceController}'s status, cannot be {@code null}
 	 */
 	void setStatus(ElmStatus deviceStatus);
 

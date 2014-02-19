@@ -21,14 +21,14 @@ import elm.util.ClientException;
 import elm.util.ClientUtil;
 
 /**
- * This manager is responsible for the connection to and the communication with a single Home Server server via HTTP and with the {@link Scheduler}. However, it
+ * This controller is responsible for the connection to and the communication with a single Home Server server via HTTP and with the {@link Scheduler}. However, it
  * does not communicate to the {@link Scheduler} directly, but indirectly via a {@link HomeServer} object.
  * <p>
- * At each poll of the Home Server server, this manager updates an 'alive' flag at its {@link HomeServer}. This enables a separate thread to monitor the health
- * of this manager.
+ * At each poll of the Home Server server, this controller updates an 'alive' flag at its {@link HomeServer}. This enables a separate thread to monitor the health
+ * of this controller.
  * </p>
  */
-public class HomeServerManager implements Runnable, HomeServerChangeListener {
+public class HomeServerController implements Runnable, HomeServerChangeListener {
 
 	private static final int DEFAULT_POLLING_INTERVAL_MILLIS = 1000;
 
@@ -62,7 +62,7 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 	 * @param userFeedbackClient
 	 *            must be started, cannot be {@code null}
 	 */
-	public HomeServerManager(HomeServer homeServer, ElmUserFeedbackClient userFeedbackClient) {
+	public HomeServerController(HomeServer homeServer, ElmUserFeedbackClient userFeedbackClient) {
 		assert homeServer != null;
 		assert userFeedbackClient != null;
 		this.homeServer = homeServer;
@@ -116,7 +116,7 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 			}
 		};
 		setState(State.OK);
-		runner = new Thread(this, HomeServerManager.class.getSimpleName());
+		runner = new Thread(this, HomeServerController.class.getSimpleName());
 		event = Event.POLL_HOME_SERVER;
 		runner.start();
 	}
@@ -161,7 +161,7 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 	}
 
 	/**
-	 * This is the manager's -- a priori infinite -- event loop. It fulfills several important requirments:
+	 * This is the controller's -- a priori infinite -- event loop. It fulfills several important requirments:
 	 * <ul>
 	 * <li>poll the actual home server; this is a potentially long-lasting network call</li>
 	 * <li>change the physical device parameters; ; this is a potentially long-lasting network call</li>
@@ -249,7 +249,7 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 				setState(State.OK);
 				pollingFailureCount = 0;
 				try {
-					final List<String> devicesNeedingStatus = homeServer.updateDeviceManagers(devices);
+					final List<String> devicesNeedingStatus = homeServer.updateDeviceControllers(devices);
 					if (devicesNeedingStatus != null) { // some devices need the Status block for the device => poll again
 						for (String deviceID : devicesNeedingStatus) {
 
@@ -265,7 +265,7 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 							updateDeviceEntry(devices, deviceID, status);
 						}
 						@SuppressWarnings("unused")
-						final List<String> ignored = homeServer.updateDeviceManagers(devices);
+						final List<String> ignored = homeServer.updateDeviceControllers(devices);
 					}
 					return;
 
@@ -336,7 +336,7 @@ public class HomeServerManager implements Runnable, HomeServerChangeListener {
 	}
 
 	@Override
-	public void devicesManagersUpdated(HomeServer server, boolean urgent) {
+	public void devicesControllersUpdated(HomeServer server, boolean urgent) {
 		// ignore
 
 	}

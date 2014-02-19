@@ -80,6 +80,7 @@ public class SimHomeServerImpl extends AbstractSimObject implements SimHomeServe
 		return uri.toString();
 	}
 
+	@Override
 	public URI getUri() {
 		return uri;
 	}
@@ -103,7 +104,7 @@ public class SimHomeServerImpl extends AbstractSimObject implements SimHomeServe
 		return waterIntakeTemperature;
 	}
 
-	public static SimHomeServerImpl createDemoDB(String uri) {
+	public static SimHomeServer createDemoDB(String uri) {
 		SimHomeServerImpl db = new SimHomeServerImpl(uri);
 		db.addDevice("2016FFFF55", (short) 200);
 		db.addDevice("A001FFFF33", (short) 380);
@@ -146,6 +147,7 @@ public class SimHomeServerImpl extends AbstractSimObject implements SimHomeServe
 		return adapter;
 	}
 
+	@Override
 	public Collection<Device> getDevices() {
 		return Collections.unmodifiableCollection(devices.values());
 	}
@@ -154,20 +156,12 @@ public class SimHomeServerImpl extends AbstractSimObject implements SimHomeServe
 		return devices.get(id);
 	}
 
-	/**
-	 * Gerneral Http {@code /} request.
-	 * 
-	 * @return never {@code null}
-	 */
+	@Override
 	public HomeServerResponse processStatusRequest() {
 		return createResponse(true, true); // no devices
 	}
 
-	/**
-	 * Http {@code /devices} request.
-	 * 
-	 * @return never {@code null}
-	 */
+	@Override
 	public HomeServerResponse processDevicesRequest() {
 		HomeServerResponse response = createResponse(false, false);
 		response.devices = new ArrayList<Device>();
@@ -180,13 +174,7 @@ public class SimHomeServerImpl extends AbstractSimObject implements SimHomeServe
 		return response;
 	}
 
-	/**
-	 * Http {@code /devices/status/<id>} request.
-	 * 
-	 * @param id
-	 *            cannot be {@code null} or empty
-	 * @return {@code null} if no device with the given id exists
-	 */
+	@Override
 	public HomeServerResponse processDeviceStatusRequest(String id) {
 		final Device device = devices.get(id);
 		if (device != null) {
@@ -201,17 +189,8 @@ public class SimHomeServerImpl extends AbstractSimObject implements SimHomeServe
 		}
 		return null;
 	}
-
-	/**
-	 * Http {@code /devices/setpoint/<id>} with a body of {@code data=<temperature>} request. Changes the setpoint of the given device in the database and
-	 * returns the proper response.
-	 * 
-	 * @param id
-	 *            cannot be {@code null} or empty
-	 * @param setpoint
-	 *            reference temperature in [1/10°C]
-	 * @return {@code null} if no device with the given id exists
-	 */
+	
+	@Override
 	public HomeServerResponse processDeviceSetpoint(String id, short setpoint) {
 		final Device device = devices.get(id);
 		if (device != null) {
@@ -226,15 +205,7 @@ public class SimHomeServerImpl extends AbstractSimObject implements SimHomeServe
 		return null;
 	}
 
-	/**
-	 * Http {@code /cmd/Vv/} with a body of {@code data=<temperature>} request. Changes the scald-protection temperature.
-	 * 
-	 * @param id
-	 *            cannot be {@code null} or empty
-	 * @param temperature
-	 *            [1/10°C] for scald protection
-	 * @return {@code null} if no device with the given id exists
-	 */
+	@Override
 	public HomeServerResponse processSetScaldProtectionTemperature(String id, short temperature) {
 		DeviceTapPointAdapter adapter = adapters.get(id);
 		if (adapter != null) {
@@ -249,13 +220,7 @@ public class SimHomeServerImpl extends AbstractSimObject implements SimHomeServe
 		return null;
 	}
 
-	/**
-	 * Http {@code /cmd/VF/} with a body of {@code data=<temperature>} request. Changes the scald-protection temperature.
-	 * 
-	 * @param id
-	 *            cannot be {@code null} or empty
-	 * @return {@code null} if no device with the given id exists
-	 */
+	@Override
 	public HomeServerResponse processSetScaldProtectionFlag(String id, boolean on) {
 		DeviceTapPointAdapter adapter = adapters.get(id);
 		if (adapter != null && !on) {
@@ -267,12 +232,7 @@ public class SimHomeServerImpl extends AbstractSimObject implements SimHomeServe
 		return null;
 	}
 
-	/**
-	 * Http {@code /devices/feedback} with a body of {@link ElmUserFeedback} request.
-	 * 
-	 * @param feedback
-	 *            cannot be {@code null}
-	 */
+	@Override
 	public void processUserFeedback(ElmUserFeedback feedback) {
 		assert feedback != null;
 		if (feedback.id != null) {

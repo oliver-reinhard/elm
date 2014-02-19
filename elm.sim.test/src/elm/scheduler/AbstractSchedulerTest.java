@@ -115,16 +115,16 @@ public class AbstractSchedulerTest {
 		scheduler.start();
 		sleep(10);
 		int runCount = scheduler.getSchdedulingRunCount();
-		scheduler.devicesManagersUpdated(hs1, false);  // false => do not wake up the scheduler
+		scheduler.devicesControllersUpdated(hs1, false);  // false => do not wake up the scheduler
 		assertEquals(runCount, scheduler.getSchdedulingRunCount());
 		
 		sleep(20); // scheduler should wake up during this time and process devices:
 		assertEquals(runCount+1, scheduler.getSchdedulingRunCount());
 		
-		scheduler.devicesManagersUpdated(hs1, true);  // true => WAKE UP the scheduler
+		scheduler.devicesControllersUpdated(hs1, true);  // true => WAKE UP the scheduler
 		sleep(2); // give it time to do its work and go back to sleep
 		runCount = scheduler.getSchdedulingRunCount();
-		scheduler.devicesManagersUpdated(hs1, true);  // true => WAKE UP the scheduler
+		scheduler.devicesControllersUpdated(hs1, true);  // true => WAKE UP the scheduler
 		sleep(2); // scheduler forced to process devices now
 		assertEquals(runCount+1, scheduler.getSchdedulingRunCount());
 	}

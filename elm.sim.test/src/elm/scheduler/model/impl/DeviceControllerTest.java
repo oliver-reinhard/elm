@@ -1,16 +1,16 @@
 package elm.scheduler.model.impl;
 
-import static elm.scheduler.model.DeviceManager.NO_POWER;
-import static elm.scheduler.model.DeviceManager.UNDEFINED_TEMPERATURE;
-import static elm.scheduler.model.DeviceManager.UNLIMITED_POWER;
-import static elm.scheduler.model.DeviceManager.DeviceStatus.CONSUMPTION_APPROVED;
-import static elm.scheduler.model.DeviceManager.DeviceStatus.CONSUMPTION_DENIED;
-import static elm.scheduler.model.DeviceManager.DeviceStatus.CONSUMPTION_ENDED;
-import static elm.scheduler.model.DeviceManager.DeviceStatus.CONSUMPTION_LIMITED;
-import static elm.scheduler.model.DeviceManager.DeviceStatus.CONSUMPTION_STARTED;
-import static elm.scheduler.model.DeviceManager.DeviceStatus.ERROR;
-import static elm.scheduler.model.DeviceManager.DeviceStatus.INITIALIZING;
-import static elm.scheduler.model.DeviceManager.DeviceStatus.READY;
+import static elm.scheduler.model.DeviceController.NO_POWER;
+import static elm.scheduler.model.DeviceController.UNDEFINED_TEMPERATURE;
+import static elm.scheduler.model.DeviceController.UNLIMITED_POWER;
+import static elm.scheduler.model.DeviceController.DeviceStatus.CONSUMPTION_APPROVED;
+import static elm.scheduler.model.DeviceController.DeviceStatus.CONSUMPTION_DENIED;
+import static elm.scheduler.model.DeviceController.DeviceStatus.CONSUMPTION_ENDED;
+import static elm.scheduler.model.DeviceController.DeviceStatus.CONSUMPTION_LIMITED;
+import static elm.scheduler.model.DeviceController.DeviceStatus.CONSUMPTION_STARTED;
+import static elm.scheduler.model.DeviceController.DeviceStatus.ERROR;
+import static elm.scheduler.model.DeviceController.DeviceStatus.INITIALIZING;
+import static elm.scheduler.model.DeviceController.DeviceStatus.READY;
 import static elm.scheduler.model.impl.ModelTestUtil.createDeviceWithInfo;
 import static elm.scheduler.model.impl.ModelTestUtil.createDeviceWithStatus;
 import static elm.scheduler.model.impl.ModelTestUtil.round;
@@ -27,24 +27,24 @@ import org.mockito.Mockito;
 import elm.hs.api.model.Device;
 import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
 import elm.scheduler.model.AsynchRemoteDeviceUpdate;
-import elm.scheduler.model.DeviceManager.UpdateResult;
+import elm.scheduler.model.DeviceController.UpdateResult;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.UnsupportedModelException;
 import elm.ui.api.ElmStatus;
 
-public class DeviceManagerTest {
+public class DeviceControllerTest {
 
 	static final String ID = "d1";
 	static final int EXPECTED_WAITING_TIME = 5_000;
 
 	HomeServer hs1;
-	DeviceManagerImpl di1;
+	DeviceControllerImpl di1;
 
 	@Before
 	public void setup() {
 		hs1 = mock(HomeServer.class);
 		try {
-			di1 = new DeviceManagerImpl(hs1, createDeviceWithInfo(1, 1), ID);
+			di1 = new DeviceControllerImpl(hs1, createDeviceWithInfo(1, 1), ID);
 		} catch (UnsupportedModelException e) {
 			throw new IllegalArgumentException(e);
 		}

@@ -1,9 +1,9 @@
 package elm.scheduler.model.impl;
 
-import static elm.scheduler.model.DeviceManager.UpdateResult.DEVICE_STATUS_REQUIRED;
-import static elm.scheduler.model.DeviceManager.UpdateResult.MINOR_UPDATES;
-import static elm.scheduler.model.DeviceManager.UpdateResult.NO_UPDATES;
-import static elm.scheduler.model.DeviceManager.UpdateResult.URGENT_UPDATES;
+import static elm.scheduler.model.DeviceController.UpdateResult.DEVICE_STATUS_REQUIRED;
+import static elm.scheduler.model.DeviceController.UpdateResult.MINOR_UPDATES;
+import static elm.scheduler.model.DeviceController.UpdateResult.NO_UPDATES;
+import static elm.scheduler.model.DeviceController.UpdateResult.URGENT_UPDATES;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -18,8 +18,8 @@ import java.util.logging.Logger;
 
 import elm.hs.api.model.Device;
 import elm.scheduler.model.AsynchRemoteDeviceUpdate;
-import elm.scheduler.model.DeviceManager;
-import elm.scheduler.model.DeviceManager.UpdateResult;
+import elm.scheduler.model.DeviceController;
+import elm.scheduler.model.DeviceController.UpdateResult;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.HomeServerChangeListener;
 import elm.scheduler.model.RemoteDeviceUpdateClient;
@@ -35,7 +35,7 @@ public class HomeServerImpl implements HomeServer {
 	private long isAliveCheckTime = System.currentTimeMillis();
 	private long pollTimeToleranceMillis = POLL_TIME_TOLERANCE_MILLIS_DEFAULT;
 
-	private final Map<String, DeviceManager> deviceManagers = new HashMap<String, DeviceManager>();
+	private final Map<String, DeviceController> deviceControllers = new HashMap<String, DeviceController>();
 	private List<AsynchRemoteDeviceUpdate> pendingUpdates;
 	private List<HomeServerChangeListener> listeners = new ArrayList<HomeServerChangeListener>();
 
@@ -66,49 +66,49 @@ public class HomeServerImpl implements HomeServer {
 	}
 
 	@Override
-	public synchronized List<String> updateDeviceManagers(List<Device> devices) throws UnsupportedModelException {
+	public synchronized List<String> updateDeviceControllers(List<Device> devices) throws UnsupportedModelException {
 		assert devices != null;
 		UpdateResult updated = NO_UPDATES;
-		List<String> idsToRemove = new LinkedList<String>(deviceManagers.keySet());
+		List<String> idsToRemove = new LinkedList<String>(deviceControllers.keySet());
 		List<String> idsNeedingStatus = new ArrayList<String>();
 
 		for (Device device : devices) {
 			final String id = device.id;
-			DeviceManager deviceManager = deviceManagers.get(id);
-			// Add DeviceManager for new device:
-			if (deviceManager == null) {
-				deviceManager = new DeviceManagerImpl(this, device);
-				deviceManagers.put(id, deviceManager);
+			DeviceController deviceController = deviceControllers.get(id);
+			// Add DeviceController for new device:
+			if (deviceController == null) {
+				deviceController = new DeviceControllerImpl(this, device);
+				deviceControllers.put(id, deviceController);
 			}
-			final UpdateResult deviceManagerUpdate = deviceManager.update(device);
-			if (deviceManagerUpdate == DEVICE_STATUS_REQUIRED) {
+			final UpdateResult deviceControllerUpdate = deviceController.update(device);
+			if (deviceControllerUpdate == DEVICE_STATUS_REQUIRED) {
 				// need Status block for this device
 				idsNeedingStatus.add(id);
 			}
-			updated = updated.and(deviceManagerUpdate);
+			updated = updated.and(deviceControllerUpdate);
 			idsToRemove.remove(id);
 		}
 		if (!idsNeedingStatus.isEmpty()) {
 			return idsNeedingStatus;
 		}
 
-		// Remove DeviceManager for obsolete devices
+		// Remove DeviceController for obsolete devices
 		for (String id : idsToRemove) {
-			deviceManagers.remove(id);
+			deviceControllers.remove(id);
 			updated = updated.and(MINOR_UPDATES);
 		}
-		fireDeviceManagersChanged(updated);
+		fireDeviceControllersChanged(updated);
 		return null;
 	}
 
 	@Override
-	public Collection<DeviceManager> getDeviceManagers() {
-		return deviceManagers.values();
+	public Collection<DeviceController> getDeviceControllers() {
+		return deviceControllers.values();
 	}
 
 	@Override
-	public DeviceManager getDeviceManager(String id) {
-		return deviceManagers.get(id);
+	public DeviceController getDeviceController(String id) {
+		return deviceControllers.get(id);
 	}
 
 	@Override
@@ -190,12 +190,12 @@ public class HomeServerImpl implements HomeServer {
 		}
 	}
 
-	private void fireDeviceManagersChanged(UpdateResult updated) {
+	private void fireDeviceControllersChanged(UpdateResult updated) {
 		if (updated != NO_UPDATES) {
 			synchronized (listeners) {
 				// The device-manager updates MUST NOT BE long-lasting or blocking!
 				for (HomeServerChangeListener listener : listeners) {
-					listener.devicesManagersUpdated(this, updated == URGENT_UPDATES);
+					listener.devicesControllersUpdated(this, updated == URGENT_UPDATES);
 				}
 			}
 		}
@@ -228,9 +228,9 @@ public class HomeServerImpl implements HomeServer {
 	public String toString() {
 		StringBuffer b = new StringBuffer(getName());
 		b.append("[");
-		int n = getDeviceManagers().size();
+		int n = getDeviceControllers().size();
 		int i = 1;
-		for (DeviceManager di : getDeviceManagers()) {
+		for (DeviceController di : getDeviceControllers()) {
 			b.append(di.toString());
 			if (i < n) {
 				b.append(", ");

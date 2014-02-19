@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.net.URI;
 
 import elm.hs.api.client.AbstractCommandLineClient;
-import elm.scheduler.HomeServerManager;
+import elm.scheduler.HomeServerController;
 import elm.scheduler.Scheduler;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.impl.HomeServerImpl;
@@ -28,7 +28,7 @@ public class SchedulerApplication extends AbstractCommandLineClient {
 		ElmUserFeedbackClient feedbackClient = new ElmUserFeedbackClient(uri, "geheim");
 		feedbackClient.start();
 		
-		HomeServerManager hsManager = new HomeServerManager(hs, feedbackClient);
+		HomeServerController hsManager = new HomeServerController(hs, feedbackClient);
 //		hsManager.setPollingIntervalMillis(5_000);
 		
 		Scheduler scheduler = new Scheduler(40_000, 30_000);

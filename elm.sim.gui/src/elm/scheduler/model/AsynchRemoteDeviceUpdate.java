@@ -8,7 +8,7 @@ import elm.util.ClientException;
 
 public class AsynchRemoteDeviceUpdate {
 
-	private DeviceManager device;
+	private DeviceController device;
 	private ElmUserFeedback feedback;
 	/** The new scald-protection temperature, in [1/10°C]. */
 	private Short scaldProtectionTemperature;
@@ -19,7 +19,7 @@ public class AsynchRemoteDeviceUpdate {
 	 * @param device
 	 *            device that should have its parameters changed, cannot be {@code null}
 	 */
-	public AsynchRemoteDeviceUpdate(DeviceManager device) {
+	public AsynchRemoteDeviceUpdate(DeviceController device) {
 		assert device != null;
 		this.device = device;
 	}
@@ -30,7 +30,7 @@ public class AsynchRemoteDeviceUpdate {
 	 * @param deviceStatus
 	 *            new device status, cannot be {@code null}
 	 */
-	public AsynchRemoteDeviceUpdate(DeviceManager device, ElmStatus deviceStatus) {
+	public AsynchRemoteDeviceUpdate(DeviceController device, ElmStatus deviceStatus) {
 		this(device);
 		feedback = new ElmUserFeedback(device.getId(), deviceStatus);
 	}
@@ -45,7 +45,7 @@ public class AsynchRemoteDeviceUpdate {
 		feedback = new ElmUserFeedback(schedulerStatus);
 	}
 
-	public DeviceManager getDevice() {
+	public DeviceController getDevice() {
 		return device;
 	}
 
@@ -68,7 +68,7 @@ public class AsynchRemoteDeviceUpdate {
 	 *            the new scald-protection temperature in [1/10°C]
 	 */
 	public void setScaldProtectionTemperature(short temperature) {
-		assert temperature != DeviceManager.UNDEFINED_TEMPERATURE && temperature > 0;
+		assert temperature != DeviceController.UNDEFINED_TEMPERATURE && temperature > 0;
 		this.scaldProtectionTemperature = temperature;
 		this.previousDemandTemperature = null;
 	}
@@ -81,7 +81,7 @@ public class AsynchRemoteDeviceUpdate {
 	 *            reference temperature as set by the user before scald-protection became effective in [1/10°C]
 	 */
 	public void clearScaldProtection(short previousDemandTemperature) {
-		assert previousDemandTemperature != DeviceManager.UNDEFINED_TEMPERATURE && previousDemandTemperature > 0;
+		assert previousDemandTemperature != DeviceController.UNDEFINED_TEMPERATURE && previousDemandTemperature > 0;
 		this.previousDemandTemperature = previousDemandTemperature;
 		this.scaldProtectionTemperature = null;
 	}

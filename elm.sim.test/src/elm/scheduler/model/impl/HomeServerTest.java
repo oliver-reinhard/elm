@@ -23,11 +23,11 @@ import org.junit.Before;
 import org.junit.Test;
 
 import elm.hs.api.model.Device;
-import elm.scheduler.model.DeviceManager;
+import elm.scheduler.model.DeviceController;
 import elm.scheduler.model.HomeServerChangeListener;
 import elm.scheduler.model.RemoteDeviceUpdateClient;
 import elm.scheduler.model.UnsupportedModelException;
-import elm.scheduler.model.impl.DeviceManagerImpl;
+import elm.scheduler.model.impl.DeviceControllerImpl;
 import elm.scheduler.model.impl.HomeServerImpl;
 import elm.ui.api.ElmStatus;
 import elm.util.ClientException;
@@ -59,7 +59,7 @@ public class HomeServerTest {
 	@Test
 	public void isAlive() {
 		hs1.setPollTimeToleranceMillis(10);
-		assertEquals(NUM_DEVICES, hs1.getDeviceManagers().size());
+		assertEquals(NUM_DEVICES, hs1.getDeviceControllers().size());
 
 		assertFalse(hs1.isAlive()); // isAlive has side effects!
 		assertFalse(hs1.isAlive());
@@ -79,8 +79,8 @@ public class HomeServerTest {
 	public void addRemoveDeviceManagerUpdates() {
 		try {
 			// add 2 more
-			hs1.updateDeviceManagers(createDevicesWithStatus(HS_ID, 4, 0));
-			assertEquals(4, hs1.getDeviceManagers().size());
+			hs1.updateDeviceControllers(createDevicesWithStatus(HS_ID, 4, 0));
+			assertEquals(4, hs1.getDeviceControllers().size());
 
 			// remove 2
 			List<Device> devices = createDevicesWithStatus(HS_ID, 4, 0);
@@ -90,9 +90,9 @@ public class HomeServerTest {
 			Device d3 = devices.get(3);
 			devices.remove(1); // remove #2
 			devices.remove(1); // remove #3
-			hs1.updateDeviceManagers(devices);
-			assertEquals(2, hs1.getDeviceManagers().size());
-			Map<String, DeviceManager> map = getDeviceMap(hs1); // getDevicesInfos() is a Collection
+			hs1.updateDeviceControllers(devices);
+			assertEquals(2, hs1.getDeviceControllers().size());
+			Map<String, DeviceController> map = getDeviceMap(hs1); // getDevicesInfos() is a Collection
 			assertTrue(map.containsKey(d0.id));
 			assertFalse(map.containsKey(d1.id));
 			assertFalse(map.containsKey(d2.id));
@@ -109,18 +109,18 @@ public class HomeServerTest {
 			// Turn a tap ON
 			List<Device> devices = createDevicesWithStatus(HS_ID, NUM_DEVICES, 0);
 			devices.get(1).status.power = toPowerUnits(10_000);
-			hs1.updateDeviceManagers(devices);
-			verify(hsL1).devicesManagersUpdated(hs1, true);
+			hs1.updateDeviceControllers(devices);
+			verify(hsL1).devicesControllersUpdated(hs1, true);
 
 			// Turn a tap OFF
 			resetListener();
 			devices = createDevicesWithStatus(HS_ID, NUM_DEVICES, 0);
-			hs1.updateDeviceManagers(devices);
-			verify(hsL1).devicesManagersUpdated(hs1, true);
+			hs1.updateDeviceControllers(devices);
+			verify(hsL1).devicesControllersUpdated(hs1, true);
 
 			// Turn nothing ON or OFF
 			resetListener();
-			hs1.updateDeviceManagers(devices);
+			hs1.updateDeviceControllers(devices);
 			verifyNoMoreInteractions(hsL1);
 
 		} catch (UnsupportedModelException e) {
@@ -132,14 +132,14 @@ public class HomeServerTest {
 	@Test
 	public void deviceUpdates() {
 		try {
-			DeviceManager[] deviceManagers = hs1.getDeviceManagers().toArray(new DeviceManager[] {});
-			DeviceManager di1_2 = deviceManagers[1];
+			DeviceController[] deviceManagers = hs1.getDeviceControllers().toArray(new DeviceController[] {});
+			DeviceController di1_2 = deviceManagers[1];
 			
 			List<Device> devices = createDevicesWithStatus(1, NUM_DEVICES, 0);
 			Device d1_2 = devices.get(1);
 			final short referenceTemperature = d1_2.status.setpoint;
 			d1_2.status.power = toPowerUnits(20_000); // Turn tap 1-2 ON
-			hs1.updateDeviceManagers(devices);
+			hs1.updateDeviceControllers(devices);
 			assertNull(hs1.getPendingUpdates());
 			// there should be no client invocations while there are no device updates:
 			RemoteDeviceUpdateClient client = mock(RemoteDeviceUpdateClient.class);
@@ -153,7 +153,7 @@ public class HomeServerTest {
 			hs1.fireDeviceChangesPending();
 			verify(hsL1).deviceUpdatesPending(hs1, true); // listener was notified
 			//
-			short scaldProtectionTemperature = ((DeviceManagerImpl) di1_2).getScaldProtectionTemperature();
+			short scaldProtectionTemperature = ((DeviceControllerImpl) di1_2).getScaldProtectionTemperature();
 			when(client.setScaldProtectionTemperature(di1_2.getId(), scaldProtectionTemperature)).thenReturn(scaldProtectionTemperature);
 			hs1.executeRemoteDeviceUpdates(client, log);
 			assertNull(hs1.getPendingUpdates());
@@ -161,11 +161,11 @@ public class HomeServerTest {
 
 			// next poll returns setpoint = scald-protection temperature:
 			d1_2.status.setpoint = 265;
-			hs1.updateDeviceManagers(devices);
+			hs1.updateDeviceControllers(devices);
 			assertNull(hs1.getPendingUpdates());
 
 			// Scheduler approves UNLIMITED power:
-			di1_2.updateMaximumPowerConsumption(DeviceManager.UNLIMITED_POWER, ElmStatus.OVERLOAD, EXPECTED_WAITING_TIME);
+			di1_2.updateMaximumPowerConsumption(DeviceController.UNLIMITED_POWER, ElmStatus.OVERLOAD, EXPECTED_WAITING_TIME);
 			assertEquals(1, hs1.getPendingUpdates().size());
 			//
 			hs1.executeRemoteDeviceUpdates(client, log);

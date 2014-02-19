@@ -4,15 +4,15 @@ import elm.hs.api.model.Device;
 import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
 import elm.hs.api.model.Info;
 import elm.hs.api.model.Status;
-import elm.scheduler.HomeServerManager;
+import elm.scheduler.HomeServerController;
 import elm.scheduler.Scheduler;
 import elm.ui.api.ElmStatus;
 
 /**
- * A {@link DeviceManager} manages one physical {@link Device} and is the devices interface for the scheduler. Despite its name the {@link DeviceManager} is a
- * re-active object rather than an object with its own {@link Thread}. It reacts to events from the {@link HomeServerManager} and from the {@link Scheduler}.
+ * A {@link DeviceController} manages one physical {@link Device} and is the devices interface for the scheduler. Despite its name the {@link DeviceController} is a
+ * re-active object rather than an object with its own {@link Thread}. It reacts to events from the {@link HomeServerController} and from the {@link Scheduler}.
  * <p>
- * {@link DeviceManager} has the following responsibilities:
+ * {@link DeviceController} has the following responsibilities:
  * <ul>
  * <li>reflect the true state of the underlying physical {@link Device}</li>
  * <li>track consumptions and consumption state</li>
@@ -21,7 +21,7 @@ import elm.ui.api.ElmStatus;
  * </ul>
  * /p>
  */
-public interface DeviceManager {
+public interface DeviceController {
 
 	public static final int NO_POWER = 0;
 	public static final int UNLIMITED_POWER = Integer.MAX_VALUE;

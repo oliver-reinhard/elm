@@ -156,10 +156,10 @@ public class SimHomeServerServer {
 	}
 
 	private final Server server;
-	private final SimHomeServerImpl database;
+	private final SimHomeServer database;
 	protected final Logger log = Logger.getLogger(getClass().getName());
 
-	public SimHomeServerServer(SimHomeServerImpl database) {
+	public SimHomeServerServer(SimHomeServer database) {
 		assert database != null;
 		assert ! database.getDevices().isEmpty();
 		this.database = database;
@@ -182,7 +182,7 @@ public class SimHomeServerServer {
 		server.setHandler(handlers);
 	}
 
-	protected SimHomeServerImpl getDatabase() {
+	protected SimHomeServer getDatabase() {
 		return database;
 	}
 

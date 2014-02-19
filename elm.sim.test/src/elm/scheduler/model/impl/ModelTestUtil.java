@@ -17,7 +17,7 @@ import elm.hs.api.model.Error;
 import elm.hs.api.model.Info;
 import elm.hs.api.model.Status;
 import elm.scheduler.model.AsynchRemoteDeviceUpdate;
-import elm.scheduler.model.DeviceManager;
+import elm.scheduler.model.DeviceController;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.UnsupportedModelException;
 import elm.ui.api.ElmStatus;
@@ -30,8 +30,8 @@ public class ModelTestUtil {
 	public static HomeServer createHomeServer(int id, int devices) {
 		HomeServer hs = new HomeServerImpl(URI.create("http://hs" + id), "pw", "hs" + id);
 		try {
-			hs.updateDeviceManagers(ModelTestUtil.createDevicesWithInfo(id, devices));
-			hs.updateDeviceManagers(ModelTestUtil.createDevicesWithStatus(id, devices, 0));
+			hs.updateDeviceControllers(ModelTestUtil.createDevicesWithInfo(id, devices));
+			hs.updateDeviceControllers(ModelTestUtil.createDevicesWithStatus(id, devices, 0));
 		} catch (UnsupportedModelException e) {
 			throw new IllegalArgumentException(e);
 		}
@@ -151,17 +151,17 @@ public class ModelTestUtil {
 	public static List<String> getDeviceIds(HomeServer server) {
 		assert server != null;
 		List<String> list = new ArrayList<String>();
-		for (DeviceManager obj : server.getDeviceManagers()) {
+		for (DeviceController obj : server.getDeviceControllers()) {
 			list.add(obj.getId());
 		}
 		Collections.sort(list);
 		return list;
 	}
 
-	public static Map<String, DeviceManager> getDeviceMap(HomeServer server) {
+	public static Map<String, DeviceController> getDeviceMap(HomeServer server) {
 		assert server != null;
-		Map<String, DeviceManager> map = new HashMap<String, DeviceManager>();
-		for (DeviceManager obj : server.getDeviceManagers()) {
+		Map<String, DeviceController> map = new HashMap<String, DeviceController>();
+		for (DeviceController obj : server.getDeviceControllers()) {
 			map.put(obj.getId(), obj);
 		}
 		return map;
@@ -188,8 +188,8 @@ public class ModelTestUtil {
 	}
 
 	public static void checkDeviceUpdate(HomeServer server, Device device, ElmStatus deviceStatus, int expectedLimitWatt) {
-		final DeviceManager deviceManager = server.getDeviceManager(device.id);
-		assertEquals(expectedLimitWatt == DeviceManager.UNLIMITED_POWER ? deviceManager.getDeviceModel().getPowerMaxWatt() : expectedLimitWatt,
+		final DeviceController deviceManager = server.getDeviceController(device.id);
+		assertEquals(expectedLimitWatt == DeviceController.UNLIMITED_POWER ? deviceManager.getDeviceModel().getPowerMaxWatt() : expectedLimitWatt,
 				deviceManager.getApprovedPowerWatt());
 		final AsynchRemoteDeviceUpdate deviceUpdate = getDeviceUpdate(server, device);
 		assertNotNull(deviceUpdate);

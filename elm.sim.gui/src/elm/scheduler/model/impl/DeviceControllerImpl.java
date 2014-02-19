@@ -1,14 +1,14 @@
 package elm.scheduler.model.impl;
 
-import static elm.scheduler.model.DeviceManager.DeviceStatus.CONSUMPTION_APPROVED;
-import static elm.scheduler.model.DeviceManager.DeviceStatus.CONSUMPTION_DENIED;
-import static elm.scheduler.model.DeviceManager.DeviceStatus.CONSUMPTION_ENDED;
-import static elm.scheduler.model.DeviceManager.DeviceStatus.CONSUMPTION_LIMITED;
-import static elm.scheduler.model.DeviceManager.DeviceStatus.CONSUMPTION_STARTED;
-import static elm.scheduler.model.DeviceManager.DeviceStatus.ERROR;
-import static elm.scheduler.model.DeviceManager.DeviceStatus.INITIALIZING;
-import static elm.scheduler.model.DeviceManager.DeviceStatus.NOT_CONNECTED;
-import static elm.scheduler.model.DeviceManager.DeviceStatus.READY;
+import static elm.scheduler.model.DeviceController.DeviceStatus.CONSUMPTION_APPROVED;
+import static elm.scheduler.model.DeviceController.DeviceStatus.CONSUMPTION_DENIED;
+import static elm.scheduler.model.DeviceController.DeviceStatus.CONSUMPTION_ENDED;
+import static elm.scheduler.model.DeviceController.DeviceStatus.CONSUMPTION_LIMITED;
+import static elm.scheduler.model.DeviceController.DeviceStatus.CONSUMPTION_STARTED;
+import static elm.scheduler.model.DeviceController.DeviceStatus.ERROR;
+import static elm.scheduler.model.DeviceController.DeviceStatus.INITIALIZING;
+import static elm.scheduler.model.DeviceController.DeviceStatus.NOT_CONNECTED;
+import static elm.scheduler.model.DeviceController.DeviceStatus.READY;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -19,18 +19,18 @@ import elm.hs.api.model.Device;
 import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
 import elm.scheduler.Scheduler;
 import elm.scheduler.model.AsynchRemoteDeviceUpdate;
-import elm.scheduler.model.DeviceManager;
+import elm.scheduler.model.DeviceController;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.UnsupportedModelException;
 import elm.ui.api.ElmStatus;
 import elm.ui.api.ElmUserFeedback;
 
 /**
- * This device-manager implementation is close to <em>stateless</em> in that, each time it runs, it performs a full analysis of all locally stored
+ * This device-controller implementation is close to <em>stateless</em> in that, each time it runs, it performs a full analysis of all locally stored
  * {@link Device} fields and {@link Scheduler} input. It keeps only minimal state and status information and thus depend only weakly on its previous state from
  * which it might never recover. </p>
  */
-public class DeviceManagerImpl implements DeviceManager {
+public class DeviceControllerImpl implements DeviceController {
 
 	private static final int LOWEST_INTAKE_WATER_TEMPERATURE = 50;
 
@@ -40,7 +40,7 @@ public class DeviceManagerImpl implements DeviceManager {
 	/** The minimum delay between ELM status notifications if no status change is involved. */
 	private static final int ELM_STATUS_NOTIFICATION_MIN_DELAY_MILLIS = 5000;
 
-	private static final Logger LOG = Logger.getLogger(DeviceManagerImpl.class.getName());
+	private static final Logger LOG = Logger.getLogger(DeviceControllerImpl.class.getName());
 
 	private final String id;
 	private final HomeServer homeServer;
@@ -83,11 +83,11 @@ public class DeviceManagerImpl implements DeviceManager {
 	/** Unix time of last {@link ElmStatus} communicated to the physical device. */
 	private long lastElmStatusNotificationTime = 0;
 
-	public DeviceManagerImpl(HomeServer server, Device device) throws UnsupportedModelException {
+	public DeviceControllerImpl(HomeServer server, Device device) throws UnsupportedModelException {
 		this(server, device, null);
 	}
 
-	public DeviceManagerImpl(HomeServer server, Device device, String name) throws UnsupportedModelException {
+	public DeviceControllerImpl(HomeServer server, Device device, String name) throws UnsupportedModelException {
 		assert server != null;
 		assert device != null;
 		this.id = device.id;

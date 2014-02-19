@@ -8,7 +8,7 @@ import java.util.logging.Logger;
 import elm.hs.api.model.Device;
 import elm.hs.api.model.Info;
 import elm.hs.api.model.Status;
-import elm.scheduler.HomeServerManager;
+import elm.scheduler.HomeServerController;
 
 public interface HomeServer {
 
@@ -41,11 +41,11 @@ public interface HomeServer {
 	 * @throws UnsupportedModelException
 	 *             if one of the devices does is not suitable for ELM
 	 */
-	List<String> updateDeviceManagers(List<Device> devices) throws UnsupportedModelException;
+	List<String> updateDeviceControllers(List<Device> devices) throws UnsupportedModelException;
 
-	Collection<DeviceManager> getDeviceManagers();
+	Collection<DeviceController> getDeviceControllers();
 
-	DeviceManager getDeviceManager(String deviceId);
+	DeviceController getDeviceController(String deviceId);
 
 	void setPollTimeToleranceMillis(long pollTimeToleranceMillis);
 
@@ -76,7 +76,7 @@ public interface HomeServer {
 
 	/**
 	 * Device updates can be {@link #putDeviceUpdate(AsynchRemoteDeviceUpdate) put} one by one without the receiver even noticing. This method notifies all
-	 * {@link HomeServerChangeListener}s of these changes, notably the {@link HomeServerManager}.
+	 * {@link HomeServerChangeListener}s of these changes, notably the {@link HomeServerController}.
 	 * <p>
 	 * <em>Note: </em>This method must not be long-running or blocking; this could delay the scheduler.
 	 * </p>

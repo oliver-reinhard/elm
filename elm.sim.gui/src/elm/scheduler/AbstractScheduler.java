@@ -7,7 +7,7 @@ import java.util.logging.Logger;
 
 import elm.hs.api.model.Device;
 import elm.scheduler.model.AsynchRemoteDeviceUpdate;
-import elm.scheduler.model.DeviceManager;
+import elm.scheduler.model.DeviceController;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.HomeServerChangeListener;
 import elm.ui.api.ElmStatus;
@@ -20,7 +20,7 @@ import elm.ui.api.ElmStatus;
  * {@link HomeServer}s. This class also enables the implementation of multiple concrete schedulers that follow different scheduling approaches.
  * </p>
  * <p>
- * The scheduler is a {@link HomeServerChangeListener listener} to critical changes of {@link HomeServer} {@link DeviceManager} which trigger a new scheduling
+ * The scheduler is a {@link HomeServerChangeListener listener} to critical changes of {@link HomeServer} {@link DeviceController} which trigger a new scheduling
  * cycle.
  * </p>
  */
@@ -184,7 +184,7 @@ public abstract class AbstractScheduler implements HomeServerChangeListener {
 	protected abstract void processDevices();
 
 	@Override
-	public synchronized void devicesManagersUpdated(HomeServer server, boolean urgent) {
+	public synchronized void devicesControllersUpdated(HomeServer server, boolean urgent) {
 		devicesUpdated = true;
 		if (urgent) {
 			notify();
