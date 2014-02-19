@@ -6,17 +6,17 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.util.logging.Logger;
 
+import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EtchedBorder;
 
 import elm.sim.metamodel.SimModelEvent;
 import elm.sim.metamodel.SimModelListener;
-import elm.sim.model.SimpleScheduler;
 import elm.sim.model.SimStatus;
+import elm.sim.model.SimpleScheduler;
 import elm.sim.model.impl.SimpleSchedulerImpl;
 
 public class SimpleSchedulerUI extends JPanel {
@@ -45,7 +45,7 @@ public class SimpleSchedulerUI extends JPanel {
 	// Widgets
 	private final StatusPanel statusPanel;
 	private JTextField waitingTimeSeconds;
-	private JTable outlets;;
+//	private JTable outlets;;
 
 	private final SimModelListener modelListener = new SimModelListener() {
 
@@ -82,6 +82,8 @@ public class SimpleSchedulerUI extends JPanel {
 		this.model = model;
 		model.addModelListener(modelListener);
 
+		setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
+
 		GridBagLayout gridBagLayout = new GridBagLayout();
 		gridBagLayout.columnWidths = new int[] { 0, 0 };
 		gridBagLayout.columnWeights = new double[] { 1.0, Double.MIN_VALUE };
@@ -92,7 +94,7 @@ public class SimpleSchedulerUI extends JPanel {
 		JLabel title = new JLabel("Scheduler");
 		title.setFont(new Font("Lucida Grande", Font.PLAIN, 15));
 		GridBagConstraints gbc_title = new GridBagConstraints();
-		gbc_title.insets = new Insets(0, 0, 5, 0);
+		gbc_title.insets = new Insets(0, 5, 5, 5);
 		gbc_title.gridx = 0;
 		gbc_title.gridy = 0;
 		add(title, gbc_title);
@@ -110,7 +112,7 @@ public class SimpleSchedulerUI extends JPanel {
 		JLabel waitingTimeLabel = new JLabel("Wartezeit [s]");
 		GridBagConstraints gbc_waitingTimeLabel = new GridBagConstraints();
 		gbc_waitingTimeLabel.anchor = GridBagConstraints.WEST;
-		gbc_waitingTimeLabel.insets = new Insets(0, 0, 5, 0);
+		gbc_waitingTimeLabel.insets = new Insets(0, 5, 5, 5);
 		gbc_waitingTimeLabel.gridx = 0;
 		gbc_waitingTimeLabel.gridy = 2;
 		add(waitingTimeLabel, gbc_waitingTimeLabel);
@@ -118,29 +120,29 @@ public class SimpleSchedulerUI extends JPanel {
 		waitingTimeSeconds = new JTextField();
 		waitingTimeSeconds.setEnabled(false);
 		GridBagConstraints gbc_waitingTimeSeconds = new GridBagConstraints();
-		gbc_waitingTimeSeconds.insets = new Insets(0, 0, 5, 0);
+		gbc_waitingTimeSeconds.insets = new Insets(0, 5, 5, 5);
 		gbc_waitingTimeSeconds.fill = GridBagConstraints.HORIZONTAL;
 		gbc_waitingTimeSeconds.gridx = 0;
 		gbc_waitingTimeSeconds.gridy = 3;
 		add(waitingTimeSeconds, gbc_waitingTimeSeconds);
 		waitingTimeSeconds.setColumns(10);
 
-		// Zapfstellen
-		JLabel outletsLabel = new JLabel("Zapfstellen");
-		GridBagConstraints gbc_outletsLabel = new GridBagConstraints();
-		gbc_outletsLabel.anchor = GridBagConstraints.WEST;
-		gbc_outletsLabel.insets = new Insets(0, 0, 5, 0);
-		gbc_outletsLabel.gridx = 0;
-		gbc_outletsLabel.gridy = 4;
-		add(outletsLabel, gbc_outletsLabel);
-
-		outlets = new JTable();
-		outlets.setBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null));
-		GridBagConstraints gbc_outlets = new GridBagConstraints();
-		gbc_outlets.fill = GridBagConstraints.BOTH;
-		gbc_outlets.gridx = 0;
-		gbc_outlets.gridy = 5;
-		add(outlets, gbc_outlets);
+//		// Zapfstellen
+//		JLabel outletsLabel = new JLabel("Zapfstellen");
+//		GridBagConstraints gbc_outletsLabel = new GridBagConstraints();
+//		gbc_outletsLabel.anchor = GridBagConstraints.WEST;
+//		gbc_outletsLabel.insets = new Insets(0, 0, 5, 0);
+//		gbc_outletsLabel.gridx = 0;
+//		gbc_outletsLabel.gridy = 4;
+//		add(outletsLabel, gbc_outletsLabel);
+//
+//		outlets = new JTable();
+//		outlets.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
+//		GridBagConstraints gbc_outlets = new GridBagConstraints();
+//		gbc_outlets.fill = GridBagConstraints.BOTH;
+//		gbc_outlets.gridx = 0;
+//		gbc_outlets.gridy = 5;
+//		add(outlets, gbc_outlets);
 
 		updateFromModel(model);
 	}

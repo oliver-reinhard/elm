@@ -2,37 +2,46 @@ package elm.sim.model;
 
 import static elm.sim.model.Flow.MEDIUM;
 import static elm.sim.model.Flow.NONE;
+import static elm.sim.model.HotWaterTemperature.TEMP_1;
+import static elm.sim.model.HotWaterTemperature.TEMP_2;
+import static elm.sim.model.HotWaterTemperature.TEMP_3;
+import static elm.sim.model.HotWaterTemperature.TEMP_4;
+import static elm.sim.model.HotWaterTemperature.TEMP_MIN;
 import static elm.sim.model.SimStatus.ERROR;
 import static elm.sim.model.SimStatus.OFF;
 import static elm.sim.model.SimStatus.ON;
 import static elm.sim.model.SimStatus.OVERLOAD;
 import static elm.sim.model.SimStatus.SATURATION;
-import static elm.sim.model.Temperature.TEMP_1;
-import static elm.sim.model.Temperature.TEMP_2;
-import static elm.sim.model.Temperature.TEMP_3;
-import static elm.sim.model.Temperature.TEMP_4;
-import static elm.sim.model.Temperature.TEMP_MIN;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import org.junit.Before;
 import org.junit.Test;
 
+import elm.hs.api.model.Device;
+import elm.scheduler.model.UnsupportedModelException;
+import elm.scheduler.model.impl.ModelTestUtil;
 import elm.sim.model.impl.TapPointImpl;
 
 public class TapPointTest {
 
-	private static final Temperature INITIAL_REFERENCE_TEMP = TEMP_3;
+	private static final HotWaterTemperature INITIAL_REFERENCE_TEMP = TEMP_3;
 
 	private TapPoint point;
 
 	@Before
 	public void setup() {
-		point = new TapPointImpl("Name", INITIAL_REFERENCE_TEMP);
-		point.setSchedulerStatus(OFF);
-		assertStatus(OFF, TEMP_MIN, NONE);
-
+		try {
+			Device device = ModelTestUtil.createDeviceWithStatus(1, 1, 0);
+			point = new TapPointImpl("Name", device.id, INITIAL_REFERENCE_TEMP);
+			point.setSchedulerStatus(OFF);
+			assertStatus(OFF, TEMP_MIN, NONE);
+		} catch (UnsupportedModelException e) {
+			fail(e.getMessage());
+			e.printStackTrace();
+		}
 	}
-	
+
 	//
 	// -------- Changing the SCHEDULER status: --------
 	//
@@ -68,7 +77,7 @@ public class TapPointTest {
 
 		// Full life cycle:
 		point.setSchedulerStatus(ON);
-		assertStatus(ON, INITIAL_REFERENCE_TEMP, MEDIUM);  // now warm
+		assertStatus(ON, INITIAL_REFERENCE_TEMP, MEDIUM); // now warm
 
 		point.setSchedulerStatus(SATURATION);
 		assertStatus(ON, INITIAL_REFERENCE_TEMP, MEDIUM);
@@ -175,7 +184,7 @@ public class TapPointTest {
 		assertStatus(ERROR, TEMP_MIN, NONE);
 	}
 
-	private void assertStatus(SimStatus expectedStatus, Temperature expectedActualTemp, Flow expectedActualFlow) {
+	private void assertStatus(SimStatus expectedStatus, HotWaterTemperature expectedActualTemp, Flow expectedActualFlow) {
 		assertEquals(expectedStatus, point.getStatus());
 		assertEquals(expectedActualTemp, point.getActualTemperature());
 		assertEquals(expectedActualFlow, point.getActualFlow());

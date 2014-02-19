@@ -1,29 +1,24 @@
 package elm.hs.api.sim.server;
 
 import elm.hs.api.model.Device;
-import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
 import elm.scheduler.model.UnsupportedModelException;
 import elm.sim.metamodel.SimModelEvent;
 import elm.sim.metamodel.SimModelListener;
+import elm.sim.model.IntakeWaterTemperature;
 import elm.sim.model.TapPoint;
-import elm.sim.model.Temperature;
+import elm.sim.model.HotWaterTemperature;
 
 public class DeviceTapPointAdapter implements SimModelListener {
 
 	private final Device device;
 	private final TapPoint point;
-	private final DeviceModel deviceModel;
-
 	public DeviceTapPointAdapter(TapPoint point, Device device) throws UnsupportedModelException {
 		assert point != null;
 		assert device != null;
+		assert device.status != null;
 		this.point = point;
 		point.addModelListener(this);
 		this.device = device;
-		deviceModel = DeviceModel.getModel(device);
-		if (!deviceModel.getType().isRemoteControllable()) {
-			throw new UnsupportedModelException(device.id);
-		}
 		updateTapPoint();
 	}
 
@@ -40,19 +35,12 @@ public class DeviceTapPointAdapter implements SimModelListener {
 		switch ((TapPoint.Attribute) event.getAttribute()) {
 		case ACTUAL_TEMPERATURE:
 		case ACTUAL_FLOW:
-			final boolean heaterOn = point.getActualFlow().isOn() && point.getActualTemperature().getDegreesCelsius() * 10 > device.status.tIn;
-			device.setHeaterOn(heaterOn);
-			if (heaterOn) {
-				int powerWatt = (int) ((point.getActualTemperature().getDegreesCelsius() - device.status.tIn / 10.0)
-						* point.getActualFlow().getMillilitresPerMinute() / 60 * 4.192);
-				powerWatt = Math.min(powerWatt, deviceModel.getPowerMaxWatt());
-				device.status.power = toPowerUnits(powerWatt);
-			} else {
-				device.status.power = 0;
-			}
+		case INTAKE_WATER_TEMPERATURE:
+			device.status.power = point.getPowerUnits();
+			device.setHeaterOn(device.status.power > 0);
 			break;
 		case REFERENCE_TEMPERATURE:
-			device.setSetpoint((short) (((Temperature) event.getNewValue()).getDegreesCelsius() * 10));
+			device.setSetpoint(((HotWaterTemperature) event.getNewValue()).getUnits());
 			break;
 		default:
 			// ignore
@@ -61,17 +49,8 @@ public class DeviceTapPointAdapter implements SimModelListener {
 	}
 
 	public void updateTapPoint() {
-		point.setReferenceTemperature(Temperature.fromInt(device.status.setpoint / 10));
-	}
-
-	int toPowerWatt(short powerUnits) {
-		assert device.status.powerMax != 0;
-		return deviceModel.getPowerMaxWatt() * powerUnits / device.status.powerMax;
-	}
-
-	short toPowerUnits(int powerWatt) {
-		assert device.status.powerMax != 0;
-		return (short) (powerWatt * device.status.powerMax / deviceModel.getPowerMaxWatt());
+		point.setReferenceTemperature(HotWaterTemperature.fromInt(device.status.setpoint / 10));
+		point.setIntakeWaterTemperature(IntakeWaterTemperature.fromShort(device.status.tIn));
 	}
 
 }

@@ -4,12 +4,15 @@ import static elm.sim.model.SimStatus.OFF;
 import static elm.sim.model.SimStatus.ON;
 import static elm.sim.model.SimStatus.OVERLOAD;
 import static elm.sim.model.SimStatus.SATURATION;
+import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
+import elm.scheduler.model.UnsupportedModelException;
 import elm.sim.metamodel.AbstractSimObject;
 import elm.sim.metamodel.SimAttribute;
 import elm.sim.model.Flow;
+import elm.sim.model.HotWaterTemperature;
+import elm.sim.model.IntakeWaterTemperature;
 import elm.sim.model.SimStatus;
 import elm.sim.model.TapPoint;
-import elm.sim.model.Temperature;
 import elm.ui.api.ElmStatus;
 
 /**
@@ -20,6 +23,11 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 	/** Outlet identification within group. */
 	private final String name;
 
+	/** ID of physical device. */
+	private final String deviceId;
+
+	private final DeviceModel deviceModel;
+
 	/** Flow as requested by user. */
 	private Flow referenceFlow = Flow.NONE; // new outlets typically are not running when they're installed
 
@@ -27,13 +35,13 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 	private Flow actualFlow = Flow.NONE; // new outlets typically are not running when they're installed
 
 	/** Temperature as requested by user. */
-	private Temperature referenceTemperature;
+	private HotWaterTemperature referenceTemperature;
 
 	/** Temperature as constrained by the scheduler. */
-	private Temperature scaldProtectionTemperature = Temperature.TEMP_MAX; // = no limit
+	private HotWaterTemperature scaldProtectionTemperature = HotWaterTemperature.TEMP_MAX; // = no limit
 
 	/** Temperature as granted by scheduler. */
-	private Temperature actualTemperature = Temperature.TEMP_MIN; // = cold water
+	private HotWaterTemperature actualTemperature = HotWaterTemperature.TEMP_MIN; // = cold water
 
 	/** The status of the outlet. */
 	private SimStatus status = OFF;
@@ -41,12 +49,20 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 	/** The waiting time indication if status == {@link SimStatus#OVERLOAD}. */
 	private int waitingTimePercent = NO_WAITING_PERCENT;
 
+	private IntakeWaterTemperature waterIntakeTemperature;
+
 	/** Mirror of the scheduler's status. */
 	private SimStatus schedulerStatus = null;
 
-	public TapPointImpl(String name, Temperature referenceTemperature) {
+	public TapPointImpl(String name, String id, HotWaterTemperature referenceTemperature) throws UnsupportedModelException{
 		assert name != null && !name.isEmpty();
+		assert id != null && !id.isEmpty();
 		this.name = name;
+		deviceId = id;
+		deviceModel = DeviceModel.getModel(id);
+		if (!deviceModel.getType().isRemoteControllable()) {
+			throw new UnsupportedModelException(id);
+		}
 		this.referenceTemperature = referenceTemperature;
 	}
 
@@ -61,6 +77,16 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 	@Override
 	public String getLabel() {
 		return name;
+	}
+
+	@Override
+	public String getId() {
+		return deviceId;
+	}
+
+	@Override
+	public DeviceModel getDeviceModel() {
+		return deviceModel;
 	}
 
 	@Override
@@ -99,9 +125,9 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 	}
 
 	@Override
-	public synchronized void setReferenceTemperature(Temperature newValue) {
+	public synchronized void setReferenceTemperature(HotWaterTemperature newValue) {
 		assert newValue != null;
-		Temperature oldValue = referenceTemperature;
+		HotWaterTemperature oldValue = referenceTemperature;
 		if (oldValue != newValue) {
 			referenceTemperature = newValue;
 			fireModelChanged(Attribute.REFERENCE_TEMPERATURE, oldValue, newValue);
@@ -110,14 +136,14 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 	}
 
 	@Override
-	public synchronized Temperature getReferenceTemperature() {
+	public synchronized HotWaterTemperature getReferenceTemperature() {
 		return referenceTemperature;
 	}
 
-	private void setActualTemperature(Temperature newValue) {
+	private void setActualTemperature(HotWaterTemperature newValue) {
 		assert newValue != null;
 		assert newValue.lessOrEqualThan(getScaldProtectionTemperature()) : "actual temperature exceeds scald temperature";
-		Temperature oldValue = actualTemperature;
+		HotWaterTemperature oldValue = actualTemperature;
 		if (oldValue != newValue) {
 			actualTemperature = newValue;
 			fireModelChanged(Attribute.ACTUAL_TEMPERATURE, oldValue, newValue);
@@ -125,12 +151,12 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 	}
 
 	@Override
-	public synchronized Temperature getActualTemperature() {
+	public synchronized HotWaterTemperature getActualTemperature() {
 		return actualTemperature;
 	}
 
 	@Override
-	public synchronized void setScaldProtectionTemperature(Temperature newValue) {
+	public synchronized void setScaldProtectionTemperature(HotWaterTemperature newValue) {
 		setInternalScaldProtectionTemperature(newValue, true);
 	}
 
@@ -140,9 +166,9 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 	 * @param updateDerived
 	 *            update derived values on true status change
 	 */
-	private void setInternalScaldProtectionTemperature(Temperature newValue, boolean updateDerived) {
+	private void setInternalScaldProtectionTemperature(HotWaterTemperature newValue, boolean updateDerived) {
 		assert newValue != null;
-		Temperature oldValue = scaldProtectionTemperature;
+		HotWaterTemperature oldValue = scaldProtectionTemperature;
 		if (oldValue != newValue) {
 			scaldProtectionTemperature = newValue;
 			fireModelChanged(Attribute.SCALD_TEMPERATURE, oldValue, newValue);
@@ -153,7 +179,7 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 	}
 
 	@Override
-	public synchronized Temperature getScaldProtectionTemperature() {
+	public synchronized HotWaterTemperature getScaldProtectionTemperature() {
 		return scaldProtectionTemperature;
 	}
 
@@ -199,27 +225,27 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 	protected void updateDerived() {
 		// currently, the actual flow is unconstrained and always follows the reference flow
 		setActualFlow(referenceFlow);
-		
+
 		if (schedulerStatus == null) {
 			if (status == OFF) {
-				setActualTemperature(Temperature.TEMP_MIN);
-			}else {
+				setActualTemperature(HotWaterTemperature.TEMP_MIN);
+			} else {
 				setActualTemperature(referenceTemperature);
 			}
-			
+
 		} else {
 			// Are we in the middle of an actual flow?
 			if (actualFlow.isOn()) {
 				// Yes => interfere as little as possible with the user's reference temperature;
 				if (schedulerStatus.in(ON, SATURATION)) {
 					setInternalStatus(ON, false);
-					setInternalScaldProtectionTemperature(Temperature.TEMP_MAX, false);
+					setInternalScaldProtectionTemperature(HotWaterTemperature.TEMP_MAX, false);
 					// allow to increase or decrease the reference temperature:
 					setActualTemperature(referenceTemperature);
 
-				} else if (schedulerStatus == OVERLOAD && scaldProtectionTemperature != Temperature.TEMP_MIN) {
+				} else if (schedulerStatus == OVERLOAD && scaldProtectionTemperature != HotWaterTemperature.TEMP_MIN) {
 					setInternalStatus(ON, false);
-					setInternalScaldProtectionTemperature(Temperature.TEMP_MAX, false);
+					setInternalScaldProtectionTemperature(HotWaterTemperature.TEMP_MAX, false);
 					// allow to increase or decrease the reference temperature:
 					setActualTemperature(referenceTemperature);
 
@@ -227,20 +253,20 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 					setInternalStatus(schedulerStatus, false); // user can see why reference-flow increase is disabled
 					setInternalScaldProtectionTemperature(actualTemperature, false);
 					// allow only to decrease the reference with respect to current actual temp.:
-					setActualTemperature(Temperature.min(actualTemperature, referenceTemperature));
+					setActualTemperature(HotWaterTemperature.min(actualTemperature, referenceTemperature));
 				}
 
 			} else if (schedulerStatus.in(ON, SATURATION)) {
 				// No, there is no actual flow:
 				setInternalStatus(schedulerStatus, false);
-				setInternalScaldProtectionTemperature(Temperature.TEMP_MAX, false);
+				setInternalScaldProtectionTemperature(HotWaterTemperature.TEMP_MAX, false);
 				// allow to increase or decrease the reference
 				setActualTemperature(referenceTemperature);
 
 			} else { // schedulerStatus.in(OFF, OVERLOAD, ERROR)
 				setInternalStatus(schedulerStatus, false);
-				setInternalScaldProtectionTemperature(Temperature.TEMP_MIN, false);
-				setActualTemperature(Temperature.TEMP_MIN);
+				setInternalScaldProtectionTemperature(HotWaterTemperature.TEMP_MIN, false);
+				setActualTemperature(HotWaterTemperature.TEMP_MIN);
 			}
 		}
 	}
@@ -261,5 +287,59 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 	@Override
 	public int getWaitingTimePercent() {
 		return waitingTimePercent;
+	}
+
+	@Override
+	public void setIntakeWaterTemperature(IntakeWaterTemperature newValue) {
+		assert newValue != null;
+		IntakeWaterTemperature oldValue = waterIntakeTemperature;
+		if (oldValue != newValue) {
+			waterIntakeTemperature = newValue;
+			fireModelChanged(Attribute.INTAKE_WATER_TEMPERATURE, oldValue, newValue);
+		}
+	}
+
+	@Override
+	public IntakeWaterTemperature getIntakeWaterTemperature() {
+		return waterIntakeTemperature;
+	}
+
+	@Override
+	public int getPowerWatt() {
+		if (deviceModel == null) {
+			throw new IllegalStateException("Must set a device ID before calling this method.");
+		}
+		final boolean heaterOn = getActualFlow().isOn() && getActualTemperature().getDegreesCelsius() > getIntakeWaterTemperature().getDegreesCelsius();
+		if (heaterOn) {
+			int powerWatt = (int) (4.192 * (getActualTemperature().getDegreesCelsius() - getIntakeWaterTemperature().getDegreesCelsius())
+					* getActualFlow().getMillilitresPerMinute() / 60);
+			return Math.min(powerWatt, deviceModel.getPowerMaxWatt());
+		} else {
+			return 0;
+		}
+	}
+
+	@Override
+	public short getPowerUnits() {
+		return toPowerUnits(getPowerWatt());
+	}
+
+	int toPowerWatt(short powerUnits) {
+		return deviceModel.getPowerMaxWatt() * powerUnits / deviceModel.getPowerMaxUnits();
+	}
+
+	short toPowerUnits(int powerWatt) {
+		return (short) (powerWatt * deviceModel.getPowerMaxUnits() / deviceModel.getPowerMaxWatt());
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder b = new StringBuilder(getClass().getSimpleName());
+		b.append("(\"");
+		b.append(getLabel());
+		b.append("\", ");
+		b.append(getId());
+		b.append(")");
+		return b.toString();
 	}
 }

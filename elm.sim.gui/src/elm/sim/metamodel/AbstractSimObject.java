@@ -38,7 +38,7 @@ public abstract class AbstractSimObject implements SimObject, SimChangeNotifier 
 	
 	@Override
 	public String toString() {
-		StringBuilder b = new StringBuilder(getClass().getName());
+		StringBuilder b = new StringBuilder(getClass().getSimpleName());
 		b.append("(\"");
 		b.append(getLabel());
 		b.append("\")");

@@ -1,19 +1,21 @@
 package elm.sim.ui;
 
+import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
+import javax.swing.JLabel;
 import javax.swing.SwingUtilities;
 
 import elm.sim.metamodel.SimModelEvent;
 import elm.sim.metamodel.SimModelListener;
 import elm.sim.model.Flow;
-import elm.sim.model.TapPoint;
 import elm.sim.model.SimStatus;
-import elm.sim.model.Temperature;
+import elm.sim.model.HotWaterTemperature;
 import elm.sim.model.impl.TapPointImpl;
 
 @SuppressWarnings("serial")
@@ -34,22 +36,25 @@ public class SimTapPointUI extends AbstractTapPointUI {
 		}
 	}
 
-	class TemperaturePanel extends EnumSelectorPanel<Temperature> {
+	class TemperaturePanel extends EnumSelectorPanel<HotWaterTemperature> {
 
 		TemperaturePanel() {
-			super("Temperatur", true, Temperature.TEMP_MIN, Temperature.TEMP_1, Temperature.TEMP_2, Temperature.TEMP_3, Temperature.TEMP_4);
+			super("Temperatur", true, HotWaterTemperature.TEMP_MIN, HotWaterTemperature.TEMP_1, HotWaterTemperature.TEMP_2, HotWaterTemperature.TEMP_3, HotWaterTemperature.TEMP_4);
 		}
 
 		@Override
-		protected void referenceValueChanged(Temperature newValue) {
+		protected void referenceValueChanged(HotWaterTemperature newValue) {
 			info("Reference temperature changed: " + newValue.getLabel());
 			model.setReferenceTemperature(newValue);
 		}
 	}
 
 	// Widgets
-	private FlowPanel flow;
+	private JLabel id;
+	private JLabel power;
 	private TemperaturePanel temperature;
+	private FlowPanel flow;
+	private DecimalFormat kWFormat;
 
 	// Listeners
 	private final SimModelListener modelListener = new SimModelListener() {
@@ -70,14 +75,14 @@ public class SimTapPointUI extends AbstractTapPointUI {
 						updateReferenceTemperatureEnablement();
 						break;
 					case ACTUAL_FLOW:
-						flow.setActual((Flow) event.getNewValue());
+						updateFromModel(); // power
 						break;
 					case REFERENCE_TEMPERATURE:
-						temperature.setReference((Temperature) event.getNewValue());
+						temperature.setReference((HotWaterTemperature) event.getNewValue());
 						updateReferenceTemperatureEnablement();
 						break;
 					case ACTUAL_TEMPERATURE:
-						temperature.setActual((Temperature) event.getNewValue());
+						updateFromModel(); // power
 						break;
 					case SCALD_TEMPERATURE:
 						updateReferenceTemperatureEnablement();
@@ -89,7 +94,11 @@ public class SimTapPointUI extends AbstractTapPointUI {
 					case WAITING_TIME_PERCENT:
 						setWaitingTimePercent((int) event.getNewValue());
 						break;
+					case INTAKE_WATER_TEMPERATURE:
+						updateFromModel(); // power
+						break;
 					case NAME:
+					case ID:
 						// cannot change
 					default:
 						throw new IllegalArgumentException(event.getAttribute().id());
@@ -112,14 +121,18 @@ public class SimTapPointUI extends AbstractTapPointUI {
 
 	@Override
 	protected void addPanelContent() {
+		id = new JLabel("ID: " + model.getId() + " (" + model.getDeviceModel().name() + ")");
+		add (id, createLabelConstraints(0, 1));
+		power = new JLabel("Leistung");
+		add (power, createLabelConstraints(1, 1));
 		// Reference Temperature and Actual Temperature
 		temperature = new TemperaturePanel();
 		temperature.setEnabled(false);
-		add(temperature, createEnumConstraints(0, 1));
+		add(temperature, createEnumConstraints(0, 2));
 
 		// Reference Flow and Actual Flow
 		flow = new FlowPanel();
-		add(flow, createEnumConstraints(1, 1));
+		add(flow, createEnumConstraints(1, 2));
 	}
 
 	private GridBagConstraints createEnumConstraints(int x, int y) {
@@ -132,9 +145,30 @@ public class SimTapPointUI extends AbstractTapPointUI {
 		return gbc;
 	}
 
+	private GridBagConstraints createLabelConstraints(int x, int y) {
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.anchor = GridBagConstraints.WEST;
+		gbc.insets = new Insets(0, 5, 0, 5);
+		gbc.gridx = x;
+		gbc.gridy = y;
+		return gbc;
+	}
+
 	@Override
-	protected void updateFromModel(TapPoint model) {
-		super.updateFromModel(model);
+	protected void updateFromModel() {
+		super.updateFromModel();
+		if (kWFormat == null) {
+			kWFormat = new DecimalFormat();
+			kWFormat.setMinimumFractionDigits(1);
+			kWFormat.setMaximumFractionDigits(1);
+		}
+		final int powerWatt = model.getPowerWatt();
+		power.setText("P: " + kWFormat.format(powerWatt / 1000.0) + " kW");
+		if (powerWatt > 0) {
+			power.setForeground(Color.red);
+		} else {
+			power.setForeground(Color.black);
+		}
 		flow.setReference(model.getReferenceFlow());
 		flow.setActual(model.getActualFlow());
 		temperature.setReference(model.getReferenceTemperature());
@@ -143,16 +177,16 @@ public class SimTapPointUI extends AbstractTapPointUI {
 
 	private void updateReferenceTemperatureEnablement() {
 		temperature.setEnabled(false); // disable all
-		List<Temperature> toEnable = new ArrayList<Temperature>();
-		if (Temperature.TEMP_MIN.lessThan(model.getScaldProtectionTemperature())) {
+		List<HotWaterTemperature> toEnable = new ArrayList<HotWaterTemperature>();
+		if (HotWaterTemperature.TEMP_MIN.lessThan(model.getScaldProtectionTemperature())) {
 			// enable only those lower than the current reference:
-			for (Temperature literal : temperature.getLiterals()) {
+			for (HotWaterTemperature literal : temperature.getLiterals()) {
 				if (literal.getDegreesCelsius() <= model.getScaldProtectionTemperature().getDegreesCelsius()) {
 					toEnable.add(literal);
 				}
 			}
 		}
-		temperature.setEnabled(true, toEnable.toArray(new Temperature[] {})); // enable all
+		temperature.setEnabled(true, toEnable.toArray(new HotWaterTemperature[] {})); // enable all
 	}
 
 	private void info(String msg) {

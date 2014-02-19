@@ -1,5 +1,6 @@
 package elm.sim.model;
 
+import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
 import elm.scheduler.Scheduler;
 import elm.scheduler.model.DeviceManager;
 import elm.sim.metamodel.SimAttribute;
@@ -13,13 +14,15 @@ public interface TapPoint extends SimChangeNotifier {
 	public enum Attribute implements SimAttribute {
 
 		NAME("Name"),
+		ID("ID"),
 		REFERENCE_FLOW("Soll-Menge"),
 		ACTUAL_FLOW("Ist-Menge"),
 		REFERENCE_TEMPERATURE("Soll-Temperatur"),
 		ACTUAL_TEMPERATURE("Ist-Temperatur"),
 		SCALD_TEMPERATURE("Verbrühschutztemperatur"),
 		STATUS("Status"),
-		WAITING_TIME_PERCENT("Wartezeit [%]"), ;
+		WAITING_TIME_PERCENT("Wartezeit [%]"),
+		INTAKE_WATER_TEMPERATURE("Kaltwassertemp.");
 
 		private final String label;
 
@@ -45,6 +48,10 @@ public interface TapPoint extends SimChangeNotifier {
 	 */
 	String getName();
 
+	String getId();
+	
+	DeviceModel getDeviceModel();
+
 	String getLabel();
 
 	SimAttribute[] getSimAttributes();
@@ -55,15 +62,15 @@ public interface TapPoint extends SimChangeNotifier {
 
 	Flow getActualFlow();
 
-	void setReferenceTemperature(Temperature newValue);
+	void setReferenceTemperature(HotWaterTemperature newValue);
 
-	Temperature getReferenceTemperature();
+	HotWaterTemperature getReferenceTemperature();
 
-	void setScaldProtectionTemperature(Temperature newValue);
+	void setScaldProtectionTemperature(HotWaterTemperature newValue);
 
-	Temperature getScaldProtectionTemperature();
+	HotWaterTemperature getScaldProtectionTemperature();
 
-	Temperature getActualTemperature();
+	HotWaterTemperature getActualTemperature();
 
 	SimStatus getStatus();
 
@@ -76,8 +83,9 @@ public interface TapPoint extends SimChangeNotifier {
 	void setStatus(ElmStatus deviceStatus);
 
 	/**
-	 * This method is ONLY used for tests or demos with the {@link SimpleScheduler} and {@link SimpleSchedulerUI}. It derives the {@link #getScaldProtectionTemperature()
-	 * scald-protection temperature} and the {@link #getActualTemperature() actual temperature} mainly from the scheduler status.
+	 * This method is ONLY used for tests or demos with the {@link SimpleScheduler} and {@link SimpleSchedulerUI}. It derives the
+	 * {@link #getScaldProtectionTemperature() scald-protection temperature} and the {@link #getActualTemperature() actual temperature} mainly from the
+	 * scheduler status.
 	 * 
 	 * @param schedulerStatus
 	 *            cannot be {@code null}
@@ -87,5 +95,23 @@ public interface TapPoint extends SimChangeNotifier {
 	void setWaitingTimePercent(int newValue);
 
 	int getWaitingTimePercent();
+
+	void setIntakeWaterTemperature(IntakeWaterTemperature newValue);
+
+	IntakeWaterTemperature getIntakeWaterTemperature();
+
+	/**
+	 * {@link #setId(String)} must have been called before invoking this method.
+	 * 
+	 * @return the currently consumed power [W]
+	 */
+	int getPowerWatt();
+
+	/**
+	 * {@link #setId(String)} must have been called before invoking this method.
+	 * 
+	 * @return the currently consumed power in device units in relation to {@link DeviceModel#getPowerMaxUnits()} configuration.
+	 */
+	short getPowerUnits();
 
 }

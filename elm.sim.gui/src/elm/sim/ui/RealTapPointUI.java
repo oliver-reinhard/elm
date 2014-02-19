@@ -29,23 +29,14 @@ public class RealTapPointUI extends AbstractTapPointUI {
 				public void run() {
 
 					switch ((TapPointImpl.Attribute) event.getAttribute()) {
-					case REFERENCE_FLOW:
-					case ACTUAL_FLOW:
-					case REFERENCE_TEMPERATURE:
-					case ACTUAL_TEMPERATURE:
-					case SCALD_TEMPERATURE:
-						// not displayed by this panel => ignore changes
-						break;
 					case STATUS:
 						setStatus((SimStatus) event.getNewValue());
 						break;
 					case WAITING_TIME_PERCENT:
 						setWaitingTimePercent((int) event.getNewValue());
 						break;
-					case NAME:
-						// cannot change
 					default:
-						throw new IllegalArgumentException(event.getAttribute().id());
+						// ignore
 					}
 				}
 			});
@@ -73,6 +64,7 @@ public class RealTapPointUI extends AbstractTapPointUI {
 		gbc.anchor = GridBagConstraints.NORTH;
 		gbc.insets = new Insets(5, 5, 5, 5);
 		gbc.gridwidth = 2;
+		gbc.gridheight = 2;
 		gbc.gridx = 0;
 		gbc.gridy = 1;
 		add(label, gbc);

@@ -2,7 +2,7 @@ package elm.apps;
 
 import java.io.IOException;
 
-import elm.hs.api.sim.server.SimHomeServer;
+import elm.hs.api.sim.server.SimHomeServerImpl;
 import elm.hs.api.sim.server.SimHomeServerServer;
 import elm.util.ElmLogFormatter;
 
@@ -24,7 +24,7 @@ public class SimHomeServerDemoServer {
 		// // TODO Auto-generated catch block
 		// e.printStackTrace();
 		// }
-		SimHomeServer database = SimHomeServer.createDemoDB("http://chs.local:9090");
+		SimHomeServerImpl database = SimHomeServerImpl.createDemoDB("http://chs.local:9090");
 		SimHomeServerServer server = new SimHomeServerServer(database);
 		server.start();
 		System.out.println(SimHomeServerDemoServer.class.getSimpleName() + " started.");

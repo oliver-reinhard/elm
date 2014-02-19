@@ -30,7 +30,7 @@ public class SchedulerApplication extends AbstractCommandLineClient {
 		HomeServerManager hsManager = new HomeServerManager(hs, feedbackClient);
 //		hsManager.setPollingIntervalMillis(5_000);
 		
-		Scheduler scheduler = new Scheduler(40_000);
+		Scheduler scheduler = new Scheduler(40_000, 30_000);
 		scheduler.setIsAliveCheckDisabled(true); // enable debugger
 //		scheduler.setSchedulingIntervalMillis(5_000);
 		scheduler.addHomeServer(hs);

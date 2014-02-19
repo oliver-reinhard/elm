@@ -46,16 +46,16 @@ public abstract class AbstractTapPointUI extends JPanel {
 		add(title, gbc_title);
 		
 		addPanelContent();
-		addStatusPanel(0, 2);
-		updateFromModel(model);
+		addStatusPanel(0, 3);
+		updateFromModel();
 	}
 	
 	protected GridBagLayout createLayout() {
 		GridBagLayout gbl = new GridBagLayout();
 		gbl.columnWidths = new int[] { 0, 0 };
 		gbl.columnWeights = new double[] { 0.0, Double.MIN_VALUE };
-		gbl.rowHeights = new int[] { 0, 0, 0 };
-		gbl.rowWeights = new double[] { 0.0, 0.0, Double.MIN_VALUE };
+		gbl.rowHeights = new int[] { 0, 0, 0, 0 };
+		gbl.rowWeights = new double[] { 0.0, 0.0, 0.0, Double.MIN_VALUE };
 		return gbl;
 	}
 
@@ -72,7 +72,7 @@ public abstract class AbstractTapPointUI extends JPanel {
 		statusPanel.setLayout(gbl_status);
 		statusPanel.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
 		GridBagConstraints gbc_status = new GridBagConstraints();
-		gbc_status.anchor = GridBagConstraints.NORTH;
+		gbc_status.anchor = GridBagConstraints.SOUTH;
 		gbc_status.insets = new Insets(5, 5, 5, 5);
 		gbc_status.gridwidth = 3;
 		gbc_status.fill = GridBagConstraints.HORIZONTAL;
@@ -102,7 +102,7 @@ public abstract class AbstractTapPointUI extends JPanel {
 		return model;
 	}
 
-	protected void updateFromModel(TapPoint model) {
+	protected void updateFromModel() {
 		setStatus(model.getStatus());
 	}
 

@@ -10,26 +10,49 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
 import elm.hs.api.sim.server.SimHomeServer;
+import elm.hs.api.sim.server.SimHomeServerImpl;
 import elm.hs.api.sim.server.SimHomeServerServer;
-import elm.sim.model.Temperature;
-import elm.sim.model.impl.SimpleSchedulerImpl;
+import elm.scheduler.model.UnsupportedModelException;
+import elm.sim.model.HotWaterTemperature;
+import elm.sim.model.IntakeWaterTemperature;
 import elm.sim.model.impl.TapPointImpl;
 import elm.sim.ui.AbstractTapPointUI;
+import elm.sim.ui.EnumSelectorPanel;
 import elm.sim.ui.RealTapPointUI;
 import elm.sim.ui.SimTapPointUI;
-import elm.sim.ui.SimpleSchedulerUI;
 import elm.util.ElmLogFormatter;
 
 @SuppressWarnings("serial")
 public class SimHomeServerApplicationUI extends JFrame {
-	
+
+	private static final String POINT_1_ID = "A001FF0001";
+	private static final String POINT_2_ID = "A001FF0002";
+	private static final String POINT_3_ID = "6003FF0003";
+	private static final String POINT_4_ID = "2016FF0005";
+
+	class IntakeWaterTemperaturePanel extends EnumSelectorPanel<IntakeWaterTemperature> {
+
+		IntakeWaterTemperaturePanel() {
+			super("Kaltwasser", false, IntakeWaterTemperature.TEMP_5, IntakeWaterTemperature.TEMP_10, IntakeWaterTemperature.TEMP_15,
+					IntakeWaterTemperature.TEMP_20);
+		}
+
+		@Override
+		protected void referenceValueChanged(IntakeWaterTemperature newValue) {
+			server.setIntakeWaterTemperature(newValue);
+		}
+	}
+
+//	private SimpleSchedulerUI scheduler;
+	private SimHomeServer server;
 	private AbstractTapPointUI tapPoint_1;
 	private AbstractTapPointUI tapPoint_2;
 	private AbstractTapPointUI tapPoint_3;
 	private AbstractTapPointUI tapPoint_4;
-	private SimpleSchedulerUI scheduler;
 
-	public SimHomeServerApplicationUI(TapPointImpl point1, TapPointImpl point2, TapPointImpl point3, TapPointImpl point4) {
+	public SimHomeServerApplicationUI(SimHomeServer server, TapPointImpl point1, TapPointImpl point2, TapPointImpl point3, TapPointImpl point4)
+			throws UnsupportedModelException {
+		this.server = server;
 		setTitle("Dusche");
 		setSize(800, 600);
 		setLocationRelativeTo(null);
@@ -37,28 +60,36 @@ public class SimHomeServerApplicationUI extends JFrame {
 		JPanel panel = new JPanel();
 		GridBagLayout gbl = new GridBagLayout();
 		panel.setLayout(gbl);
-		
-		
-		scheduler = new SimpleSchedulerUI(new SimpleSchedulerImpl());
-		GridBagConstraints gbc_scheduler = new GridBagConstraints();
-		gbc_scheduler.insets = new Insets(5, 5, 5, 5);
-		gbc_scheduler.gridheight = 2;
-		gbc_scheduler.gridx = 0;
-		gbc_scheduler.gridy = 0;
-		panel.add(scheduler, gbc_scheduler);
+
+//		scheduler = new SimpleSchedulerUI(new SimpleSchedulerImpl());
+//		GridBagConstraints gbc_scheduler = new GridBagConstraints();
+//		gbc_scheduler.insets = new Insets(5, 5, 5, 5);
+//		gbc_scheduler.anchor = GridBagConstraints.NORTH;
+//		gbc_scheduler.gridx = 0;
+//		gbc_scheduler.gridy = 0;
+//		panel.add(scheduler, gbc_scheduler);
+
+		IntakeWaterTemperaturePanel intake = new IntakeWaterTemperaturePanel();
+		intake.setReference(server.getIntakeWaterTemperature());
+		GridBagConstraints gbc_intake = new GridBagConstraints();
+		gbc_intake.insets = new Insets(5, 10, 5, 10);
+		gbc_intake.anchor = GridBagConstraints.NORTH;
+		gbc_intake.gridx = 0;
+		gbc_intake.gridy = 1;
+		panel.add(intake, gbc_intake);
 
 		tapPoint_1 = new RealTapPointUI(point1);
-		panel.add(tapPoint_1, createOutletConstraints(1,0));
-		
+		panel.add(tapPoint_1, createOutletConstraints(1, 0));
+
 		tapPoint_2 = new SimTapPointUI(point2);
-		panel.add(tapPoint_2, createOutletConstraints(2,0));
+		panel.add(tapPoint_2, createOutletConstraints(2, 0));
 
 		tapPoint_3 = new SimTapPointUI(point3);
-		panel.add(tapPoint_3, createOutletConstraints(1,1));
+		panel.add(tapPoint_3, createOutletConstraints(1, 1));
 
 		tapPoint_4 = new SimTapPointUI(point4);
-		panel.add(tapPoint_4, createOutletConstraints(2,1));
-		
+		panel.add(tapPoint_4, createOutletConstraints(2, 1));
+
 		getContentPane().add(panel);
 	}
 
@@ -77,27 +108,32 @@ public class SimHomeServerApplicationUI extends JFrame {
 		} catch (SecurityException | IOException e) {
 			System.exit(1);
 		}
-		
-		final TapPointImpl point1 = new TapPointImpl("2 OG lk - Dusche", Temperature.TEMP_2);
-		final TapPointImpl point2 = new TapPointImpl("2 OG lk - Küche", Temperature.TEMP_2);
-		final TapPointImpl point3 = new TapPointImpl("1 OG lk - Dusche", Temperature.TEMP_2);
-		final TapPointImpl point4 = new TapPointImpl("1 OG lk - Küche", Temperature.TEMP_2);
-		
+
+		final TapPointImpl point1 = new TapPointImpl("2 OG lk - Dusche", POINT_1_ID, HotWaterTemperature.TEMP_2);
+		final TapPointImpl point2 = new TapPointImpl("2 OG lk - Küche", POINT_2_ID, HotWaterTemperature.TEMP_2);
+		final TapPointImpl point3 = new TapPointImpl("1 OG lk - Dusche", POINT_3_ID, HotWaterTemperature.TEMP_2);
+		final TapPointImpl point4 = new TapPointImpl("1 OG lk - Küche", POINT_4_ID, HotWaterTemperature.TEMP_2);
+
+		final SimHomeServerImpl server = new SimHomeServerImpl("http://chs.local:9090");
+		server.addDevice(POINT_1_ID, (short) 380, point1);
+		server.addDevice(POINT_2_ID, (short) 420, point2);
+		server.addDevice(POINT_3_ID, (short) 450, point3);
+		server.addDevice(POINT_4_ID, (short) 300, point4);
+
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
 			public void run() {
-				SimHomeServerApplicationUI ex = new SimHomeServerApplicationUI(point1, point2, point3, point4);
-				ex.setVisible(true);
+				try {
+					SimHomeServerApplicationUI ex = new SimHomeServerApplicationUI(server, point1, point2, point3, point4);
+					ex.setVisible(true);
+				} catch (UnsupportedModelException e) {
+					e.printStackTrace();
+					System.exit(1);
+				}
 			}
 		});
-		
-		SimHomeServer db = new SimHomeServer("http://chs.local:9090");
-		db.addDevice("A001FFFF33", (short) 380, point1);
-		db.addDevice("A001FFFF66", (short) 420, point2);
-		db.addDevice("6003FFFF1A", (short) 450, point3);
-		db.addDevice("2016FFFF55", (short) 300, point4);
-		SimHomeServerServer server = new SimHomeServerServer(db);
-		server.start();
+		SimHomeServerServer httpServer = new SimHomeServerServer(server);
+		httpServer.start();
 		// try {
 		// JmDNS jmDNS = JmDNS.create();
 		// ServiceInfo info = ServiceInfo.create("_clage-hs._tcp.local.", "Home Server Sim", 9090, "Home Server Simulation");
