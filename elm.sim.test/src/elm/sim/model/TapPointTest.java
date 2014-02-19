@@ -33,7 +33,7 @@ public class TapPointTest {
 	public void setup() {
 		try {
 			Device device = ModelTestUtil.createDeviceWithStatus(1, 1, 0);
-			point = new TapPointImpl("Name", device.id, INITIAL_REFERENCE_TEMP);
+			point = new TapPointImpl("Name", device.id, true, INITIAL_REFERENCE_TEMP);
 			point.setSchedulerStatus(OFF);
 			assertStatus(OFF, TEMP_MIN, NONE);
 		} catch (UnsupportedModelException e) {

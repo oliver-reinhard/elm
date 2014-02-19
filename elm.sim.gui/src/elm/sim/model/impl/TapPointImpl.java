@@ -25,6 +25,9 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 
 	/** ID of physical device. */
 	private final String deviceId;
+	
+	/** Is there a real physical device behind this tap point? */
+	private final boolean simDevice;
 
 	private final DeviceModel deviceModel;
 
@@ -54,7 +57,15 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 	/** Mirror of the scheduler's status. */
 	private SimStatus schedulerStatus = null;
 
-	public TapPointImpl(String name, String id, HotWaterTemperature referenceTemperature) throws UnsupportedModelException{
+	/**
+	 * 
+	 * @param name user-readable device description, cannot be {@code null} or empty
+	 * @param id device ID, cannot be {@code null} or empty
+	 * @param simDevice is this device only a simulation (vs. a real, physical device)
+	 * @param referenceTemperature cannot be {@code null}
+	 * @throws UnsupportedModelException
+	 */
+	public TapPointImpl(String name, String id, boolean simDevice, HotWaterTemperature referenceTemperature) throws UnsupportedModelException{
 		assert name != null && !name.isEmpty();
 		assert id != null && !id.isEmpty();
 		this.name = name;
@@ -63,6 +74,7 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 		if (!deviceModel.getType().isRemoteControllable()) {
 			throw new UnsupportedModelException(id);
 		}
+		this.simDevice = simDevice;
 		this.referenceTemperature = referenceTemperature;
 	}
 
@@ -82,6 +94,11 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 	@Override
 	public String getId() {
 		return deviceId;
+	}
+
+	@Override
+	public boolean isSimDevice() {
+		return simDevice;
 	}
 
 	@Override

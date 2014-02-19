@@ -10,6 +10,7 @@ import javax.swing.SwingUtilities;
 import elm.sim.metamodel.SimModelEvent;
 import elm.sim.metamodel.SimModelListener;
 import elm.sim.model.SimStatus;
+import elm.sim.model.TapPoint;
 import elm.sim.model.impl.TapPointImpl;
 
 @SuppressWarnings("serial")
@@ -48,7 +49,7 @@ public class RealTapPointUI extends AbstractTapPointUI {
 	 * @param model
 	 *            cannot be {@code null}
 	 */
-	public RealTapPointUI(final TapPointImpl model) {
+	public RealTapPointUI(final TapPoint model) {
 		super(model);
 		model.addModelListener(modelListener);
 		setFocusable(false);
@@ -56,6 +57,8 @@ public class RealTapPointUI extends AbstractTapPointUI {
 
 	@Override
 	protected void addPanelContent() {
+		super.addPanelContent();
+		
 		ImageIcon deviceIcon = SimUtil.getIcon("clage-dlx");
 		assert deviceIcon != null;
 
@@ -64,9 +67,16 @@ public class RealTapPointUI extends AbstractTapPointUI {
 		gbc.anchor = GridBagConstraints.NORTH;
 		gbc.insets = new Insets(5, 5, 5, 5);
 		gbc.gridwidth = 2;
-		gbc.gridheight = 2;
 		gbc.gridx = 0;
-		gbc.gridy = 1;
+		gbc.gridy = 2;
 		add(label, gbc);
+	}
+	
+	@Override
+	protected GridBagConstraints createLabelConstraints(int x, int y) {
+		GridBagConstraints gbc = super.createLabelConstraints(x, y);
+		gbc.gridwidth = 2;
+		gbc.anchor = GridBagConstraints.CENTER;
+		return gbc;
 	}
 }

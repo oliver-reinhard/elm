@@ -25,6 +25,8 @@ public abstract class AbstractTapPointUI extends JPanel {
 	protected JLabel statusLabel;
 	protected JProgressBar waitingTimePercent;
 
+	protected JLabel id;
+
 	public AbstractTapPointUI(final TapPoint model) {
 		assert model != null;
 		this.model = model;
@@ -60,7 +62,8 @@ public abstract class AbstractTapPointUI extends JPanel {
 	}
 
 	protected void addPanelContent() {
-		// empty
+		id = new JLabel("ID: " + model.getId() + " (" + model.getDeviceModel().name() + ")");
+		add (id, createLabelConstraints(0, 1));
 	}
 
 	protected void addStatusPanel(int gridx, int gridy) {
@@ -96,6 +99,15 @@ public abstract class AbstractTapPointUI extends JPanel {
 		gbc_progressBar.gridx = 1;
 		gbc_progressBar.gridy = 0;
 		statusPanel.add(waitingTimePercent, gbc_progressBar);
+	}
+
+	protected GridBagConstraints createLabelConstraints(int x, int y) {
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.anchor = GridBagConstraints.WEST;
+		gbc.insets = new Insets(0, 5, 0, 5);
+		gbc.gridx = x;
+		gbc.gridy = y;
+		return gbc;
 	}
 
 	public TapPoint getModel() {

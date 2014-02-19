@@ -14,8 +14,9 @@ import javax.swing.SwingUtilities;
 import elm.sim.metamodel.SimModelEvent;
 import elm.sim.metamodel.SimModelListener;
 import elm.sim.model.Flow;
-import elm.sim.model.SimStatus;
 import elm.sim.model.HotWaterTemperature;
+import elm.sim.model.SimStatus;
+import elm.sim.model.TapPoint;
 import elm.sim.model.impl.TapPointImpl;
 
 @SuppressWarnings("serial")
@@ -49,8 +50,6 @@ public class SimTapPointUI extends AbstractTapPointUI {
 		}
 	}
 
-	// Widgets
-	private JLabel id;
 	private JLabel power;
 	private TemperaturePanel temperature;
 	private FlowPanel flow;
@@ -113,7 +112,7 @@ public class SimTapPointUI extends AbstractTapPointUI {
 	 * @param model
 	 *            cannot be {@code null}
 	 */
-	public SimTapPointUI(final TapPointImpl model) {
+	public SimTapPointUI(final TapPoint model) {
 		super(model);
 		model.addModelListener(modelListener);
 		setFocusable(false);
@@ -121,8 +120,8 @@ public class SimTapPointUI extends AbstractTapPointUI {
 
 	@Override
 	protected void addPanelContent() {
-		id = new JLabel("ID: " + model.getId() + " (" + model.getDeviceModel().name() + ")");
-		add (id, createLabelConstraints(0, 1));
+		super.addPanelContent();
+		
 		power = new JLabel("Leistung");
 		add (power, createLabelConstraints(1, 1));
 		// Reference Temperature and Actual Temperature
@@ -140,15 +139,6 @@ public class SimTapPointUI extends AbstractTapPointUI {
 		gbc.anchor = GridBagConstraints.NORTH;
 		gbc.fill = GridBagConstraints.VERTICAL;
 		gbc.insets = new Insets(5, 5, 5, 5);
-		gbc.gridx = x;
-		gbc.gridy = y;
-		return gbc;
-	}
-
-	private GridBagConstraints createLabelConstraints(int x, int y) {
-		GridBagConstraints gbc = new GridBagConstraints();
-		gbc.anchor = GridBagConstraints.WEST;
-		gbc.insets = new Insets(0, 5, 0, 5);
 		gbc.gridx = x;
 		gbc.gridy = y;
 		return gbc;

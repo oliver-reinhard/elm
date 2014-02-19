@@ -15,6 +15,7 @@ import elm.scheduler.model.UnsupportedModelException;
 import elm.scheduler.model.impl.ModelTestUtil;
 import elm.sim.model.Flow;
 import elm.sim.model.HotWaterTemperature;
+import elm.sim.model.TapPoint;
 import elm.sim.model.impl.TapPointImpl;
 import elm.ui.api.ElmStatus;
 
@@ -23,7 +24,7 @@ public class DeviceTapPointAdapterTest {
 
 	static final short INITIAL_TEMPERATURE = (short) (HotWaterTemperature.TEMP_2.getDegreesCelsius() * 10);
 
-	TapPointImpl point;
+	TapPoint point;
 	Device device;
 	DeviceTapPointAdapter adapter;
 
@@ -31,7 +32,7 @@ public class DeviceTapPointAdapterTest {
 	public void setup() {
 		try {
 			device = ModelTestUtil.createDeviceWithStatus(1, 1, 0);
-			point = new TapPointImpl("Dusche", device.id, HotWaterTemperature.TEMP_2);
+			point = new TapPointImpl("Dusche", device.id, true, HotWaterTemperature.TEMP_2);
 			point.setStatus(ElmStatus.ON);
 			final Device device2 = ModelTestUtil.createDeviceWithInfo(1, 1);
 			device.info = device2.info;

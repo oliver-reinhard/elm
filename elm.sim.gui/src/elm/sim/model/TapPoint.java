@@ -114,4 +114,6 @@ public interface TapPoint extends SimChangeNotifier {
 	 */
 	short getPowerUnits();
 
+	public abstract boolean isSimDevice();
+
 }
