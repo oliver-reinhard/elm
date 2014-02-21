@@ -15,6 +15,8 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
+import elm.hs.api.HomeServerService;
+
 public abstract class AbstractCommandLineClient {
 
 	protected static final String OPT_PASSWD = "p";
@@ -26,10 +28,10 @@ public abstract class AbstractCommandLineClient {
 
 	protected final Logger LOG = Logger.getLogger(getClass().getName());
 
-	protected String user = HomeServerPublicApiClient.HOME_SERVER_ADMIN_USER;
-	protected String password = HomeServerPublicApiClient.HOME_SERVER_DEFAULT_PASSWORD;
-	protected URI publicBaseUri = HomeServerPublicApiClient.DEFAULT_HOME_SERVER_URI;
-	protected URI internalBaseUri = HomeServerInternalApiClient.DEFAULT_HOME_SERVER_INTERNAL_URI;
+	protected String user = HomeServerService.ADMIN_USER;
+	protected String password = HomeServerService.DEFAULT_PASSWORD;
+	protected URI publicBaseUri = HomeServerService.DEFAULT_URI;
+	protected URI internalBaseUri = HomeServerService.INTERNAL_API_URI;
 	protected String deviceID;
 	protected boolean useInternalClient;
 	protected boolean verbose;

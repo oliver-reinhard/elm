@@ -16,6 +16,8 @@ java.util.logging.FileHandler.limit = 50000
 java.util.logging.FileHandler.count = 1
 java.util.logging.FileHandler.formatter = java.util.logging.XMLFormatter
 
-elm.sim.level = WARNING
+elm.apps.level = INFO
 elm.scheduler.level = INFO
+elm.hs.api.sim.level = INFO
+elm.sim.level = INFO
  

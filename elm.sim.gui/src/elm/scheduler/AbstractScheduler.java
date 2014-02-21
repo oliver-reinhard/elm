@@ -20,8 +20,8 @@ import elm.ui.api.ElmStatus;
  * {@link HomeServer}s. This class also enables the implementation of multiple concrete schedulers that follow different scheduling approaches.
  * </p>
  * <p>
- * The scheduler is a {@link HomeServerChangeListener listener} to critical changes of {@link HomeServer} {@link DeviceController} which trigger a new scheduling
- * cycle.
+ * The scheduler is a {@link HomeServerChangeListener listener} to critical changes of {@link HomeServer} {@link DeviceController} which trigger a new
+ * scheduling cycle.
  * </p>
  */
 public abstract class AbstractScheduler implements HomeServerChangeListener {
@@ -93,12 +93,15 @@ public abstract class AbstractScheduler implements HomeServerChangeListener {
 	}
 
 	public synchronized void addHomeServer(HomeServer server) {
-		if (!homeServers.contains(server)) {
-			homeServers.add(server);
-			server.addChangeListener(this);
-			server.putDeviceUpdate(new AsynchRemoteDeviceUpdate(getStatus()));
-			server.fireDeviceChangesPending();
+		for (HomeServer hs : homeServers) {
+			if (hs.getUri().equals(server)) {
+				return;
+			}
 		}
+		homeServers.add(server);
+		server.addChangeListener(this);
+		server.putDeviceUpdate(new AsynchRemoteDeviceUpdate(getStatus()));
+		server.fireDeviceChangesPending();
 	}
 
 	public synchronized void removeHomeServer(HomeServer server) {

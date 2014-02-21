@@ -272,13 +272,17 @@ public class SchedulerTest {
 		try {
 			scheduler.setIsAliveCheckDisabled(true); // enable debugger
 
-			checkDeviceUpdatesSize(hs1, 0);
+			checkDeviceUpdatesSize(hs1, 2);
+			checkDeviceUpdatesSize(hs2, 2);
+			// home server 1: process device updates => "execute" (and clear) the device updates
+			RemoteDeviceUpdateClient client = mock(RemoteDeviceUpdateClient.class);
+			hs1.executeRemoteDeviceUpdates(client, log); // clear
+			hs2.executeRemoteDeviceUpdates(client, log); // clear
+			
 			scheduler.addHomeServer(hs1);
 			checkDeviceUpdatesSize(hs1, 1);
 			checkDeviceUpdate(hs1, OFF, 0);
 			//
-			// home server 1: process device updates => "execute" (and clear) the device updates
-			RemoteDeviceUpdateClient client = mock(RemoteDeviceUpdateClient.class);
 			hs1.executeRemoteDeviceUpdates(client, log); // clear
 
 			scheduler.addHomeServer(hs2);

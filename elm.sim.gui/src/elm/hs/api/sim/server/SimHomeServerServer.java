@@ -188,6 +188,10 @@ public class SimHomeServerServer {
 
 	public void start() throws Exception {
 		server.start();
-		server.join();
+		log.log(Level.INFO, "HomeServer started: " + server.getURI());
+	}
+
+	public void processCalls() throws Exception {
+		server.join();  // blocking
 	}
 }

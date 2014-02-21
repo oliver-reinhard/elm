@@ -6,6 +6,7 @@ import static elm.ui.api.ElmStatus.ON;
 import static elm.ui.api.ElmStatus.OVERLOAD;
 import static elm.ui.api.ElmStatus.SATURATION;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -41,9 +42,14 @@ public class Scheduler extends AbstractScheduler {
 	/** Above this limit the scheduler is in {@link ElmStatus#OVERLOAD} mode. */
 	private final int overloadPowerLimitWatt;
 
+	/** The total amount of power being requested. */
+	private int totalDemandPowerWatt;
+
 	private long overloadModeBeginTime = NOT_IN_OVERLOAD;
 
 	private boolean isAliveCheckDisabled;
+	
+	private final DecimalFormat kWFormat;
 
 	/**
 	 * @param maxElectricalPowerWatt
@@ -66,7 +72,10 @@ public class Scheduler extends AbstractScheduler {
 		assert saturationPowerLimitWatt < maxElectricalPowerWatt;
 		overloadPowerLimitWatt = maxElectricalPowerWatt;
 		this.saturationPowerLimitWatt = saturationPowerLimitWatt;
-		log.info("saturation limit: " + saturationPowerLimitWatt + ", overload limit: " + overloadPowerLimitWatt);
+		kWFormat = new DecimalFormat();
+		kWFormat.setMinimumFractionDigits(1);
+		kWFormat.setMaximumFractionDigits(1);
+		log.info("saturation limit: " + formatPower(saturationPowerLimitWatt) + ", overload limit: " + formatPower(overloadPowerLimitWatt));
 	}
 
 	@Override
@@ -109,6 +118,11 @@ public class Scheduler extends AbstractScheduler {
 				// TODO handle partial failure here
 				return;
 			}
+		}
+		
+		if (totalDemandPowerWatt != this.totalDemandPowerWatt) {
+			log.info("Total requested power: " + formatPower(totalDemandPowerWatt) + " kW");
+			this.totalDemandPowerWatt = totalDemandPowerWatt;
 		}
 
 		// Analyze:
@@ -156,7 +170,7 @@ public class Scheduler extends AbstractScheduler {
 			device.updateMaximumPowerConsumption(approvedPowerLimit, OVERLOAD, expectedWaitingTimeMillis);
 		}
 		if (totalDemandPowerWatt > overloadPowerLimitWatt) {
-			log.severe("Overload power limit (" + overloadPowerLimitWatt + " W) overrun: " + totalDemandPowerWatt + " W");
+			log.severe("Overload power limit (" + formatPower(overloadPowerLimitWatt) + ") overrun: " + formatPower(totalDemandPowerWatt));
 			// TODO should reduce the water flow of all consuming devices
 		}
 
@@ -167,6 +181,10 @@ public class Scheduler extends AbstractScheduler {
 		for (HomeServer server : homeServers) {
 			server.fireDeviceChangesPending();
 		}
+	}
+
+	private final String formatPower(int totalDemandPowerWatt) {
+		return kWFormat.format(totalDemandPowerWatt/1000.0) + " kW";
 	}
 
 	/**

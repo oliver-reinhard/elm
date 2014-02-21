@@ -6,26 +6,21 @@ import java.net.URISyntaxException;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.http.HttpStatus;
 
+import elm.hs.api.HomeServerService;
 import elm.hs.api.model.HomeServerResponse;
 import elm.util.ClientException;
 
 public class HomeServerInternalApiClient extends AbstractHomeServerClient {
 
-	/** The default port for internal Home Server access according to API v1.0 documentation. */
-	private static final int HOME_SERVER_INTERNAL_API_PORT = 8080;
-
-	/** The default URI according to API v1.0 documentation. */
-	public static final URI DEFAULT_HOME_SERVER_INTERNAL_URI = URI.create(DEFAULT_HOME_SERVER_URI.toString() + ":" + HOME_SERVER_INTERNAL_API_PORT);
-
 	protected final HomeServerPublicApiClient publicClient;
 
 	public HomeServerInternalApiClient(String pass, HomeServerPublicApiClient publicClient) throws URISyntaxException {
-		this(HOME_SERVER_ADMIN_USER, pass, publicClient);
+		this(HomeServerService.ADMIN_USER, pass, publicClient);
 	}
 
 	public HomeServerInternalApiClient(String user, String pass, HomeServerPublicApiClient publicClient) throws URISyntaxException {
-		this(new URI(publicClient.getBaseUri().getScheme(), null, publicClient.getBaseUri().getHost(), HOME_SERVER_INTERNAL_API_PORT, null, null, null), user,
-				pass, publicClient);
+		this(new URI(publicClient.getBaseUri().getScheme(), null, publicClient.getBaseUri().getHost(), HomeServerService.INTERNAL_API_PORT, null, null, null),
+				user, pass, publicClient);
 	}
 
 	/**
@@ -50,7 +45,7 @@ public class HomeServerInternalApiClient extends AbstractHomeServerClient {
 	 * @param deviceID
 	 *            cannot be {@code null} or empty
 	 * @param newTemp
-	 *            in 1/10 degree Celsius, cannot be {@code < 0}
+	 *            in 1/10°C, cannot be {@code < 0}
 	 * @return the new scald temperature in in 1/10 degree Celsius, or {@code null}; never {@code null} (the value is a {@link Short} for mocking purposes)
 	 * @throws ClientException
 	 *             if the operation ended in a status {@code != 200} or if the execution threw an exception
@@ -79,19 +74,22 @@ public class HomeServerInternalApiClient extends AbstractHomeServerClient {
 	}
 
 	/**
+	 * Removes the reference-temperature protection and resets the previous reference temperature if {@code previouseTemp} is not {@code null}
 	 * 
 	 * @param deviceID
 	 *            cannot be {@code null} or empty
 	 * @param previousTemp
-	 *            in 1/10 degree Celsius, cannot be {@code < 0}
+	 *            in 1/10 degree Celsius, cannot be {@code < 0}, but can be {@code null}
 	 * @throws ClientException
 	 *             if the operation ended in a status {@code != 200} or if the execution threw an exception
 	 */
-	public void clearScaldProtection(String deviceID, int previousTemp) throws ClientException {
-		assert previousTemp >= 0;
+	public void clearScaldProtection(String deviceID, Integer previousTemp) throws ClientException {
+		assert previousTemp == null || previousTemp >= 0;
 		assert deviceID != null && !deviceID.isEmpty();
 
 		doPost("/cmd/VF/" + deviceID, "data=0", new int[] { HttpStatus.OK_200 });
-		publicClient.setReferenceTemperature(deviceID, previousTemp);
+		if (previousTemp != null) {
+			publicClient.setReferenceTemperature(deviceID, previousTemp);
+		}
 	}
 }

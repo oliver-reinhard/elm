@@ -1,5 +1,6 @@
 package elm.scheduler.model.impl;
 
+import static elm.scheduler.model.impl.ModelTestUtil.checkDeviceUpdatesSize;
 import static elm.scheduler.model.impl.ModelTestUtil.createDevicesWithStatus;
 import static elm.scheduler.model.impl.ModelTestUtil.createHomeServer;
 import static elm.scheduler.model.impl.ModelTestUtil.getDeviceMap;
@@ -136,19 +137,21 @@ public class HomeServerTest {
 			DeviceController di1_2 = deviceManagers[1];
 			
 			List<Device> devices = createDevicesWithStatus(1, NUM_DEVICES, 0);
+			Device d1_1 = devices.get(0);
 			Device d1_2 = devices.get(1);
 			final short referenceTemperature = d1_2.status.setpoint;
 			d1_2.status.power = toPowerUnits(20_000); // Turn tap 1-2 ON
 			hs1.updateDeviceControllers(devices);
-			assertNull(hs1.getPendingUpdates());
-			// there should be no client invocations while there are no device updates:
+			checkDeviceUpdatesSize(hs1, 2);  // => clear-scald protection flag
+			//
 			RemoteDeviceUpdateClient client = mock(RemoteDeviceUpdateClient.class);
 			hs1.executeRemoteDeviceUpdates(client, log);
-			verifyNoMoreInteractions(client);
+			verify(client).clearScaldProtection(d1_1.id, null);
+			verify(client).clearScaldProtection(d1_2.id, null);
 			
 			// Scheduler approves only LIMITED power:
 			di1_2.updateMaximumPowerConsumption(ACTUAL_POWER_WATT, ElmStatus.OVERLOAD, EXPECTED_WAITING_TIME);
-			assertEquals(1, hs1.getPendingUpdates().size());
+			checkDeviceUpdatesSize(hs1, 1);
 			//
 			hs1.fireDeviceChangesPending();
 			verify(hsL1).deviceUpdatesPending(hs1, true); // listener was notified
@@ -166,12 +169,12 @@ public class HomeServerTest {
 
 			// Scheduler approves UNLIMITED power:
 			di1_2.updateMaximumPowerConsumption(DeviceController.UNLIMITED_POWER, ElmStatus.OVERLOAD, EXPECTED_WAITING_TIME);
-			assertEquals(1, hs1.getPendingUpdates().size());
+			checkDeviceUpdatesSize(hs1, 1);
 			//
 			hs1.executeRemoteDeviceUpdates(client, log);
 			assertNull(hs1.getPendingUpdates());
 			// ensure the original reference Temperature is restored:
-			verify(client).clearScaldProtection(di1_2.getId(), referenceTemperature);
+			verify(client).clearScaldProtection(di1_2.getId(), new Integer(referenceTemperature));
 			
 		} catch (ClientException | UnsupportedModelException e) {
 			fail(e.toString());

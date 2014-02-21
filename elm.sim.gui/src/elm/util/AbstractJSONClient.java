@@ -102,8 +102,9 @@ public abstract class AbstractJSONClient {
 		assert resultClass != null;
 		ClientException exception;
 
+		final String uri = getBaseUri() + resourcePath;
 		try {
-			ContentResponse response = client.GET(getBaseUri() + resourcePath);
+			ContentResponse response = client.GET(uri);
 			final String responseAsString = response.getContentAsString();
 			int status = response.getStatus();
 			if (!isSuccess(httpSuccessStatuses, status)) {
@@ -134,7 +135,7 @@ public abstract class AbstractJSONClient {
 		} catch (TimeoutException e) {
 			exception = new ClientException(e);
 		}
-		log.log(Level.SEVERE, "Querying resource path failed: " + resourcePath, exception);
+		log.log(Level.WARNING, "GET request failed: " + uri + " (" + exception.getCause().getMessage() + ")");
 		throw exception;
 	}
 
@@ -153,8 +154,9 @@ public abstract class AbstractJSONClient {
 		assert resourcePath != null && !resourcePath.isEmpty();
 		ClientException exception;
 
+		final String uri = getBaseUri() + resourcePath;
 		try {
-			Request postRequest = client.newRequest(getBaseUri() + resourcePath).method(HttpMethod.POST);
+			Request postRequest = client.newRequest(uri).method(HttpMethod.POST);
 			if (content != null) {
 				postRequest.content(new StringContentProvider(content), "application/x-www-form-urlencoded");
 			}
@@ -181,7 +183,7 @@ public abstract class AbstractJSONClient {
 		} catch (TimeoutException e) {
 			exception = new ClientException(e);
 		}
-		log.log(Level.SEVERE, "Posting resource path failed: " + resourcePath, exception);
+		log.log(Level.WARNING, "POST request failed: " + uri + " (" + exception.getCause().getMessage() + ")");
 		throw exception;
 	}
 

@@ -144,8 +144,15 @@ public class DeviceControllerImpl implements DeviceController {
 		if (device.status == null) {
 			// device.info != null as per assertion, above
 			final boolean deviceHeaterOn = device.info.flags == 0;
+			// The heater is turned ON, or it is OFF because of denied or limited power or update() is called for the first time:
 			if (deviceHeaterOn || status.isConsuming() || status == INITIALIZING) {
-				// The heater is turned ON, or it is OFF because of denied or limited power, or this is the first invocation of update()
+				if (status == INITIALIZING) {
+					// if the scheduler died earlier while scald protection was active, then we have to remove it now 
+					// (we may set it again immediately).
+					AsynchRemoteDeviceUpdate update = new AsynchRemoteDeviceUpdate(this);
+					update.clearScaldProtection(null);
+					homeServer.putDeviceUpdate(update);
+				}
 				return UpdateResult.DEVICE_STATUS_REQUIRED;
 			}
 		}

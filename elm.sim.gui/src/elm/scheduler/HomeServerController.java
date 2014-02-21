@@ -40,10 +40,11 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 		WAIT, POLL_HOME_SERVER, PROCESS_DEVICE_UPDATES, STOP
 	}
 
+	private final AbstractScheduler scheduler;
+	private final ElmUserFeedbackClient userFeedbackClient;
 	private final HomeServer homeServer;
 	private State state = State.NOT_CONNECTED;
 
-	private final ElmUserFeedbackClient userFeedbackClient;
 	private HomeServerPublicApiClient publicClient = null;
 	private HomeServerInternalApiClient internalClient = null;
 	private RemoteDeviceUpdateClient deviceUpdateClient = null;
@@ -57,17 +58,20 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 	private final Logger log = Logger.getLogger(getClass().getName());
 
 	/**
-	 * @param homeServer
-	 *            cannot be {@code null}
+	 * @param scheduler cannot be {@code null}
 	 * @param userFeedbackClient
 	 *            must be started, cannot be {@code null}
+	 * @param homeServer
+	 *            cannot be {@code null}
 	 */
-	public HomeServerController(HomeServer homeServer, ElmUserFeedbackClient userFeedbackClient) {
-		assert homeServer != null;
+	public HomeServerController(AbstractScheduler scheduler, ElmUserFeedbackClient userFeedbackClient, HomeServer homeServer) {
+		assert scheduler != null;
 		assert userFeedbackClient != null;
+		assert homeServer != null;
+		this.scheduler = scheduler;
+		this.userFeedbackClient = userFeedbackClient;
 		this.homeServer = homeServer;
 		this.homeServer.addChangeListener(this);
-		this.userFeedbackClient = userFeedbackClient;
 	}
 	
 	public int getPollingIntervalMillis() {
@@ -106,7 +110,7 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 			}
 
 			@Override
-			public void clearScaldProtection(String deviceID, int previousTemp) throws ClientException {
+			public void clearScaldProtection(String deviceID, Integer previousTemp) throws ClientException {
 				internalClient.clearScaldProtection(deviceID, previousTemp);
 			}
 
@@ -134,6 +138,7 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 			try {
 				publicClient.start();
 				internalClient.start();
+				scheduler.addHomeServer(homeServer);
 			} catch (Exception e) {
 				log(Level.SEVERE, "Cannot start HTTP client", e);
 				setState(State.ERROR);
@@ -147,6 +152,7 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 		} finally {
 			runner = null;
 			setState(State.STOPPED);
+			scheduler.removeHomeServer(homeServer);
 			try {
 				if (publicClient != null && publicClient.getClient().isStarted()) {
 					publicClient.stop();
@@ -276,7 +282,9 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 			throw new ClientException(ClientException.Error.APPLICATION_FAILURE_RESPONSE);
 
 		} catch (ClientException e) {
-			log(Level.SEVERE, "Exception in event loop", e);
+			if (e.getCause() == null) {  // it's an application problem not a communication problem
+				log(Level.SEVERE, "Exception in event loop", e);
+			}
 			lastClientException = e;
 			switch (e.getError()) {
 			case INTERRUPTED:

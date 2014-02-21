@@ -1,39 +1,23 @@
-package elm.apps;
+package elm.sim.ui;
 
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.io.IOException;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 import elm.hs.api.sim.server.SimHomeServer;
-import elm.hs.api.sim.server.SimHomeServerImpl;
-import elm.scheduler.model.UnsupportedModelException;
 import elm.sim.metamodel.SimModelEvent;
 import elm.sim.metamodel.SimModelListener;
-import elm.sim.model.HotWaterTemperature;
 import elm.sim.model.IntakeWaterTemperature;
 import elm.sim.model.SimStatus;
 import elm.sim.model.SimpleScheduler;
 import elm.sim.model.TapPoint;
 import elm.sim.model.impl.SimpleSchedulerImpl;
-import elm.sim.model.impl.TapPointImpl;
-import elm.sim.ui.AbstractTapPointUI;
-import elm.sim.ui.EnumSelectorPanel;
-import elm.sim.ui.RealTapPointUI;
-import elm.sim.ui.SimTapPointUI;
-import elm.sim.ui.SimpleSchedulerUI;
-import elm.util.ElmLogFormatter;
 
 @SuppressWarnings("serial")
-public class SimpleSimDemoApplicationUI extends JFrame {
-
-	private static final String POINT_1_ID = "A001FF0001";
-	private static final String POINT_2_ID = "A001FF0002";
-	private static final String POINT_3_ID = "6003FF0003";
-	private static final String POINT_4_ID = "2016FF0004";
+public class SimServerApplicationUI extends JFrame {
 
 	class IntakeWaterTemperaturePanel extends EnumSelectorPanel<IntakeWaterTemperature> {
 
@@ -44,40 +28,36 @@ public class SimpleSimDemoApplicationUI extends JFrame {
 
 		@Override
 		protected void referenceValueChanged(IntakeWaterTemperature newValue) {
-			server.setIntakeWaterTemperature(newValue);
+			getServer().setIntakeWaterTemperature(newValue);
 		}
 	}
 
+	private final AbstractSimServerApplicationConfiguration configuration;
 	private final SimpleSchedulerUI schedulerUI;
-	private final SimHomeServer server;
 	private final AbstractTapPointUI[][] pointUIs;
 
 	/**
-	 * 
-	 * @param server
+	 * @param configuration
 	 *            cannot be {@code null}
-	 * @param scheduler
-	 *            can be {@code null} => no scheduler panel displayed
-	 * @param points
-	 *            cannot be {@code null}
-	 * @throws UnsupportedModelException
-	 *             if one of the tap points' id does not map to a known device model.
 	 */
-	public SimpleSimDemoApplicationUI(SimHomeServer server, SimpleScheduler scheduler, TapPoint[][] points) throws UnsupportedModelException {
-		assert server != null;
-		this.server = server;
-		assert points != null;
+	public SimServerApplicationUI(AbstractSimServerApplicationConfiguration configuration) {
+		assert configuration != null;
+		assert configuration.getServer() != null;
+		assert configuration.getTapPoints() != null;
+		this.configuration = configuration;
 
+		// Set defaults; can be changed later before making the frame visible
 		setTitle("Durchlauferhitzer-Simulation");
 		setSize(700, 600);
 		setLocationRelativeTo(null);
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
+		
 		JPanel panel = new JPanel();
 		GridBagLayout gbl = new GridBagLayout();
 		panel.setLayout(gbl);
 
-		if (scheduler != null) {
-			schedulerUI = new SimpleSchedulerUI(scheduler);
+		if (configuration.getScheduler() != null) {
+			schedulerUI = new SimpleSchedulerUI(configuration.getScheduler());
 			GridBagConstraints gbc_scheduler = new GridBagConstraints();
 			gbc_scheduler.insets = new Insets(5, 5, 5, 5);
 			gbc_scheduler.anchor = GridBagConstraints.NORTH;
@@ -90,7 +70,7 @@ public class SimpleSimDemoApplicationUI extends JFrame {
 		}
 
 		IntakeWaterTemperaturePanel intake = new IntakeWaterTemperaturePanel();
-		intake.setReference(server.getIntakeWaterTemperature());
+		intake.setReference(configuration.getServer().getIntakeWaterTemperature());
 		GridBagConstraints gbc_intake = new GridBagConstraints();
 		gbc_intake.insets = new Insets(5, 5, 5, 5);
 		gbc_intake.anchor = GridBagConstraints.NORTH;
@@ -100,6 +80,7 @@ public class SimpleSimDemoApplicationUI extends JFrame {
 		panel.add(intake, gbc_intake);
 
 		int maxRowLength = 0;
+		final TapPoint[][] points = configuration.getTapPoints();
 		for (int row = 0; row < points.length; row++) {
 			if (points[row].length > maxRowLength) {
 				maxRowLength = points[row].length;
@@ -111,7 +92,7 @@ public class SimpleSimDemoApplicationUI extends JFrame {
 			for (int col = 0; col < points[row].length; col++) {
 				TapPoint point = points[row][col];
 				pointUIs[row][col] = point.isSimDevice() ? new SimTapPointUI(point) : new RealTapPointUI(point);
-				panel.add(pointUIs[row][col], createOutletConstraints(row + 1, col));
+				panel.add(pointUIs[row][col], createOutletConstraints(col+1, row));
 			}
 		}
 
@@ -147,36 +128,7 @@ public class SimpleSimDemoApplicationUI extends JFrame {
 	}
 
 	public SimHomeServer getServer() {
-		return server;
-	}
-
-	public static SimpleSimDemoApplicationUI createUI(final boolean showSimpleScheduler) throws UnsupportedModelException {
-		try {
-			ElmLogFormatter.init();
-		} catch (SecurityException | IOException e) {
-			System.exit(1);
-		}
-		final TapPoint point1 = new TapPointImpl("2 OG lk - Dusche", POINT_1_ID, false, HotWaterTemperature.TEMP_2); // "real" device
-		final TapPoint point2 = new TapPointImpl("2 OG lk - Küche", POINT_2_ID, true, HotWaterTemperature.TEMP_2); // sim device
-		final TapPoint point3 = new TapPointImpl("1 OG lk - Dusche", POINT_3_ID, true, HotWaterTemperature.TEMP_2); // sim device
-		final TapPoint point4 = new TapPointImpl("1 OG lk - Küche", POINT_4_ID, true, HotWaterTemperature.TEMP_2); // sim device
-
-		final TapPoint[][] points = new TapPoint[][] { { point1, point2 }, { point3, point4 } };
-
-		final SimHomeServerImpl server = new SimHomeServerImpl("http://chs.local:9090");
-		server.addDevice(POINT_1_ID, (short) 380, point1);
-		server.addDevice(POINT_2_ID, (short) 420, point2);
-		server.addDevice(POINT_3_ID, (short) 450, point3);
-		server.addDevice(POINT_4_ID, (short) 300, point4);
-
-		SimpleScheduler scheduler = showSimpleScheduler ? new SimpleSchedulerImpl() : null;
-
-		final SimpleSimDemoApplicationUI ui = new SimpleSimDemoApplicationUI(server, scheduler, points);
-		return ui;
-	}
-
-	public static void main(String[] args) throws UnsupportedModelException {
-		createUI(true).setVisible(true);
+		return configuration.getServer();
 	}
 
 }

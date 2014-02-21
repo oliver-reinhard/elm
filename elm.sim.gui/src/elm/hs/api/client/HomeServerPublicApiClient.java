@@ -5,6 +5,7 @@ import java.net.URISyntaxException;
 
 import org.eclipse.jetty.http.HttpStatus;
 
+import elm.hs.api.HomeServerService;
 import elm.hs.api.model.HomeServerResponse;
 import elm.util.ClientException;
 
@@ -18,7 +19,7 @@ public class HomeServerPublicApiClient extends AbstractHomeServerClient {
 	 * @throws URISyntaxException
 	 */
 	public HomeServerPublicApiClient(String pass) throws URISyntaxException {
-		super(DEFAULT_HOME_SERVER_URI, pass);
+		super(HomeServerService.DEFAULT_URI, pass);
 	}
 
 	/**

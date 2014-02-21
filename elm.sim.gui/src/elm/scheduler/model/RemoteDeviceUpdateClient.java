@@ -19,10 +19,10 @@ public interface RemoteDeviceUpdateClient {
 	/**
 	 * 
 	 * @param deviceID
-	 * @param previousTemp
+	 * @param previousTemp can be {@code null}
 	 * @throws ClientException if the operation ended in a status {@code != 200} or if the execution threw an exception
 	 */
-	void clearScaldProtection(String deviceID, int previousTemp) throws ClientException;
+	void clearScaldProtection(String deviceID, Integer previousTemp) throws ClientException;
 	
 	void updateUserFeedback(ElmUserFeedback feedback) throws ClientException;
 

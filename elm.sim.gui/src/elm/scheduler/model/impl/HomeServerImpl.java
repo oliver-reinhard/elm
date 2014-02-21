@@ -168,7 +168,7 @@ public class HomeServerImpl implements HomeServer {
 			try {
 				update.execute(client, log);
 			} catch (Exception e) {
-				log.log(Level.SEVERE, "Device update failed", e);
+				log.log(Level.SEVERE, "Remote device update failed", e);
 			}
 		}
 	}
