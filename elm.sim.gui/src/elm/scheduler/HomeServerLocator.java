@@ -13,7 +13,6 @@ import javax.jmdns.ServiceListener;
 import elm.hs.api.HomeServerService;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.impl.HomeServerImpl;
-import elm.ui.api.ElmUserFeedbackClient;
 
 /**
  * This class listens for DNS Service Discovery events for CLAGE Home Servers. Whenever a new Home Server instance is detected, a new
@@ -24,24 +23,23 @@ public class HomeServerLocator implements ServiceListener {
 	private static final Logger LOG = Logger.getLogger(HomeServerLocator.class.getName());
 
 	private final AbstractScheduler scheduler;
-	private final ElmUserFeedbackClient userFeedbackClient;
+	private final ElmUserFeedbackManager userFeedbackManager;
 	private final String homeServerPassword;
 
 	private JmDNS jmDNS;
 
-	public HomeServerLocator(AbstractScheduler scheduler, ElmUserFeedbackClient userFeedbackClient, String homeServerPassword) {
+	public HomeServerLocator(AbstractScheduler scheduler, String homeServerPassword) {
 		assert scheduler != null;
-		assert userFeedbackClient != null;
 		assert homeServerPassword != null;
 		this.scheduler = scheduler;
-		this.userFeedbackClient = userFeedbackClient;
+		this.userFeedbackManager = new ElmUserFeedbackManager();
 		this.homeServerPassword = homeServerPassword;
 	}
 
 	@Override
 	public void serviceAdded(ServiceEvent e) {
 		info("added", e);
-		jmDNS.requestServiceInfo(HomeServerService.DNS_SD_SERVICE_TYPE, e.getName()); // this prompts a serviceResolved() notification a.s.a.p.
+		jmDNS.requestServiceInfo(HomeServerService.DNS_SD_HS_SERVICE_TYPE, e.getName()); // this prompts a serviceResolved() notification a.s.a.p.
 	}
 
 	@Override
@@ -54,7 +52,7 @@ public class HomeServerLocator implements ServiceListener {
 
 					final URI uri = new URI(url);
 					HomeServer homeServer = new HomeServerImpl(uri, homeServerPassword);
-					HomeServerController controller = new HomeServerController(scheduler, userFeedbackClient, homeServer);
+					HomeServerController controller = new HomeServerController(scheduler, userFeedbackManager, homeServer);
 					LOG.info("Starting new " + controller.getClass().getSimpleName() + " for '" + e.getName() + "' at " + uri);
 					controller.start();
 
@@ -79,9 +77,9 @@ public class HomeServerLocator implements ServiceListener {
 	}
 
 	public void start() throws IOException {
-		LOG.info("Starting service listener for service type '" + HomeServerService.DNS_SD_SERVICE_TYPE + "'");
+		LOG.info("Starting service listener for service type '" + HomeServerService.DNS_SD_HS_SERVICE_TYPE + "'");
 		jmDNS = JmDNS.create();
-		jmDNS.addServiceListener(HomeServerService.DNS_SD_SERVICE_TYPE, this);
+		jmDNS.addServiceListener(HomeServerService.DNS_SD_HS_SERVICE_TYPE, this);
 		//jmDNS.getServiceInfo(HomeServerService.DNS_SD_SERVICE_TYPE, HomeServerService.DNS_SD_SERVICE_NAME); // this prompts a serviceResolved() notification a.s.a.p.
 	}
 }

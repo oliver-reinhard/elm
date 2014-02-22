@@ -1,7 +1,7 @@
 package elm.sim.model;
 
+import elm.hs.api.model.ElmStatus;
 import elm.sim.metamodel.SimEnum;
-import elm.ui.api.ElmStatus;
 
 public enum SimStatus implements SimEnum {
 	OFF("Aus"), ON("Ein"), SATURATION("Sättigung"), OVERLOAD("Überlast"), ERROR("Fehler");

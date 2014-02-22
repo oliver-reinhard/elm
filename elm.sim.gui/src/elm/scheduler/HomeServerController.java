@@ -8,6 +8,7 @@ import java.util.logging.Logger;
 import elm.hs.api.client.HomeServerInternalApiClient;
 import elm.hs.api.client.HomeServerPublicApiClient;
 import elm.hs.api.model.Device;
+import elm.hs.api.model.ElmUserFeedback;
 import elm.hs.api.model.HomeServerResponse;
 import elm.hs.api.model.Info;
 import elm.hs.api.model.Status;
@@ -15,17 +16,15 @@ import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.HomeServerChangeListener;
 import elm.scheduler.model.RemoteDeviceUpdateClient;
 import elm.scheduler.model.UnsupportedModelException;
-import elm.ui.api.ElmUserFeedback;
-import elm.ui.api.ElmUserFeedbackClient;
 import elm.util.ClientException;
 import elm.util.ClientUtil;
 
 /**
- * This controller is responsible for the connection to and the communication with a single Home Server server via HTTP and with the {@link Scheduler}. However, it
- * does not communicate to the {@link Scheduler} directly, but indirectly via a {@link HomeServer} object.
+ * This controller is responsible for the connection to and the communication with a single Home Server server via HTTP and with the {@link Scheduler}. However,
+ * it does not communicate to the {@link Scheduler} directly, but indirectly via a {@link HomeServer} object.
  * <p>
- * At each poll of the Home Server server, this controller updates an 'alive' flag at its {@link HomeServer}. This enables a separate thread to monitor the health
- * of this controller.
+ * At each poll of the Home Server server, this controller updates an 'alive' flag at its {@link HomeServer}. This enables a separate thread to monitor the
+ * health of this controller.
  * </p>
  */
 public class HomeServerController implements Runnable, HomeServerChangeListener {
@@ -41,7 +40,7 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 	}
 
 	private final AbstractScheduler scheduler;
-	private final ElmUserFeedbackClient userFeedbackClient;
+	private final ElmUserFeedbackManager userFeedbackManager;
 	private final HomeServer homeServer;
 	private State state = State.NOT_CONNECTED;
 
@@ -58,22 +57,23 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 	private final Logger log = Logger.getLogger(getClass().getName());
 
 	/**
-	 * @param scheduler cannot be {@code null}
-	 * @param userFeedbackClient
+	 * @param scheduler
+	 *            cannot be {@code null}
+	 * @param userFeedbackManager
 	 *            must be started, cannot be {@code null}
 	 * @param homeServer
 	 *            cannot be {@code null}
 	 */
-	public HomeServerController(AbstractScheduler scheduler, ElmUserFeedbackClient userFeedbackClient, HomeServer homeServer) {
+	public HomeServerController(AbstractScheduler scheduler, ElmUserFeedbackManager userFeedbackManager, HomeServer homeServer) {
 		assert scheduler != null;
-		assert userFeedbackClient != null;
+		assert userFeedbackManager != null;
 		assert homeServer != null;
 		this.scheduler = scheduler;
-		this.userFeedbackClient = userFeedbackClient;
+		this.userFeedbackManager = userFeedbackManager;
 		this.homeServer = homeServer;
 		this.homeServer.addChangeListener(this);
 	}
-	
+
 	public int getPollingIntervalMillis() {
 		return pollingIntervalMillis;
 	}
@@ -99,7 +99,7 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 		ClientUtil.initSslContextFactory(publicClient.getClient());
 
 		internalClient = new HomeServerInternalApiClient(homeServer.getUri(), "admin", homeServer.getPassword(), publicClient);
-//		internalClient = new HomeServerInternalApiClient(homeServer.getPassword(), publicClient);
+		// internalClient = new HomeServerInternalApiClient(homeServer.getPassword(), publicClient);
 		// ClientUtil.initSslContextFactory(internalClient.getClient());
 
 		deviceUpdateClient = new RemoteDeviceUpdateClient() {
@@ -116,7 +116,12 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 
 			@Override
 			public void updateUserFeedback(ElmUserFeedback feedback) throws ClientException {
-				userFeedbackClient.updateUserFeedback(feedback);
+				if (feedback.id != null) {
+					HomeServerPublicApiClient client = userFeedbackManager.getFeedackClient(feedback.id);
+					client.updateUserFeedback(feedback);
+				} else {
+					publicClient.updateUserFeedback(feedback);
+				}
 			}
 		};
 		setState(State.OK);
@@ -139,6 +144,11 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 				publicClient.start();
 				internalClient.start();
 				scheduler.addHomeServer(homeServer);
+				// Feedback management
+				if (publicClient.supportsUserFeedback()) {
+					HomeServerResponse feedbackDevicesResponse = publicClient.getFeedbackDevices();
+					userFeedbackManager.addFeedbackServer(publicClient, feedbackDevicesResponse.feeback.deviceIds);
+				}
 			} catch (Exception e) {
 				log(Level.SEVERE, "Cannot start HTTP client", e);
 				setState(State.ERROR);
@@ -153,6 +163,7 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 			runner = null;
 			setState(State.STOPPED);
 			scheduler.removeHomeServer(homeServer);
+			userFeedbackManager.removeFeedbackServer(publicClient);
 			try {
 				if (publicClient != null && publicClient.getClient().isStarted()) {
 					publicClient.stop();
@@ -225,8 +236,8 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 			synchronized (this) {
 				if (event == Event.WAIT) {
 					log(Level.FINE, "wait " + waitIntervalMillis + " ms", null);
-					event = Event.POLL_HOME_SERVER;  // default action after wait (may be changed during wait period)
-					
+					event = Event.POLL_HOME_SERVER; // default action after wait (may be changed during wait period)
+
 					wait(waitIntervalMillis); // "sleep"
 
 					if (event == Event.STOP) {
@@ -282,7 +293,7 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 			throw new ClientException(ClientException.Error.APPLICATION_FAILURE_RESPONSE);
 
 		} catch (ClientException e) {
-			if (e.getCause() == null) {  // it's an application problem not a communication problem
+			if (e.getCause() == null) { // it's an application problem not a communication problem
 				log(Level.SEVERE, "Exception in event loop", e);
 			}
 			lastClientException = e;
@@ -360,7 +371,7 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 	public ClientException getLastClientException() {
 		return lastClientException;
 	}
-	
+
 	private void log(Level level, String message, Throwable ex) {
 		log.log(level, homeServer.getUri().toString() + ": " + message, ex);
 	}

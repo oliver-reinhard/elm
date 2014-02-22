@@ -4,10 +4,10 @@ import java.net.URI;
 import java.util.Collection;
 
 import elm.hs.api.model.Device;
+import elm.hs.api.model.ElmUserFeedback;
 import elm.hs.api.model.HomeServerResponse;
 import elm.sim.metamodel.SimAttribute;
 import elm.sim.model.IntakeWaterTemperature;
-import elm.ui.api.ElmUserFeedback;
 
 public interface SimHomeServer {
 	
@@ -42,30 +42,30 @@ public interface SimHomeServer {
 
 
 	/**
-	 * Gerneral Http {@code /} request.
+	 * Gerneral  GET Http {@code ""} request.
 	 * 
 	 * @return never {@code null}
 	 */
-	HomeServerResponse processStatusRequest();
+	HomeServerResponse processStatusQuery();
 
 	/**
-	 * Http {@code /devices} request.
+	 * Http GET {@code /devices} request.
 	 * 
 	 * @return never {@code null}
 	 */
-	HomeServerResponse processDevicesRequest();
+	HomeServerResponse processDevicesQuery();
 
 	/**
-	 * Http {@code /devices/status/<id>} request.
+	 * Http GET {@code /devices/status/<id>} request.
 	 * 
 	 * @param id
 	 *            cannot be {@code null} or empty
 	 * @return {@code null} if no device with the given id exists
 	 */
-	HomeServerResponse processDeviceStatusRequest(String id);
+	HomeServerResponse processDeviceStatusQuery(String id);
 
 	/**
-	 * Http {@code /devices/setpoint/<id>} with a body of {@code data=<temperature>} request. Changes the setpoint of the given device in the database and
+	 * Http POST {@code /devices/setpoint/<id>} with a body of {@code data=<temperature>} request. Changes the setpoint of the given device in the database and
 	 * returns the proper response.
 	 * 
 	 * @param id
@@ -77,15 +77,7 @@ public interface SimHomeServer {
 	HomeServerResponse processDeviceSetpoint(String id, short setpoint);
 
 	/**
-	 * Http {@code /devices/feedback} with a body of {@link ElmUserFeedback} request.
-	 * 
-	 * @param feedback
-	 *            cannot be {@code null}
-	 */
-	void processUserFeedback(ElmUserFeedback feedback);
-
-	/**
-	 * Http {@code /cmd/VF/} with a body of {@code data=<temperature>} request. Changes the scald-protection temperature.
+	 * Http POST {@code /cmd/VF/} with a body of {@code data=<temperature>} request. Changes the scald-protection temperature.
 	 * 
 	 * @param id
 	 *            cannot be {@code null} or empty
@@ -94,7 +86,7 @@ public interface SimHomeServer {
 	HomeServerResponse processSetScaldProtectionFlag(String id, boolean on);
 
 	/**
-	 * Http {@code /cmd/Vv/} with a body of {@code data=<temperature>} request. Changes the scald-protection temperature.
+	 * Http POST {@code /cmd/Vv/} with a body of {@code data=<temperature>} request. Changes the scald-protection temperature.
 	 * 
 	 * @param id
 	 *            cannot be {@code null} or empty
@@ -103,4 +95,17 @@ public interface SimHomeServer {
 	 * @return {@code null} if no device with the given id exists
 	 */
 	HomeServerResponse processSetScaldProtectionTemperature(String id, short temperature);
+
+	/**
+	 * Http GET {@code /devices/feedback} without parameter or request body. This returns a list of device IDs whose feedback is handled by this server.
+	 */
+	HomeServerResponse processDevicesFeedbackQuery();
+
+	/**
+	 * Http POST {@code /devices/feedback} with a body of {@link ElmUserFeedback} request.
+	 * 
+	 * @param feedback
+	 *            cannot be {@code null}
+	 */
+	void processUserFeedback(ElmUserFeedback feedback);
 }

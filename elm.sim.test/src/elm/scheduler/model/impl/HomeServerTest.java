@@ -24,13 +24,13 @@ import org.junit.Before;
 import org.junit.Test;
 
 import elm.hs.api.model.Device;
+import elm.hs.api.model.ElmStatus;
 import elm.scheduler.model.DeviceController;
 import elm.scheduler.model.HomeServerChangeListener;
 import elm.scheduler.model.RemoteDeviceUpdateClient;
 import elm.scheduler.model.UnsupportedModelException;
 import elm.scheduler.model.impl.DeviceControllerImpl;
 import elm.scheduler.model.impl.HomeServerImpl;
-import elm.ui.api.ElmStatus;
 import elm.util.ClientException;
 
 public class HomeServerTest {

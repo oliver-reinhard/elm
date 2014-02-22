@@ -1,4 +1,4 @@
-package elm.ui.api;
+package elm.hs.api.model;
 
 public class ElmUserFeedback {
 

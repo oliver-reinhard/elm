@@ -2,8 +2,8 @@ package elm.scheduler.model;
 
 import java.util.logging.Logger;
 
-import elm.ui.api.ElmStatus;
-import elm.ui.api.ElmUserFeedback;
+import elm.hs.api.model.ElmStatus;
+import elm.hs.api.model.ElmUserFeedback;
 import elm.util.ClientException;
 
 public class AsynchRemoteDeviceUpdate {

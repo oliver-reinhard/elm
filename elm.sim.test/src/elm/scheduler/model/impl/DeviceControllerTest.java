@@ -25,12 +25,12 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import elm.hs.api.model.Device;
+import elm.hs.api.model.ElmStatus;
 import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
 import elm.scheduler.model.AsynchRemoteDeviceUpdate;
 import elm.scheduler.model.DeviceController.UpdateResult;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.UnsupportedModelException;
-import elm.ui.api.ElmStatus;
 
 public class DeviceControllerTest {
 

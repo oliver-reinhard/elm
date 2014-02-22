@@ -16,14 +16,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import elm.hs.api.model.Device;
+import elm.hs.api.model.ElmStatus;
+import elm.hs.api.model.ElmUserFeedback;
 import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
 import elm.scheduler.Scheduler;
 import elm.scheduler.model.AsynchRemoteDeviceUpdate;
 import elm.scheduler.model.DeviceController;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.UnsupportedModelException;
-import elm.ui.api.ElmStatus;
-import elm.ui.api.ElmUserFeedback;
 
 /**
  * This device-controller implementation is close to <em>stateless</em> in that, each time it runs, it performs a full analysis of all locally stored

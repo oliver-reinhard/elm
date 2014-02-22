@@ -1,10 +1,10 @@
 package elm.scheduler;
 
-import static elm.ui.api.ElmStatus.ERROR;
-import static elm.ui.api.ElmStatus.OFF;
-import static elm.ui.api.ElmStatus.ON;
-import static elm.ui.api.ElmStatus.OVERLOAD;
-import static elm.ui.api.ElmStatus.SATURATION;
+import static elm.hs.api.model.ElmStatus.ERROR;
+import static elm.hs.api.model.ElmStatus.OFF;
+import static elm.hs.api.model.ElmStatus.ON;
+import static elm.hs.api.model.ElmStatus.OVERLOAD;
+import static elm.hs.api.model.ElmStatus.SATURATION;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -14,11 +14,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import elm.hs.api.model.ElmStatus;
 import elm.scheduler.model.AsynchRemoteDeviceUpdate;
 import elm.scheduler.model.DeviceController;
 import elm.scheduler.model.DeviceController.DeviceStatus;
 import elm.scheduler.model.HomeServer;
-import elm.ui.api.ElmStatus;
 
 /**
  * This scheduler implementation is <em>stateless</em> in that, each time it runs, it performs a full analysis of all known {@link HomeServer}s and their

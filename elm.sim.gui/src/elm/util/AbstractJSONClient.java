@@ -97,7 +97,7 @@ public abstract class AbstractJSONClient {
 	 *            the list of HTTP statuses that are to be considered a success
 	 * @return {@code null} if not-OK return status or an exception
 	 */
-	protected <T> T doGet(String resourcePath, Class<T> resultClass, int[] httpSuccessStatuses) throws ClientException {
+	protected synchronized <T> T doGet(String resourcePath, Class<T> resultClass, int[] httpSuccessStatuses) throws ClientException {
 		assert resourcePath != null;
 		assert resultClass != null;
 		ClientException exception;
@@ -150,7 +150,7 @@ public abstract class AbstractJSONClient {
 	 *            the list of HTTP statuses that are to be considered a success
 	 * @return {@code null} if the post ended in a non-success status or if it threw an exception, else the response object
 	 */
-	protected ContentResponse doPost(String resourcePath, String content, int[] httpSuccessStatuses) throws ClientException {
+	protected synchronized ContentResponse doPost(String resourcePath, String content, int[] httpSuccessStatuses) throws ClientException {
 		assert resourcePath != null && !resourcePath.isEmpty();
 		ClientException exception;
 

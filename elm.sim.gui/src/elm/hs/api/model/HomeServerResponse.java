@@ -19,6 +19,9 @@ public class HomeServerResponse implements HomeServerObject {
 	public List<Service> services;
 	public Server server;
 	public Response response;
+	
+	// Sim Home Server only:
+	public Feedback feeback;
 
 	public boolean _isDeviceAlive(String deviceID) {
 		assert deviceID != null & ! deviceID.isEmpty();

@@ -1,12 +1,12 @@
 package elm.sim.model;
 
+import elm.hs.api.model.ElmStatus;
 import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
 import elm.scheduler.Scheduler;
 import elm.scheduler.model.DeviceController;
 import elm.sim.metamodel.SimAttribute;
 import elm.sim.metamodel.SimChangeNotifier;
 import elm.sim.ui.SimpleSchedulerUI;
-import elm.ui.api.ElmStatus;
 
 public interface TapPoint extends SimChangeNotifier {
 
@@ -49,7 +49,9 @@ public interface TapPoint extends SimChangeNotifier {
 	String getName();
 
 	String getId();
-	
+
+	boolean isSimDevice();
+
 	DeviceModel getDeviceModel();
 
 	String getLabel();
@@ -113,7 +115,5 @@ public interface TapPoint extends SimChangeNotifier {
 	 * @return the currently consumed power in device units in relation to {@link DeviceModel#getPowerMaxUnits()} configuration.
 	 */
 	short getPowerUnits();
-
-	public abstract boolean isSimDevice();
 
 }

@@ -4,6 +4,7 @@ import static elm.sim.model.SimStatus.OFF;
 import static elm.sim.model.SimStatus.ON;
 import static elm.sim.model.SimStatus.OVERLOAD;
 import static elm.sim.model.SimStatus.SATURATION;
+import elm.hs.api.model.ElmStatus;
 import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
 import elm.scheduler.model.UnsupportedModelException;
 import elm.sim.metamodel.AbstractSimObject;
@@ -13,7 +14,6 @@ import elm.sim.model.HotWaterTemperature;
 import elm.sim.model.IntakeWaterTemperature;
 import elm.sim.model.SimStatus;
 import elm.sim.model.TapPoint;
-import elm.ui.api.ElmStatus;
 
 /**
  * Apart from the name, which is mandatory, all fields are optional.

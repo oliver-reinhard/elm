@@ -14,6 +14,10 @@ public class Service implements HomeServerObject {
 	public static final String FILES_PATH = "/files";
 	public static final String TIMERS_PATH = "/timers";
 	
+	// Sim Home Server
+	public static final String ELM_FEEDBACK_PATH = "/devices/elm-feedback";
+	
+	
 	public String deviceList;
 	public String deviceStatus;
 	public String deviceSetpoint;
@@ -22,5 +26,8 @@ public class Service implements HomeServerObject {
 	public String deviceLogs;
 	public String fileList;
 	public String timerList;
+	
+	// Sim Home Server
+	public String elmFeedback;
 
 }

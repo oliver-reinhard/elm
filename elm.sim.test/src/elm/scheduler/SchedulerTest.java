@@ -1,5 +1,10 @@
 package elm.scheduler;
 
+import static elm.hs.api.model.ElmStatus.ERROR;
+import static elm.hs.api.model.ElmStatus.OFF;
+import static elm.hs.api.model.ElmStatus.ON;
+import static elm.hs.api.model.ElmStatus.OVERLOAD;
+import static elm.hs.api.model.ElmStatus.SATURATION;
 import static elm.scheduler.model.DeviceController.DeviceStatus.CONSUMPTION_APPROVED;
 import static elm.scheduler.model.DeviceController.DeviceStatus.CONSUMPTION_DENIED;
 import static elm.scheduler.model.DeviceController.DeviceStatus.CONSUMPTION_STARTED;
@@ -10,11 +15,6 @@ import static elm.scheduler.model.impl.ModelTestUtil.createDevicesWithStatus;
 import static elm.scheduler.model.impl.ModelTestUtil.createHomeServer;
 import static elm.scheduler.model.impl.ModelTestUtil.sleep;
 import static elm.scheduler.model.impl.ModelTestUtil.toPowerUnits;
-import static elm.ui.api.ElmStatus.ERROR;
-import static elm.ui.api.ElmStatus.OFF;
-import static elm.ui.api.ElmStatus.ON;
-import static elm.ui.api.ElmStatus.OVERLOAD;
-import static elm.ui.api.ElmStatus.SATURATION;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;

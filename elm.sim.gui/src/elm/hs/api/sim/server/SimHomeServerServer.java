@@ -6,7 +6,6 @@ import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletInputStream;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -21,8 +20,8 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import elm.hs.api.model.ElmUserFeedback;
 import elm.hs.api.model.HomeServerResponse;
-import elm.ui.api.ElmUserFeedback;
 
 public class SimHomeServerServer {
 
@@ -30,7 +29,7 @@ public class SimHomeServerServer {
 	class StatusServlet extends AbstractHomeServerServlet {
 		@Override
 		protected HomeServerResponse getHomeServerResponse(HttpServletRequest request) {
-			return getDatabase().processStatusRequest();
+			return getDatabase().processStatusQuery();
 		}
 	}
 
@@ -39,7 +38,7 @@ public class SimHomeServerServer {
 
 		@Override
 		protected HomeServerResponse getHomeServerResponse(HttpServletRequest request) {
-			return getDatabase().processDevicesRequest();
+			return getDatabase().processDevicesQuery();
 		}
 	}
 
@@ -47,14 +46,14 @@ public class SimHomeServerServer {
 	class DeviceStatusServlet extends AbstractHomeServerServlet {
 
 		/**
-		 * Parses a request of {@code /devices/status/<id>}.
+		 * Parses a request of {@code /devices/status} or {@code /devices/status/<id>}.
 		 */
 		@Override
 		protected HomeServerResponse getHomeServerResponse(HttpServletRequest request) {
 			String uri = request.getRequestURI();
 			String[] segments = uri.split("/");
 			final String deviceID = segments[segments.length - 1];
-			return getDatabase().processDeviceStatusRequest(deviceID);
+			return getDatabase().processDeviceStatusQuery(deviceID);
 		}
 	}
 
@@ -74,7 +73,7 @@ public class SimHomeServerServer {
 				if (referenceTemperature != null) {
 					return getDatabase().processDeviceSetpoint(id, referenceTemperature);
 				} else {
-					return getDatabase().processDeviceStatusRequest(id);
+					return getDatabase().processDeviceStatusQuery(id);
 				}
 			} catch (IOException | IllegalArgumentException e) {
 				// already logged
@@ -126,12 +125,12 @@ public class SimHomeServerServer {
 	}
 
 	@SuppressWarnings("serial")
-	class DeviceFeedbackServlet extends HttpServlet {
+	class DeviceFeedbackServlet extends AbstractHomeServerServlet {
 
 		private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
 		/**
-		 * Parses a request of {@code /devices/feedback} with a content of one JSON'ed {@link ElmUserFeedback} object.
+		 * Parses a POST request of {@code /devices/feedback} with a content of one JSON'ed {@link ElmUserFeedback} object.
 		 */
 		@Override
 		protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -153,6 +152,26 @@ public class SimHomeServerServer {
 			}
 			response.sendError(HttpStatus.BAD_REQUEST_400, "ElmDeviceUserFeedback object expected");
 		}
+
+		/**
+		 * Processes a GET request of {@code /devices/feedback} without parameters or request body.
+		 */
+		@Override
+		protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+			// copied from super.doPost(..):
+			try {
+				HomeServerResponse homeServerResponse = getHomeServerResponse(request);
+				sendSingleMessage(response, homeServerResponse);
+			} catch (RuntimeException e) {
+				e.printStackTrace();
+				response.sendError(HttpStatus.INTERNAL_SERVER_ERROR_500, "Server error: " + e.getMessage());
+			}
+		}
+
+		@Override
+		protected HomeServerResponse getHomeServerResponse(HttpServletRequest request) {
+			return getDatabase().processDevicesFeedbackQuery();
+		}
 	}
 
 	private final Server server;
@@ -161,7 +180,7 @@ public class SimHomeServerServer {
 
 	public SimHomeServerServer(SimHomeServer database) {
 		assert database != null;
-		assert ! database.getDevices().isEmpty();
+		assert !database.getDevices().isEmpty();
 		this.database = database;
 
 		server = new Server(database.getUri().getPort());
@@ -192,6 +211,6 @@ public class SimHomeServerServer {
 	}
 
 	public void processCalls() throws Exception {
-		server.join();  // blocking
+		server.join(); // blocking
 	}
 }

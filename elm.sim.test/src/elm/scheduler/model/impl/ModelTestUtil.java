@@ -13,6 +13,7 @@ import java.util.Map;
 
 import elm.hs.api.model.Device;
 import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
+import elm.hs.api.model.ElmStatus;
 import elm.hs.api.model.Error;
 import elm.hs.api.model.Info;
 import elm.hs.api.model.Status;
@@ -20,7 +21,6 @@ import elm.scheduler.model.AsynchRemoteDeviceUpdate;
 import elm.scheduler.model.DeviceController;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.UnsupportedModelException;
-import elm.ui.api.ElmStatus;
 
 public class ModelTestUtil {
 	private static final String SIM_TYPE_ID = "D012"; // Model SIM

@@ -1,6 +1,6 @@
 package elm.scheduler.model;
 
-import elm.ui.api.ElmUserFeedback;
+import elm.hs.api.model.ElmUserFeedback;
 import elm.util.ClientException;
 
 public interface RemoteDeviceUpdateClient {

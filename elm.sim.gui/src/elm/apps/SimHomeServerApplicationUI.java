@@ -17,7 +17,6 @@ import elm.util.ElmLogFormatter;
 
 public class SimHomeServerApplicationUI {
 
-	private static final String SERVER_DESCRIPTON = "Home Server Simulation";
 	public static final int REGISTERED_SERVER_PORT = 9090;
 
 	private static Logger LOG;
@@ -26,15 +25,15 @@ public class SimHomeServerApplicationUI {
 		try {
 			ElmLogFormatter.init();
 			LOG = Logger.getLogger(SimHomeServerApplicationUI.class.getName());
-			
+
 			final JmDNS jmDNS = JmDNS.create();
-			final ServiceInfo serviceInfo = ServiceInfo.create(HomeServerService.DNS_SD_SERVICE_TYPE, SERVER_DESCRIPTON, REGISTERED_SERVER_PORT,
-					SERVER_DESCRIPTON);
-			
+			final ServiceInfo serviceInfo = ServiceInfo.create(HomeServerService.DNS_SD_HS_SERVICE_TYPE, HomeServerService.DNS_SD_HS_SIM_SERVICE_NAME,
+					REGISTERED_SERVER_PORT, "Home Server and ELM-Feedback Provider");
+
 			SimpleSimServerApplicationConfiguration configuration = new SimpleSimServerApplicationConfiguration();
 			configuration.init(false, REGISTERED_SERVER_PORT); // don't show SimpleSchedulerUI
 			SimServerApplicationUI ui = new SimServerApplicationUI(configuration);
-			ui.setTitle(SERVER_DESCRIPTON);
+			ui.setTitle(HomeServerService.DNS_SD_HS_SIM_SERVICE_NAME);
 			ui.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 			ui.addWindowListener(new WindowAdapter() {
 				@Override
@@ -46,18 +45,18 @@ public class SimHomeServerApplicationUI {
 				}
 			});
 			ui.setVisible(true);
-			
+
 			SimHomeServerServer httpServer = new SimHomeServerServer(configuration.getServer());
 			httpServer.start();
-			
-			info("registering (service type: " + HomeServerService.DNS_SD_SERVICE_TYPE + ") ...");
+
+			info("registering (service type: " + HomeServerService.DNS_SD_HS_SERVICE_TYPE + ") ...");
 			jmDNS.registerService(serviceInfo);
 			info("registered");
-			
+
 			httpServer.processCalls(); // blocking
-			
+
 		} catch (Exception e) {
-			LOG.log(Level.SEVERE, SERVER_DESCRIPTON + " start failed", e);
+			LOG.log(Level.SEVERE, HomeServerService.DNS_SD_HS_SIM_SERVICE_NAME + " start failed", e);
 			System.exit(1);
 		}
 	}

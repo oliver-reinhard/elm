@@ -8,9 +8,10 @@ import java.net.URI;
 public interface HomeServerService {
 
 	/** The DNS Service Discovery Type of the Home Server. */
-	static final String DNS_SD_SERVICE_TYPE = "_clage-hs._tcp.local.";
-	
-	static final String DNS_SD_SERVICE_NAME = "Home Server Simulation";
+	static final String DNS_SD_HS_SERVICE_TYPE = "_clage-hs._tcp.local.";
+
+	/** Name under which the {@link SimHomeServerService} registers itself in the Service Discovery registry. */
+	static final String DNS_SD_HS_SIM_SERVICE_NAME = "Sim Home Server";
 
 	/** The default URI according to API v1.0 documentation. */
 	static final URI DEFAULT_URI = URI.create("http://192.168.204.204");

@@ -5,11 +5,18 @@ import java.net.URISyntaxException;
 
 import org.eclipse.jetty.http.HttpStatus;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import elm.hs.api.HomeServerService;
+import elm.hs.api.model.ElmUserFeedback;
 import elm.hs.api.model.HomeServerResponse;
+import elm.hs.api.model.Service;
 import elm.util.ClientException;
 
 public class HomeServerPublicApiClient extends AbstractHomeServerClient {
+
+	private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
 	/**
 	 * Use the default server URI and administration user.
@@ -137,5 +144,51 @@ public class HomeServerPublicApiClient extends AbstractHomeServerClient {
 		assert deviceID != null && !deviceID.isEmpty();
 
 		doPost("/devices/setpoint/" + deviceID, "data=" + newTemp, new int[] { HttpStatus.OK_200 });
+	}
+
+	// ------ Services offered by Sim Home Servers ------
+
+	/**
+	 * Queries the server whether is supports user feedback.
+	 * <p>
+	 * <em>Note: </em>{@link #getFeedbackDevices()} and {@link #updateUserFeedback(ElmUserFeedback)} must only be invoked when this method returns {@code true}.
+	 * </p>
+	 * 
+	 * @throws ClientException
+	 *             if the operation ended in a status {@code != 200} or if the execution threw an exception
+	 */
+	public boolean supportsUserFeedback() throws ClientException {
+		HomeServerResponse statusResponse = getServerStatus();
+		for (Service service : statusResponse.services) {
+			if (service.elmFeedback != null) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Returns the device IDs of the devices for which this home server handles the device user feedback.
+	 * 
+	 * @return never {@code null}
+	 * @throws ClientException
+	 *             if the operation ended in a status {@code != 200} or if the execution threw an exception
+	 */
+	public HomeServerResponse getFeedbackDevices() throws ClientException {
+		return doGet("/devices/feedback", HomeServerResponse.class);
+	}
+
+	/**
+	 * Sends device user feedback to UI of the respective device.
+	 * 
+	 * @param feedback
+	 *            cannot be {@code null} or empty
+	 * @throws ClientException
+	 *             if the operation ended in a status {@code != 200} or if the execution threw an exception
+	 */
+	public void updateUserFeedback(ElmUserFeedback feedback) throws ClientException {
+		assert feedback != null;
+
+		doPost("/devices/feedback", gson.toJson(feedback), new int[] { HttpStatus.OK_200 });
 	}
 }

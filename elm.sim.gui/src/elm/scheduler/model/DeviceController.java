@@ -2,11 +2,11 @@ package elm.scheduler.model;
 
 import elm.hs.api.model.Device;
 import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
+import elm.hs.api.model.ElmStatus;
 import elm.hs.api.model.Info;
 import elm.hs.api.model.Status;
 import elm.scheduler.HomeServerController;
 import elm.scheduler.Scheduler;
-import elm.ui.api.ElmStatus;
 
 /**
  * A {@link DeviceController} manages one physical {@link Device} and is the devices interface for the scheduler. Despite its name the {@link DeviceController} is a

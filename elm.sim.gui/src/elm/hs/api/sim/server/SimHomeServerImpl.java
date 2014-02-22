@@ -14,6 +14,8 @@ import com.google.gson.GsonBuilder;
 
 import elm.hs.api.model.Device;
 import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
+import elm.hs.api.model.ElmUserFeedback;
+import elm.hs.api.model.Feedback;
 import elm.hs.api.model.HomeServerFieldNamingStrategy;
 import elm.hs.api.model.HomeServerResponse;
 import elm.hs.api.model.Info;
@@ -28,14 +30,27 @@ import elm.sim.metamodel.SimAttribute;
 import elm.sim.model.HotWaterTemperature;
 import elm.sim.model.IntakeWaterTemperature;
 import elm.sim.model.TapPoint;
-import elm.ui.api.ElmUserFeedback;
 
-public class SimHomeServerImpl extends AbstractSimObject implements SimHomeServer{
+public class SimHomeServerImpl extends AbstractSimObject implements SimHomeServer {
 
+	/**
+	 * Services implemented by this server.
+	 * <p>
+	 * <em>Note: </em>In contrast with a regular CLAGE Home Server, this server also offers ELM device feedback processing ({@link Service#ELM_FEEDBACK_PATH}).
+	 * </p>
+	 */
 	private final List<Service> services = new ArrayList<Service>();
-	private final Map<String, Device> devices = new LinkedHashMap<String, Device>();
+
+	/** "Active" devices managed by this server, i.e. simulated devices with changes to demand power, flow, etc. */
+	private final Map<String, Device> simDevices = new LinkedHashMap<String, Device>();
+
+	/** Devices for which this server provides user device feedback (status, waiting time, etc.). */
+	private final Map<String, Device> feedbackDevices = new LinkedHashMap<String, Device>();
+
+	/** Adapters to {@link TapPoint}s objects. Typically there are adapters for all {@link #simDevices} plus all {@link #feedbackDevices}. */
 	private final Map<String, DeviceTapPointAdapter> adapters = new HashMap<String, DeviceTapPointAdapter>();
 
+	/** Simulated water-intake temperature for the {@link #simDevices} managed by this server. */
 	private IntakeWaterTemperature waterIntakeTemperature = IntakeWaterTemperature.TEMP_10;
 
 	private final URI uri;
@@ -67,6 +82,11 @@ public class SimHomeServerImpl extends AbstractSimObject implements SimHomeServe
 
 		s = new Service();
 		s.timerList = Service.TIMERS_PATH;
+		services.add(s);
+
+		// This is a special service of the SimHomeServer:
+		s = new Service();
+		s.elmFeedback = Service.ELM_FEEDBACK_PATH;
 		services.add(s);
 	}
 
@@ -106,9 +126,9 @@ public class SimHomeServerImpl extends AbstractSimObject implements SimHomeServe
 
 	public static SimHomeServer createDemoDB(String uri) {
 		SimHomeServerImpl db = new SimHomeServerImpl(uri);
-		db.addDevice("2016FFFF55", (short) 200);
-		db.addDevice("A001FFFF33", (short) 380);
-		db.addDevice("6003FFFF1A", (short) 420);
+		db.addDevice("2016FFFF55", (short) 200, true);
+		db.addDevice("A001FFFF33", (short) 380, true);
+		db.addDevice("6003FFFF1A", (short) 420, true);
 		return db;
 	}
 
@@ -117,13 +137,19 @@ public class SimHomeServerImpl extends AbstractSimObject implements SimHomeServe
 	 *            cannot be {@code null} or empty
 	 * @param setpoint
 	 *            reference temperature in [1/10°C]
+	 * @param simDevice
+	 *            {@code true} if this is not a real device; real devices are not added to the internal device list
 	 * @return never {@code null}
 	 */
-	public Device addDevice(String id, short setpoint) {
+	public Device addDevice(String id, short setpoint, boolean simDevice) {
 		assert id != null && !id.isEmpty();
 		assert setpoint > 0;
 		final Device device = createDevice(id, uri.toString(), setpoint, true, true, false); // Info + Status block
-		devices.put(id, device);
+		if (simDevice) {
+			simDevices.put(id, device);
+		}
+		// these will not appear in the response to /device/status requests
+		feedbackDevices.put(id, device);
 		return device;
 	}
 
@@ -141,7 +167,7 @@ public class SimHomeServerImpl extends AbstractSimObject implements SimHomeServe
 	 */
 	public DeviceTapPointAdapter addDevice(String id, short setpoint, TapPoint point) throws UnsupportedModelException {
 		assert point != null;
-		Device device = addDevice(id, setpoint);
+		Device device = addDevice(id, setpoint, point.isSimDevice());
 		final DeviceTapPointAdapter adapter = new DeviceTapPointAdapter(point, device);
 		adapters.put(id, adapter);
 		return adapter;
@@ -149,24 +175,24 @@ public class SimHomeServerImpl extends AbstractSimObject implements SimHomeServe
 
 	@Override
 	public Collection<Device> getDevices() {
-		return Collections.unmodifiableCollection(devices.values());
+		return Collections.unmodifiableCollection(simDevices.values());
 	}
 
 	public Device getDevice(String id) {
-		return devices.get(id);
+		return simDevices.get(id);
 	}
 
 	@Override
-	public HomeServerResponse processStatusRequest() {
+	public HomeServerResponse processStatusQuery() {
 		return createResponse(true, true); // no devices
 	}
 
 	@Override
-	public HomeServerResponse processDevicesRequest() {
+	public HomeServerResponse processDevicesQuery() {
 		HomeServerResponse response = createResponse(false, false);
 		response.devices = new ArrayList<Device>();
-		response.total = devices.size();
-		for (Device device : devices.values()) {
+		response.total = simDevices.size();
+		for (Device device : simDevices.values()) {
 			Device newDevice = createDevice(device.id);
 			newDevice.info = device.info; // attach only the Info block
 			response.devices.add(newDevice);
@@ -175,8 +201,8 @@ public class SimHomeServerImpl extends AbstractSimObject implements SimHomeServe
 	}
 
 	@Override
-	public HomeServerResponse processDeviceStatusRequest(String id) {
-		final Device device = devices.get(id);
+	public HomeServerResponse processDeviceStatusQuery(String id) {
+		final Device device = simDevices.get(id);
 		if (device != null) {
 			Device newDevice = createDevice(id);
 			newDevice.status = device.status; // attach only the Status block
@@ -189,10 +215,10 @@ public class SimHomeServerImpl extends AbstractSimObject implements SimHomeServe
 		}
 		return null;
 	}
-	
+
 	@Override
 	public HomeServerResponse processDeviceSetpoint(String id, short setpoint) {
-		final Device device = devices.get(id);
+		final Device device = simDevices.get(id);
 		if (device != null) {
 			// change the "database":
 			device.setSetpoint(setpoint);
@@ -200,7 +226,7 @@ public class SimHomeServerImpl extends AbstractSimObject implements SimHomeServe
 			if (adapter != null) {
 				adapter.updateTapPoint();
 			}
-			return processDeviceStatusRequest(id);
+			return processDeviceStatusQuery(id);
 		}
 		return null;
 	}
@@ -211,7 +237,7 @@ public class SimHomeServerImpl extends AbstractSimObject implements SimHomeServe
 		if (adapter != null) {
 			adapter.getPoint().setScaldProtectionTemperature(HotWaterTemperature.fromInt(temperature / 10));
 		}
-		if (devices.containsKey(id)) {
+		if (simDevices.containsKey(id)) {
 			HomeServerResponse response = createResponse(false, false);
 			response.response = new Response();
 			response.response.data = Short.toString(temperature);
@@ -226,10 +252,23 @@ public class SimHomeServerImpl extends AbstractSimObject implements SimHomeServe
 		if (adapter != null && !on) {
 			adapter.getPoint().setScaldProtectionTemperature(HotWaterTemperature.TEMP_MAX);
 		}
-		if (devices.containsKey(id)) {
+		if (simDevices.containsKey(id)) {
 			return createResponse(false, false);
 		}
 		return null;
+	}
+
+	@Override
+	public HomeServerResponse processDevicesFeedbackQuery() {
+		Feedback feedback = new Feedback();
+		feedback.deviceIds = new ArrayList<String>();
+		// typically this includes all #simDevices and all #feedbackDevices:
+		for (Device device : feedbackDevices.values()) {
+			feedback.deviceIds.add(device.id);
+		}
+		HomeServerResponse response = createResponse(false, false);
+		response.feeback = feedback;
+		return response;
 	}
 
 	@Override
@@ -238,20 +277,22 @@ public class SimHomeServerImpl extends AbstractSimObject implements SimHomeServe
 		if (feedback.id != null) {
 			// update the given tap point:
 			assert feedback.deviceStatus != null;
-			DeviceTapPointAdapter adapter = adapters.get(feedback.id);
-			if (adapter != null) {
-				if (feedback.deviceStatus != null) {
+			if (feedbackDevices.containsKey(feedback.id)) {
+				DeviceTapPointAdapter adapter = adapters.get(feedback.id);
+				if (adapter != null) {
 					adapter.getPoint().setStatus(feedback.deviceStatus);
-				}
-				if (feedback.expectedWaitingTimeMillis != null) {
-					adapter.getPoint().setWaitingTimePercent(50); // TODO convert time to percent!
+					if (feedback.expectedWaitingTimeMillis != null) {
+						adapter.getPoint().setWaitingTimePercent(50); // TODO convert time to percent!
+					}
 				}
 			}
 		} else {
 			// update all tap points:
 			assert feedback.schedulerStatus != null;
 			for (DeviceTapPointAdapter adapter : adapters.values()) {
-				adapter.getPoint().setStatus(feedback.schedulerStatus);
+				if (feedbackDevices.containsKey(adapter.getDevice().id)) {
+					adapter.getPoint().setStatus(feedback.schedulerStatus);
+				}
 			}
 		}
 	}
@@ -312,7 +353,7 @@ public class SimHomeServerImpl extends AbstractSimObject implements SimHomeServe
 			result.status = new Status();
 			result.status.setpoint = setpoint;
 			result.status.tIn = getIntakeWaterTemperature().getUnits();
-			result.status.tOut = (short) (setpoint - 2);  // just to be more "real"
+			result.status.tOut = (short) (setpoint - 2); // just to be more "real"
 			result.status.tP1 = 350;
 			result.status.tP2 = 380;
 			result.status.tP3 = 420;

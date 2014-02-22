@@ -1,6 +1,6 @@
 package elm.scheduler;
 
-import elm.ui.api.ElmStatus;
+import elm.hs.api.model.ElmStatus;
 
 /**
  * <p>

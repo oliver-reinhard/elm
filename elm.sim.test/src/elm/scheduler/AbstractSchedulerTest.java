@@ -1,10 +1,10 @@
 package elm.scheduler;
 
+import static elm.hs.api.model.ElmStatus.ERROR;
+import static elm.hs.api.model.ElmStatus.OFF;
+import static elm.hs.api.model.ElmStatus.ON;
 import static elm.scheduler.model.impl.ModelTestUtil.createHomeServer;
 import static elm.scheduler.model.impl.ModelTestUtil.sleep;
-import static elm.ui.api.ElmStatus.ERROR;
-import static elm.ui.api.ElmStatus.OFF;
-import static elm.ui.api.ElmStatus.ON;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
