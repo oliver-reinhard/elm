@@ -268,6 +268,7 @@ public class SimHomeServerImpl extends AbstractSimObject implements SimHomeServe
 		}
 		HomeServerResponse response = createResponse(false, false);
 		response.feeback = feedback;
+		response.total = feedback.deviceIds.size();
 		return response;
 	}
 

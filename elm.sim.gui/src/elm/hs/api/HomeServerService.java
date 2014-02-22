@@ -14,7 +14,7 @@ public interface HomeServerService {
 	static final String DNS_SD_HS_SIM_SERVICE_NAME = "Sim Home Server";
 
 	/** The default URI according to API v1.0 documentation. */
-	static final URI DEFAULT_URI = URI.create("http://192.168.204.204");
+	static final URI DEFAULT_URI = URI.create("https://192.168.204.204");
 
 	/** The Home Server administration user according to API v1.0 documentation. */
 	static final String ADMIN_USER = "admin";

@@ -17,7 +17,7 @@ public class ElmUserFeedbackManager {
 
 	private final Map<String, HomeServerPublicApiClient> deviceFeedbackMap = new HashMap<String, HomeServerPublicApiClient>();
 
-	public void addFeedbackServer(HomeServerPublicApiClient client, List<String> deviceIds) {
+	public synchronized void addFeedbackServer(HomeServerPublicApiClient client, List<String> deviceIds) {
 		assert client != null;
 		assert deviceIds != null;
 		for (String id : deviceIds) {
@@ -26,7 +26,7 @@ public class ElmUserFeedbackManager {
 		}
 	}
 
-	public void removeFeedbackServer(HomeServerPublicApiClient client) {
+	public synchronized void removeFeedbackServer(HomeServerPublicApiClient client) {
 		assert client != null;
 		final List<String> toRemove = new ArrayList<String>();
 		for (String id : deviceFeedbackMap.keySet()) {

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import elm.hs.api.HomeServerService;
 import elm.hs.api.client.HomeServerInternalApiClient;
 import elm.hs.api.client.HomeServerPublicApiClient;
 import elm.hs.api.model.Device;
@@ -32,7 +33,7 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 	private static final int DEFAULT_POLLING_INTERVAL_MILLIS = 1000;
 
 	public enum State {
-		NOT_CONNECTED, OK, TIMEOUT, STOPPED, ERROR
+		NOT_CONNECTED, CONNECTING, CONNECTED, TIMEOUT, STOPPED, ERROR
 	}
 
 	private enum Event {
@@ -95,11 +96,10 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 
 	public synchronized void start() throws URISyntaxException {
 		stop();
-		publicClient = new HomeServerPublicApiClient(homeServer.getUri(), homeServer.getPassword());
+		publicClient = new HomeServerPublicApiClient(homeServer.getUri(), HomeServerService.ADMIN_USER, homeServer.getPassword());
 		ClientUtil.initSslContextFactory(publicClient.getClient());
 
-		internalClient = new HomeServerInternalApiClient(homeServer.getUri(), "admin", homeServer.getPassword(), publicClient);
-		// internalClient = new HomeServerInternalApiClient(homeServer.getPassword(), publicClient);
+		internalClient = new HomeServerInternalApiClient(homeServer.getUri(), HomeServerService.ADMIN_USER, homeServer.getPassword(), publicClient);
 		// ClientUtil.initSslContextFactory(internalClient.getClient());
 
 		deviceUpdateClient = new RemoteDeviceUpdateClient() {
@@ -124,7 +124,7 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 				}
 			}
 		};
-		setState(State.OK);
+		setState(State.CONNECTING);
 		runner = new Thread(this, HomeServerController.class.getSimpleName());
 		event = Event.POLL_HOME_SERVER;
 		runner.start();
@@ -144,11 +144,14 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 				publicClient.start();
 				internalClient.start();
 				scheduler.addHomeServer(homeServer);
+				
 				// Feedback management
 				if (publicClient.supportsUserFeedback()) {
 					HomeServerResponse feedbackDevicesResponse = publicClient.getFeedbackDevices();
 					userFeedbackManager.addFeedbackServer(publicClient, feedbackDevicesResponse.feeback.deviceIds);
+					setState(State.CONNECTED);
 				}
+				
 			} catch (Exception e) {
 				log(Level.SEVERE, "Cannot start HTTP client", e);
 				setState(State.ERROR);
@@ -257,15 +260,20 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 			homeServer.updateLastHomeServerPollTime();
 
 			final HomeServerResponse response = publicClient.getRegisteredDevices();
-
-			final List<Device> devices = response.devices;
-			if (response == null || devices == null) {
+			if (response == null) {
 				throw new ClientException(ClientException.Error.APPLICATION_DATA_ERROR);
 			}
+			
 			if (response.success) {
-				setState(State.OK);
+				setState(State.CONNECTED);
 				pollingFailureCount = 0;
+				
+				if (response.devices == null) { // is null if no devices are connected to HomeServer
+					return;
+				}
+				
 				try {
+					final List<Device> devices = response.devices;
 					final List<String> devicesNeedingStatus = homeServer.updateDeviceControllers(devices);
 					if (devicesNeedingStatus != null) { // some devices need the Status block for the device => poll again
 						for (String deviceID : devicesNeedingStatus) {

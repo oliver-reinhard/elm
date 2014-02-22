@@ -45,12 +45,15 @@ public class HomeServerLocator implements ServiceListener {
 	@Override
 	public void serviceResolved(ServiceEvent e) {
 		info("resolved", e);
-		final String[] urls = e.getInfo().getURLs();
+		final String[] urls = e.getInfo().getURLs("https");
 		if (urls.length > 0) {
 			for (String url : urls) {
 				try {
-
-					final URI uri = new URI(url);
+					URI uri = new URI(url);
+					// The real CLAGE Home Servers require https, but the Sim Home Servers require http:
+					if (e.getName().equals(HomeServerService.DNS_SD_HS_SIM_SERVICE_NAME)) {
+						uri = new URI(url.toLowerCase().replace("https", "http"));
+					}
 					HomeServer homeServer = new HomeServerImpl(uri, homeServerPassword);
 					HomeServerController controller = new HomeServerController(scheduler, userFeedbackManager, homeServer);
 					LOG.info("Starting new " + controller.getClass().getSimpleName() + " for '" + e.getName() + "' at " + uri);
@@ -71,7 +74,7 @@ public class HomeServerLocator implements ServiceListener {
 	}
 
 	void info(String action, ServiceEvent e) {
-		final String[] urls = e.getInfo().getURLs();
+		final String[] urls = e.getInfo().getURLs("https");
 		final String url = urls.length > 0 ? urls[0] : "(unknown URL)";
 		LOG.info("Received discovery notification: Service " + action + ": " + e.getType() + ", " + e.getName() + " at " + url);
 	}
@@ -80,6 +83,5 @@ public class HomeServerLocator implements ServiceListener {
 		LOG.info("Starting service listener for service type '" + HomeServerService.DNS_SD_HS_SERVICE_TYPE + "'");
 		jmDNS = JmDNS.create();
 		jmDNS.addServiceListener(HomeServerService.DNS_SD_HS_SERVICE_TYPE, this);
-		//jmDNS.getServiceInfo(HomeServerService.DNS_SD_SERVICE_TYPE, HomeServerService.DNS_SD_SERVICE_NAME); // this prompts a serviceResolved() notification a.s.a.p.
 	}
 }
