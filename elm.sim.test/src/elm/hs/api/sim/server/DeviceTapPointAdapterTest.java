@@ -16,6 +16,7 @@ import elm.scheduler.model.UnsupportedModelException;
 import elm.scheduler.model.impl.ModelTestUtil;
 import elm.sim.model.Flow;
 import elm.sim.model.HotWaterTemperature;
+import elm.sim.model.IntakeWaterTemperature;
 import elm.sim.model.TapPoint;
 import elm.sim.model.impl.TapPointImpl;
 
@@ -69,12 +70,14 @@ public class DeviceTapPointAdapterTest {
 
 	@Test
 	public void heaterOnAtDevice() {
-		device.status.tIn = (short) (HotWaterTemperature.TEMP_MIN.getDegreesCelsius() * 10);
-		device.status.setpoint = device.status.tIn;
+		assertEquals(HotWaterTemperature.TEMP_0.getDegreesCelsius(), IntakeWaterTemperature.TEMP_25.getDegreesCelsius());
+		
+		device.status.tIn = (short) (IntakeWaterTemperature.TEMP_25.getDegreesCelsius() * 10);
+		device.status.setpoint = device.status.tIn;  // == HotWaterTemperature.TEMP_0
 		adapter.updateTapPoint();
-		assertEquals(HotWaterTemperature.TEMP_MIN.getDegreesCelsius(), point.getIntakeWaterTemperature().getDegreesCelsius());
-		assertEquals(HotWaterTemperature.TEMP_MIN, point.getReferenceTemperature());
-		assertEquals(HotWaterTemperature.TEMP_MIN, point.getActualTemperature());
+		assertEquals(IntakeWaterTemperature.TEMP_25, point.getIntakeWaterTemperature());
+		assertEquals(HotWaterTemperature.TEMP_0, point.getReferenceTemperature());
+		assertEquals(HotWaterTemperature.TEMP_0, point.getActualTemperature());
 		assertEquals(Flow.NONE, point.getActualFlow());
 		assertFalse(device._isHeaterOn());
 
@@ -85,7 +88,7 @@ public class DeviceTapPointAdapterTest {
 		assertTrue(device._isHeaterOn());
 
 		point.setReferenceTemperature(HotWaterTemperature.TEMP_MIN);
-		assertEquals(HotWaterTemperature.TEMP_MIN, point.getActualTemperature());
+		assertEquals(HotWaterTemperature.TEMP_0, point.getActualTemperature());  // intake water is still TEMP_25 == TEMP_0
 		assertFalse(device._isHeaterOn());
 	}
 
@@ -104,7 +107,7 @@ public class DeviceTapPointAdapterTest {
 
 		point.setReferenceTemperature(HotWaterTemperature.TEMP_2);
 		assertEquals(HotWaterTemperature.TEMP_2, point.getActualTemperature());
-		assertEquals(157, device.status.power); // power units
+		assertEquals(123, device.status.power); // power units
 	}
 
 }

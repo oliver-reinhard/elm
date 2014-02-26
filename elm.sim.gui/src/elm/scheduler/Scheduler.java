@@ -121,7 +121,7 @@ public class Scheduler extends AbstractScheduler {
 		}
 		
 		if (totalDemandPowerWatt != this.totalDemandPowerWatt) {
-			log.info("Total requested power: " + formatPower(totalDemandPowerWatt) + " kW");
+			log.info("Total requested power: " + formatPower(totalDemandPowerWatt));
 			this.totalDemandPowerWatt = totalDemandPowerWatt;
 		}
 

@@ -154,7 +154,7 @@ public class SimTapPointUI extends AbstractTapPointUI {
 		}
 		final int powerWatt = model.getPowerWatt();
 		power.setText("P: " + kWFormat.format(powerWatt / 1000.0) + " kW");
-		if (powerWatt > 0) {
+		if (model.getActualFlow() != Flow.NONE) {
 			power.setForeground(Color.red);
 		} else {
 			power.setForeground(Color.black);

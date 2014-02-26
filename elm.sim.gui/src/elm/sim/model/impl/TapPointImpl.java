@@ -25,7 +25,7 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 
 	/** ID of physical device. */
 	private final String deviceId;
-	
+
 	/** Is there a real physical device behind this tap point? */
 	private final boolean simDevice;
 
@@ -59,13 +59,17 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 
 	/**
 	 * 
-	 * @param name user-readable device description, cannot be {@code null} or empty
-	 * @param id device ID, cannot be {@code null} or empty
-	 * @param simDevice is this device only a simulation (vs. a real, physical device)
-	 * @param referenceTemperature cannot be {@code null}
+	 * @param name
+	 *            user-readable device description, cannot be {@code null} or empty
+	 * @param id
+	 *            device ID, cannot be {@code null} or empty
+	 * @param simDevice
+	 *            is this device only a simulation (vs. a real, physical device)
+	 * @param referenceTemperature
+	 *            cannot be {@code null}
 	 * @throws UnsupportedModelException
 	 */
-	public TapPointImpl(String name, String id, boolean simDevice, HotWaterTemperature referenceTemperature) throws UnsupportedModelException{
+	public TapPointImpl(String name, String id, boolean simDevice, HotWaterTemperature referenceTemperature) throws UnsupportedModelException {
 		assert name != null && !name.isEmpty();
 		assert id != null && !id.isEmpty();
 		this.name = name;
@@ -160,9 +164,11 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 	private void setActualTemperature(HotWaterTemperature newValue) {
 		assert newValue != null;
 		assert newValue.lessOrEqualThan(getScaldProtectionTemperature()) : "actual temperature exceeds scald temperature";
+		final int intakeTempCelcius = getIntakeWaterTemperature() != null ? getIntakeWaterTemperature().getDegreesCelsius() : newValue.getDegreesCelsius();
+		HotWaterTemperature realNewValue = HotWaterTemperature.fromInt(Math.max(newValue.getDegreesCelsius(), intakeTempCelcius));
 		HotWaterTemperature oldValue = actualTemperature;
-		if (oldValue != newValue) {
-			actualTemperature = newValue;
+		if (oldValue != realNewValue) {
+			actualTemperature = realNewValue;
 			fireModelChanged(Attribute.ACTUAL_TEMPERATURE, oldValue, newValue);
 		}
 	}
@@ -313,6 +319,7 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 		if (oldValue != newValue) {
 			waterIntakeTemperature = newValue;
 			fireModelChanged(Attribute.INTAKE_WATER_TEMPERATURE, oldValue, newValue);
+			updateDerived();
 		}
 	}
 
@@ -326,7 +333,8 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 		if (deviceModel == null) {
 			throw new IllegalStateException("Must set a device ID before calling this method.");
 		}
-		final boolean heaterOn = getActualFlow().isOn() && getActualTemperature().getDegreesCelsius() > getIntakeWaterTemperature().getDegreesCelsius();
+		final boolean heaterOn = getActualFlow().isOn() && getActualTemperature().getDegreesCelsius() > (deviceModel.getTemperatureOff() / 10)
+				&& getActualTemperature().getDegreesCelsius() > getIntakeWaterTemperature().getDegreesCelsius();
 		if (heaterOn) {
 			int powerWatt = (int) (4.192 * (getActualTemperature().getDegreesCelsius() - getIntakeWaterTemperature().getDegreesCelsius())
 					* getActualFlow().getMillilitresPerMinute() / 60);
@@ -348,7 +356,7 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 	short toPowerUnits(int powerWatt) {
 		return (short) (powerWatt * deviceModel.getPowerMaxUnits() / deviceModel.getPowerMaxWatt());
 	}
-	
+
 	@Override
 	public String toString() {
 		StringBuilder b = new StringBuilder(getClass().getSimpleName());

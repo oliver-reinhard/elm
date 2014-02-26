@@ -198,7 +198,7 @@ public class DeviceControllerTest {
 		di1.updateMaximumPowerConsumption(NO_POWER, ElmStatus.OVERLOAD, EXPECTED_WAITING_TIME);
 		assertEquals(CONSUMPTION_DENIED, di1.getStatus());
 		assertEquals(0, di1.getApprovedPowerWatt());
-		final short minScaldTemp = DeviceModel.SIM.getScaldProtectionTemperatureMin();
+		final short minScaldTemp = DeviceModel.SIM.getTemperatureOff();
 		assertEquals(minScaldTemp, di1.getScaldProtectionTemperature());
 		verify(hs1).putDeviceUpdate(Mockito.<AsynchRemoteDeviceUpdate> any());
 		// next poll returns setpoint = scald-protection temperature:

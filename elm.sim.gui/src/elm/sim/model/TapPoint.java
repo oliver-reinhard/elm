@@ -72,6 +72,7 @@ public interface TapPoint extends SimChangeNotifier {
 
 	HotWaterTemperature getScaldProtectionTemperature();
 
+	/** The actual temperature is never lower than the {@link #getIntakeWaterTemperature() intake water temperature}. */
 	HotWaterTemperature getActualTemperature();
 
 	SimStatus getStatus();

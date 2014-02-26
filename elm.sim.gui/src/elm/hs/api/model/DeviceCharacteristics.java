@@ -43,19 +43,19 @@ public class DeviceCharacteristics {
 		final DeviceType type;
 		final int powerMaxWatt;
 		final short powerMaxUnits;
-		final short scaldTemperatureMin; // degrees C
-		final short scaldTemperatureMax; // degrees C
+		final short temperatureOffUnits; // 1/10°C
+		final short temperatureMaxUnits; // 1/10°C
 
 		private DeviceModel(DeviceType type, int powerMaxWatt) {
 			this(type, powerMaxWatt, 180, 190, 600);
 		}
 
-		private DeviceModel(DeviceType type, int powerMaxWatt, int powerMaxUnits, int scaldTemperatureMin, int scaldTemperatureMax) {
+		private DeviceModel(DeviceType type, int powerMaxWatt, int powerMaxUnits, int temperatureOff, int temperatureMax) {
 			this.type = type;
 			this.powerMaxWatt = powerMaxWatt;
 			this.powerMaxUnits = (short) powerMaxUnits;
-			this.scaldTemperatureMin = (short) scaldTemperatureMin;
-			this.scaldTemperatureMax = (short) scaldTemperatureMax;
+			this.temperatureOffUnits = (short) temperatureOff;
+			this.temperatureMaxUnits = (short) temperatureMax;
 		}
 
 		public DeviceType getType() {
@@ -70,14 +70,18 @@ public class DeviceCharacteristics {
 			return powerMaxUnits;
 		}
 
-		/** @return Minimum scald-protection temperature in [1/10°C]. */
-		public short getScaldProtectionTemperatureMin() {
-			return scaldTemperatureMin;
+		/**
+		 * The device heater remains off for reference temperatures below this temperature, even if the intake water temperature is even lower.
+		 * 
+		 * @return temperature in [1/10°C].
+		 */
+		public short getTemperatureOff() {
+			return temperatureOffUnits;
 		}
 
-		/** @return Maximum scald-protection temperature in [1/10°C]. */
-		public short getScaldProtectionTemperatureMax() {
-			return scaldTemperatureMax;
+		/** @return Maximum reference temperature in [1/10°C]. */
+		public short getTemperatureMax() {
+			return temperatureMaxUnits;
 		}
 
 		/**

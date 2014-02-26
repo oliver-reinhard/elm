@@ -3,8 +3,9 @@ package elm.sim.model;
 import elm.sim.metamodel.SimEnum;
 
 public enum HotWaterTemperature implements SimEnum {
-	/** The minimum temperature is given by the temperature of the inflowing cold water. */
-	TEMP_MIN(15), TEMP_1(30), TEMP_2(38), TEMP_3(42), TEMP_4(48),
+	/** The minimum temperature is a preset device characteristic. */
+	TEMP_MIN(19), TEMP_0(25),
+	TEMP_1(30), TEMP_2(38), TEMP_3(42), TEMP_4(48),
 	/** The maximum temperature is given by the technical upper temperature limit of the water heater. */
 	TEMP_MAX(60);
 

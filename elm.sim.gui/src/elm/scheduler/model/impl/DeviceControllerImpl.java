@@ -277,7 +277,7 @@ public class DeviceControllerImpl implements DeviceController {
 
 		} else { // limited power
 			scaldProtectionTemperature = toTemperatureLimit(newApprovedPowerWatt);
-			assert scaldProtectionTemperature >= deviceModel.getScaldProtectionTemperatureMin();
+			assert scaldProtectionTemperature >= deviceModel.getTemperatureOff();
 			if (userDemandTemperature == UNDEFINED_TEMPERATURE) {
 				userDemandTemperature = actualDemandTemperature;
 			}
@@ -338,17 +338,17 @@ public class DeviceControllerImpl implements DeviceController {
 			// dTnew = dPowerApproved / (demandPower / dTDemand)
 			int flowTimesHeatCapacity = getDemandPowerWatt() / (getDemandTemperature() - getIntakeWaterTemperature());
 			short temperature = (short) (approvedPowerWatt / flowTimesHeatCapacity + getIntakeWaterTemperature());
-			if (temperature < deviceModel.getScaldProtectionTemperatureMin()) {
-				return deviceModel.getScaldProtectionTemperatureMin();
+			if (temperature < deviceModel.getTemperatureOff()) {
+				return deviceModel.getTemperatureOff();
 			}
-			if (temperature > deviceModel.getScaldProtectionTemperatureMax()) {
-				return deviceModel.getScaldProtectionTemperatureMax();
+			if (temperature > deviceModel.getTemperatureMax()) {
+				return deviceModel.getTemperatureMax();
 			}
 			return temperature;
 
 		} else {
 			// Interpolate from maximum device heating power and maximum temperature difference:
-			return (short) (deviceModel.getScaldProtectionTemperatureMin() + (deviceModel.getScaldProtectionTemperatureMax() - LOWEST_INTAKE_WATER_TEMPERATURE)
+			return (short) (deviceModel.getTemperatureOff() + (deviceModel.getTemperatureMax() - LOWEST_INTAKE_WATER_TEMPERATURE)
 					* approvedPowerWatt / deviceModel.getPowerMaxWatt());
 		}
 	}

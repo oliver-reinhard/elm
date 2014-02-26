@@ -2,6 +2,7 @@ package elm.sim.model;
 
 import static elm.sim.model.Flow.MEDIUM;
 import static elm.sim.model.Flow.NONE;
+import static elm.sim.model.HotWaterTemperature.TEMP_0;
 import static elm.sim.model.HotWaterTemperature.TEMP_1;
 import static elm.sim.model.HotWaterTemperature.TEMP_2;
 import static elm.sim.model.HotWaterTemperature.TEMP_3;
@@ -40,6 +41,20 @@ public class TapPointTest {
 			fail(e.getMessage());
 			e.printStackTrace();
 		}
+	}
+
+	@Test
+	public void setActualTemperature() {
+		point.setReferenceTemperature(TEMP_MIN);
+		assertEquals(TEMP_MIN, point.getActualTemperature());
+		
+		assert IntakeWaterTemperature.TEMP_15.getDegreesCelsius() < TEMP_MIN.getDegreesCelsius();
+		point.setIntakeWaterTemperature(IntakeWaterTemperature.TEMP_15);
+		assertEquals(TEMP_MIN, point.getActualTemperature());
+
+		assert IntakeWaterTemperature.TEMP_25.getDegreesCelsius() > TEMP_MIN.getDegreesCelsius();
+		point.setIntakeWaterTemperature(IntakeWaterTemperature.TEMP_25);
+		assertEquals(TEMP_0, point.getActualTemperature());
 	}
 
 	//

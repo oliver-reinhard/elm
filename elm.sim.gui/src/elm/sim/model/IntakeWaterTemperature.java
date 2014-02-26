@@ -5,7 +5,7 @@ import elm.sim.metamodel.SimEnum;
 public enum IntakeWaterTemperature implements SimEnum {
 
 	/** HomeServer temperature units in [1/10°C] */
-	TEMP_5(50), TEMP_10(100), TEMP_15(150), TEMP_20(200);
+	TEMP_5(50), TEMP_10(100), TEMP_15(150), TEMP_20(200), TEMP_25(250);
 
 	private final short units;
 
@@ -28,7 +28,7 @@ public enum IntakeWaterTemperature implements SimEnum {
 
 	/** HomeServer temperature units in [1/10°C] */
 	public static IntakeWaterTemperature fromShort(short units) {
-		assert units >= TEMP_5.units && units <= TEMP_20.units;
+		assert units >= TEMP_5.units && units <= TEMP_25.units;
 		IntakeWaterTemperature prev = TEMP_5;
 		for (IntakeWaterTemperature t : values()) {
 			int average = (prev.units + t.units) / 2;
