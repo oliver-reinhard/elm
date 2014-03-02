@@ -12,7 +12,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import elm.hs.api.model.Device;
 import elm.hs.api.model.ElmStatus;
-import elm.scheduler.model.UnsupportedModelException;
+import elm.scheduler.model.UnsupportedDeviceModelException;
 import elm.scheduler.model.impl.ModelTestUtil;
 import elm.sim.model.Flow;
 import elm.sim.model.HotWaterTemperature;
@@ -39,7 +39,7 @@ public class DeviceTapPointAdapterTest {
 			device.info = device2.info;
 			device.status.setpoint = INITIAL_TEMPERATURE;
 			adapter = new DeviceTapPointAdapter(point, device);
-		} catch (UnsupportedModelException e) {
+		} catch (UnsupportedDeviceModelException e) {
 			fail(e.getMessage());
 			e.printStackTrace();
 		}

@@ -3,7 +3,7 @@ package elm.sim.ui;
 import java.net.UnknownHostException;
 
 import elm.hs.api.sim.server.SimHomeServer;
-import elm.scheduler.model.UnsupportedModelException;
+import elm.scheduler.model.UnsupportedDeviceModelException;
 import elm.sim.model.SimpleScheduler;
 import elm.sim.model.TapPoint;
 
@@ -29,11 +29,11 @@ public abstract class AbstractSimServerApplicationConfiguration {
 	 *            if {@code true} then create a scheduler
 	 * @param serverPort
 	 *            IP port for the server
-	 * @throws UnsupportedModelException
+	 * @throws UnsupportedDeviceModelException
 	 *             if one of the tap points' id does not map to a known device model.
 	 * @throws UnknownHostException 
 	 */
-	public abstract void init(final boolean createSimpleScheduler, int serverPort) throws UnsupportedModelException, UnknownHostException;
+	public abstract void init(final boolean createSimpleScheduler, int serverPort) throws UnsupportedDeviceModelException, UnknownHostException;
 
 	public TapPoint[][] getTapPoints() {
 		return tapPoints;

@@ -2,6 +2,7 @@ package elm.hs.api.sim.server;
 
 import java.net.URI;
 import java.util.Collection;
+import java.util.List;
 
 import elm.hs.api.model.Device;
 import elm.hs.api.model.ElmUserFeedback;
@@ -102,10 +103,10 @@ public interface SimHomeServer {
 	HomeServerResponse processDevicesFeedbackQuery();
 
 	/**
-	 * Http POST {@code /devices/feedback} with a body of {@link ElmUserFeedback} request.
+	 * Http POST {@code /devices/feedback} with a body of List of {@link ElmUserFeedback} request.
 	 * 
 	 * @param feedback
 	 *            cannot be {@code null}
 	 */
-	void processUserFeedback(ElmUserFeedback feedback);
+	void processUserFeedback(List<ElmUserFeedback> feedback);
 }

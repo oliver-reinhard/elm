@@ -17,38 +17,48 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import elm.hs.api.model.Device;
-import elm.scheduler.model.AsynchRemoteDeviceUpdate;
+import elm.hs.api.model.ElmStatus;
+import elm.hs.api.model.ElmUserFeedback;
+import elm.scheduler.ElmTimeService;
+import elm.scheduler.ElmUserFeedbackManager;
+import elm.scheduler.model.RemoteDeviceUpdate;
 import elm.scheduler.model.DeviceController;
 import elm.scheduler.model.DeviceController.UpdateResult;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.HomeServerChangeListener;
 import elm.scheduler.model.RemoteDeviceUpdateClient;
-import elm.scheduler.model.UnsupportedModelException;
+import elm.scheduler.model.UnsupportedDeviceModelException;
 
 public class HomeServerImpl implements HomeServer {
 
 	private final String name;
 	private final URI uri;
 	private final String password;
+	private final ElmUserFeedbackManager userFeedbackManager;
 
+	/** Enable deterministic testing via a replacement of this time service. */
+	private ElmTimeService timeService = ElmTimeService.INSTANCE;
+	
 	private long lastHomeServerPollTime = 0L;
-	private long isAliveCheckTime = System.currentTimeMillis();
+	private long isAliveCheckTime = timeService.currentTimeMillis();
 	private long pollTimeToleranceMillis = POLL_TIME_TOLERANCE_MILLIS_DEFAULT;
 
 	private final Map<String, DeviceController> deviceControllers = new HashMap<String, DeviceController>();
-	private List<AsynchRemoteDeviceUpdate> pendingUpdates;
+	private List<RemoteDeviceUpdate> pendingUpdates;
 	private List<HomeServerChangeListener> listeners = new ArrayList<HomeServerChangeListener>();
 
-	public HomeServerImpl(URI uri, String password) {
-		this(uri, password, null);
+	public HomeServerImpl(URI uri, String password, ElmUserFeedbackManager userFeedbackManager) {
+		this(uri, password, null, userFeedbackManager);
 	}
 
-	public HomeServerImpl(URI uri, String password, String name) {
+	public HomeServerImpl(URI uri, String password, String name, ElmUserFeedbackManager userFeedbackManager) {
 		assert uri != null;
 		assert password != null && !password.isEmpty();
+		assert userFeedbackManager != null;
 		this.uri = uri;
 		this.password = password;
 		this.name = name;
+		this.userFeedbackManager = userFeedbackManager;
 	}
 
 	public String getName() {
@@ -65,8 +75,13 @@ public class HomeServerImpl implements HomeServer {
 		return password;
 	}
 
+	/** Used for testing. */
+	public ElmUserFeedbackManager getUserFeedbackManager() {
+		return userFeedbackManager;
+	}
+
 	@Override
-	public synchronized List<String> updateDeviceControllers(List<Device> devices) throws UnsupportedModelException {
+	public synchronized List<String> updateDeviceControllers(List<Device> devices) throws UnsupportedDeviceModelException {
 		assert devices != null;
 		UpdateResult updated = NO_UPDATES;
 		List<String> idsToRemove = new LinkedList<String>(deviceControllers.keySet());
@@ -78,6 +93,7 @@ public class HomeServerImpl implements HomeServer {
 			// Add DeviceController for new device:
 			if (deviceController == null) {
 				deviceController = new DeviceControllerImpl(this, device);
+				((DeviceControllerImpl) deviceController).setTimeService(timeService);
 				deviceControllers.put(id, deviceController);
 			}
 			final UpdateResult deviceControllerUpdate = deviceController.update(device);
@@ -111,6 +127,12 @@ public class HomeServerImpl implements HomeServer {
 		return deviceControllers.get(id);
 	}
 
+	/** Used for testing. */
+	public void setTimeService(ElmTimeService timeService) {
+		assert timeService != null;
+		this.timeService = timeService;
+	}
+
 	@Override
 	public long getPollTimeToleranceMillis() {
 		return pollTimeToleranceMillis;
@@ -123,23 +145,23 @@ public class HomeServerImpl implements HomeServer {
 
 	@Override
 	public void updateLastHomeServerPollTime() {
-		this.lastHomeServerPollTime = System.currentTimeMillis();
+		this.lastHomeServerPollTime = timeService.currentTimeMillis();
 	}
 
 	@Override
 	public boolean isAlive() {
 		long oldIsAliveCheckTime = isAliveCheckTime;
-		isAliveCheckTime = System.currentTimeMillis();
+		isAliveCheckTime = timeService.currentTimeMillis();
 		// Either the home server has been polled since the last isAlive inquiry, or this inquiry is no later than POLL_TIME_TOLERANCE_MILLIS after the last
 		// poll
 		return oldIsAliveCheckTime <= lastHomeServerPollTime || lastHomeServerPollTime + pollTimeToleranceMillis >= isAliveCheckTime;
 	}
 
 	@Override
-	public synchronized void putDeviceUpdate(AsynchRemoteDeviceUpdate update) {
+	public synchronized void putDeviceUpdate(RemoteDeviceUpdate update) {
 		assert update != null;
 		if (pendingUpdates == null) {
-			pendingUpdates = new ArrayList<AsynchRemoteDeviceUpdate>();
+			pendingUpdates = new ArrayList<RemoteDeviceUpdate>();
 		}
 		pendingUpdates.add(update);
 	}
@@ -147,7 +169,7 @@ public class HomeServerImpl implements HomeServer {
 	/**
 	 * Used for testing.
 	 */
-	public synchronized List<AsynchRemoteDeviceUpdate> getPendingUpdates() {
+	public synchronized List<RemoteDeviceUpdate> getPendingUpdates() {
 		return pendingUpdates == null ? null : Collections.unmodifiableList(pendingUpdates);
 	}
 
@@ -155,7 +177,7 @@ public class HomeServerImpl implements HomeServer {
 	public void executeRemoteDeviceUpdates(RemoteDeviceUpdateClient client, Logger log) {
 		assert client != null;
 		assert log != null;
-		List<AsynchRemoteDeviceUpdate> updates;
+		List<RemoteDeviceUpdate> updates;
 		// we don't want to hold the lock during the update execution
 		synchronized (this) {
 			if (pendingUpdates == null) {
@@ -164,13 +186,18 @@ public class HomeServerImpl implements HomeServer {
 			updates = pendingUpdates;
 			pendingUpdates = null;
 		}
-		for (AsynchRemoteDeviceUpdate update : updates) {
+		for (RemoteDeviceUpdate update : updates) {
 			try {
 				update.execute(client, log);
 			} catch (Exception e) {
 				log.log(Level.SEVERE, "Remote device update failed", e);
 			}
 		}
+	}
+
+	@Override
+	public void dispatchElmUserFeedback(String deviceId, ElmStatus deviceStatus, int expectedWaitingTimeMillis) {
+		userFeedbackManager.putFeedback(new ElmUserFeedback(deviceId, deviceStatus, expectedWaitingTimeMillis));
 	}
 
 	@Override
@@ -201,24 +228,12 @@ public class HomeServerImpl implements HomeServer {
 		}
 	}
 
-	public void fireDeviceChangesPending() {
-		// lock "this" as shortly as possible, particularly don't notify listeners:
-		boolean doUpdate = false;
-		boolean urgent = false;
-		synchronized (this) {
-			if (pendingUpdates != null) {
-				doUpdate = true;
-				for (AsynchRemoteDeviceUpdate update : pendingUpdates) {
-					urgent = urgent || update.isUrgent();
-				}
-			}
-			// now release the lock
-		}
-		if (doUpdate) {
+	public void fireDeviceUpdatesPending() {
+		if (pendingUpdates != null) {
 			synchronized (listeners) {
 				// The device updates MUST NOT BE long-lasting or blocking!
 				for (HomeServerChangeListener listener : listeners) {
-					listener.deviceUpdatesPending(this, urgent);
+					listener.deviceUpdatesPending(this);
 				}
 			}
 		}

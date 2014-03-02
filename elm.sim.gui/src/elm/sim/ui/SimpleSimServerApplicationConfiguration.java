@@ -4,7 +4,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 import elm.hs.api.sim.server.SimHomeServerImpl;
-import elm.scheduler.model.UnsupportedModelException;
+import elm.scheduler.model.UnsupportedDeviceModelException;
 import elm.sim.model.HotWaterTemperature;
 import elm.sim.model.TapPoint;
 import elm.sim.model.impl.SimpleSchedulerImpl;
@@ -18,7 +18,7 @@ public class SimpleSimServerApplicationConfiguration extends AbstractSimServerAp
 	private static final String POINT_4_ID = "2016FF0004";
 
 	@Override
-	public void init(boolean createSimpleScheduler, int serverPort) throws UnsupportedModelException, UnknownHostException {
+	public void init(boolean createSimpleScheduler, int serverPort) throws UnsupportedDeviceModelException, UnknownHostException {
 		assert serverPort > 0;
 		final TapPoint point1 = new TapPointImpl("2 OG lk - Dusche", POINT_1_ID, false, HotWaterTemperature.TEMP_2); // "real" device
 		final TapPoint point2 = new TapPointImpl("2 OG lk - Küche", POINT_2_ID, true, HotWaterTemperature.TEMP_2); // sim device

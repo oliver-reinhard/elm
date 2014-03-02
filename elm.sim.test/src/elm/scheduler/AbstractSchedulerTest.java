@@ -24,6 +24,8 @@ public class AbstractSchedulerTest {
 	static final int NUM_HOME_SERVERS = 2;
 	static final int NUM_DEVICES = 0;  // no devices
 
+	ElmUserFeedbackManager feedbackManager;
+	ElmUserFeedbackClient feedbackClient;
 	HomeServer hs1;
 	HomeServer hs2;
 	AbstractScheduler scheduler;
@@ -31,8 +33,11 @@ public class AbstractSchedulerTest {
 
 	@Before
 	public void setup() {
-		hs1 = createHomeServer(1, NUM_DEVICES);
-		hs2 = createHomeServer(2, NUM_DEVICES);
+		feedbackManager = mock(ElmUserFeedbackManager.class);
+		feedbackClient = mock(ElmUserFeedbackClient.class);
+		
+		hs1 = createHomeServer(1, NUM_DEVICES, feedbackManager, feedbackClient);
+		hs2 = createHomeServer(2, NUM_DEVICES, feedbackManager, feedbackClient);
 		
 		scheduler = new AbstractScheduler() {
 			@Override

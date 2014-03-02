@@ -9,14 +9,12 @@ import elm.hs.api.HomeServerService;
 import elm.hs.api.client.HomeServerInternalApiClient;
 import elm.hs.api.client.HomeServerPublicApiClient;
 import elm.hs.api.model.Device;
-import elm.hs.api.model.ElmUserFeedback;
 import elm.hs.api.model.HomeServerResponse;
 import elm.hs.api.model.Info;
 import elm.hs.api.model.Status;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.HomeServerChangeListener;
-import elm.scheduler.model.RemoteDeviceUpdateClient;
-import elm.scheduler.model.UnsupportedModelException;
+import elm.scheduler.model.UnsupportedDeviceModelException;
 import elm.util.ClientException;
 import elm.util.ClientUtil;
 
@@ -47,7 +45,8 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 
 	private HomeServerPublicApiClient publicClient = null;
 	private HomeServerInternalApiClient internalClient = null;
-	private RemoteDeviceUpdateClient deviceUpdateClient = null;
+
+	private boolean supportsElmUserFeedback;
 
 	private ClientException lastClientException = null;
 	private Event event = Event.POLL_HOME_SERVER;
@@ -101,29 +100,7 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 
 		internalClient = new HomeServerInternalApiClient(homeServer.getUri(), HomeServerService.ADMIN_USER, homeServer.getPassword(), publicClient);
 		// ClientUtil.initSslContextFactory(internalClient.getClient());
-
-		deviceUpdateClient = new RemoteDeviceUpdateClient() {
-
-			@Override
-			public Short setScaldProtectionTemperature(String deviceID, int newTemp) throws ClientException {
-				return internalClient.setScaldProtectionTemperature(deviceID, newTemp);
-			}
-
-			@Override
-			public void clearScaldProtection(String deviceID, Integer previousTemp) throws ClientException {
-				internalClient.clearScaldProtection(deviceID, previousTemp);
-			}
-
-			@Override
-			public void updateUserFeedback(ElmUserFeedback feedback) throws ClientException {
-				if (feedback.id != null) {
-					HomeServerPublicApiClient client = userFeedbackManager.getFeedackClient(feedback.id);
-					client.updateUserFeedback(feedback);
-				} else {
-					publicClient.updateUserFeedback(feedback);
-				}
-			}
-		};
+		
 		setState(State.CONNECTING);
 		runner = new Thread(this, HomeServerController.class.getSimpleName());
 		event = Event.POLL_HOME_SERVER;
@@ -144,14 +121,15 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 				publicClient.start();
 				internalClient.start();
 				scheduler.addHomeServer(homeServer);
-				
+
 				// Feedback management
 				if (publicClient.supportsUserFeedback()) {
 					HomeServerResponse feedbackDevicesResponse = publicClient.getFeedbackDevices();
 					userFeedbackManager.addFeedbackServer(publicClient, feedbackDevicesResponse.feeback.deviceIds);
+					supportsElmUserFeedback = true;
 					setState(State.CONNECTED);
 				}
-				
+
 			} catch (Exception e) {
 				log(Level.SEVERE, "Cannot start HTTP client", e);
 				setState(State.ERROR);
@@ -204,6 +182,10 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 		loop: while (true) {
 
 			if (event == Event.POLL_HOME_SERVER) {
+				if (supportsElmUserFeedback) {
+					log(Level.FINE, "send user feedback", null);
+					sendElmUserFeedback();
+				}
 				log(Level.FINE, "poll devices", null);
 				pollHomeServer(); // this may take many milliseconds and 'event' could change in the meantime
 				pollingCycleStartTime = System.currentTimeMillis();
@@ -220,7 +202,7 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 
 			if (event == Event.PROCESS_DEVICE_UPDATES) {
 				log(Level.FINE, "process device updates", null);
-				homeServer.executeRemoteDeviceUpdates(deviceUpdateClient, log); // this may take many milliseconds and 'event' could change in the meantime
+				homeServer.executeRemoteDeviceUpdates(internalClient, log); // this may take many milliseconds and 'event' could change in the meantime
 				synchronized (this) {
 					if (event == Event.STOP) {
 						break loop;
@@ -251,6 +233,16 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 		}
 	}
 
+	private void sendElmUserFeedback() {
+		try {
+			userFeedbackManager.sendFeedack(publicClient);
+		} catch (ClientException e) {
+			if (e.getCause() == null) { // it's an application problem not a communication problem
+				log(Level.SEVERE, "Exception in event loop", e);
+			}
+		}
+	}
+
 	/**
 	 * <em>Note: </em> this method is not executed within a {@code synchronized} block.
 	 */
@@ -263,15 +255,15 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 			if (response == null) {
 				throw new ClientException(ClientException.Error.APPLICATION_DATA_ERROR);
 			}
-			
+
 			if (response.success) {
 				setState(State.CONNECTED);
 				pollingFailureCount = 0;
-				
+
 				if (response.devices == null) { // is null if no devices are connected to HomeServer
 					return;
 				}
-				
+
 				try {
 					final List<Device> devices = response.devices;
 					final List<String> devicesNeedingStatus = homeServer.updateDeviceControllers(devices);
@@ -294,7 +286,7 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 					}
 					return;
 
-				} catch (UnsupportedModelException ume) {
+				} catch (UnsupportedDeviceModelException ume) {
 					throw new ClientException(ClientException.Error.APPLICATION_DATA_ERROR, null, ume);
 				}
 			}
@@ -369,7 +361,7 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 	}
 
 	@Override
-	public synchronized void deviceUpdatesPending(HomeServer server, boolean urgent) {
+	public synchronized void deviceUpdatesPending(HomeServer server) {
 		if (runner != null && event != Event.STOP) {
 			event = Event.PROCESS_DEVICE_UPDATES;
 			this.notify(); // ends the "run()" loop

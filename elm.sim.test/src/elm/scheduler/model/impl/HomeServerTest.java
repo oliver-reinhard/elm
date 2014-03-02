@@ -25,12 +25,12 @@ import org.junit.Test;
 
 import elm.hs.api.model.Device;
 import elm.hs.api.model.ElmStatus;
+import elm.scheduler.ElmUserFeedbackClient;
+import elm.scheduler.ElmUserFeedbackManager;
 import elm.scheduler.model.DeviceController;
 import elm.scheduler.model.HomeServerChangeListener;
 import elm.scheduler.model.RemoteDeviceUpdateClient;
-import elm.scheduler.model.UnsupportedModelException;
-import elm.scheduler.model.impl.DeviceControllerImpl;
-import elm.scheduler.model.impl.HomeServerImpl;
+import elm.scheduler.model.UnsupportedDeviceModelException;
 import elm.util.ClientException;
 
 public class HomeServerTest {
@@ -42,12 +42,16 @@ public class HomeServerTest {
 
 	final Logger log = Logger.getLogger(getClass().getName());
 
+	ElmUserFeedbackManager feedbackManager;
+	ElmUserFeedbackClient feedbackClient;
 	HomeServerImpl hs1;
 	HomeServerChangeListener hsL1;
 
 	@Before
 	public void setup() {
-		hs1 = (HomeServerImpl) createHomeServer(HS_ID, NUM_DEVICES);
+		feedbackManager = mock(ElmUserFeedbackManager.class);
+		feedbackClient = mock(ElmUserFeedbackClient.class);
+		hs1 = (HomeServerImpl) createHomeServer(HS_ID, NUM_DEVICES, feedbackManager, feedbackClient);
 		resetListener();
 	}
 
@@ -99,8 +103,9 @@ public class HomeServerTest {
 			assertFalse(map.containsKey(d2.id));
 			assertTrue(map.containsKey(d3.id));
 
-		} catch (UnsupportedModelException e) {
-			assertTrue(false);
+		} catch (UnsupportedDeviceModelException e) {
+			fail(e.toString());
+			e.printStackTrace();
 		}
 	}
 
@@ -124,7 +129,7 @@ public class HomeServerTest {
 			hs1.updateDeviceControllers(devices);
 			verifyNoMoreInteractions(hsL1);
 
-		} catch (UnsupportedModelException e) {
+		} catch (UnsupportedDeviceModelException e) {
 			fail(e.toString());
 			e.printStackTrace();
 		}
@@ -150,11 +155,12 @@ public class HomeServerTest {
 			verify(client).clearScaldProtection(d1_2.id, null);
 			
 			// Scheduler approves only LIMITED power:
-			di1_2.updateMaximumPowerConsumption(ACTUAL_POWER_WATT, ElmStatus.OVERLOAD, EXPECTED_WAITING_TIME);
+			di1_2.updateMaximumPowerConsumption(ElmStatus.OVERLOAD, ACTUAL_POWER_WATT);
+			di1_2.updateUserFeedback(ElmStatus.OVERLOAD, EXPECTED_WAITING_TIME);
 			checkDeviceUpdatesSize(hs1, 1);
 			//
-			hs1.fireDeviceChangesPending();
-			verify(hsL1).deviceUpdatesPending(hs1, true); // listener was notified
+			hs1.fireDeviceUpdatesPending();
+			verify(hsL1).deviceUpdatesPending(hs1); // listener was notified
 			//
 			short scaldProtectionTemperature = ((DeviceControllerImpl) di1_2).getScaldProtectionTemperature();
 			when(client.setScaldProtectionTemperature(di1_2.getId(), scaldProtectionTemperature)).thenReturn(scaldProtectionTemperature);
@@ -168,7 +174,8 @@ public class HomeServerTest {
 			assertNull(hs1.getPendingUpdates());
 
 			// Scheduler approves UNLIMITED power:
-			di1_2.updateMaximumPowerConsumption(DeviceController.UNLIMITED_POWER, ElmStatus.OVERLOAD, EXPECTED_WAITING_TIME);
+			di1_2.updateMaximumPowerConsumption(ElmStatus.OVERLOAD, DeviceController.UNLIMITED_POWER);
+			di1_2.updateUserFeedback(ElmStatus.OVERLOAD, EXPECTED_WAITING_TIME);
 			checkDeviceUpdatesSize(hs1, 1);
 			//
 			hs1.executeRemoteDeviceUpdates(client, log);
@@ -176,7 +183,7 @@ public class HomeServerTest {
 			// ensure the original reference Temperature is restored:
 			verify(client).clearScaldProtection(di1_2.getId(), new Integer(referenceTemperature));
 			
-		} catch (ClientException | UnsupportedModelException e) {
+		} catch (ClientException | UnsupportedDeviceModelException e) {
 			fail(e.toString());
 			e.printStackTrace();
 		}

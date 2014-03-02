@@ -9,6 +9,7 @@ import java.util.List;
  */
 public class Feedback implements HomeServerObject {
 	
+	/** The device IDs this home server can display feedback information for. */
 	public List<String> deviceIds;
 
 }

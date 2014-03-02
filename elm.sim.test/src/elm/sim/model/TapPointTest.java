@@ -20,7 +20,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import elm.hs.api.model.Device;
-import elm.scheduler.model.UnsupportedModelException;
+import elm.scheduler.model.UnsupportedDeviceModelException;
 import elm.scheduler.model.impl.ModelTestUtil;
 import elm.sim.model.impl.TapPointImpl;
 
@@ -37,7 +37,7 @@ public class TapPointTest {
 			point = new TapPointImpl("Name", device.id, true, INITIAL_REFERENCE_TEMP);
 			point.setSchedulerStatus(OFF);
 			assertStatus(OFF, TEMP_MIN, NONE);
-		} catch (UnsupportedModelException e) {
+		} catch (UnsupportedDeviceModelException e) {
 			fail(e.getMessage());
 			e.printStackTrace();
 		}

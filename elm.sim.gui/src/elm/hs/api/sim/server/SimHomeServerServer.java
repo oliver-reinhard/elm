@@ -1,6 +1,7 @@
 package elm.hs.api.sim.server;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -140,7 +141,8 @@ public class SimHomeServerServer {
 				int len = stream.read(buf);
 				if (len > 0) {
 					String requestAsString = new String(buf, 0, len);
-					final ElmUserFeedback feedback = gson.fromJson(requestAsString, ElmUserFeedback.class);
+					@SuppressWarnings("unchecked")
+					final List<ElmUserFeedback> feedback = gson.fromJson(requestAsString, List.class);
 					if (feedback != null) {
 						database.processUserFeedback(feedback);
 						response.setStatus(HttpStatus.OK_200);

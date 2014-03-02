@@ -54,7 +54,7 @@ public class HomeServerLocator implements ServiceListener {
 					if (e.getName().equals(HomeServerService.DNS_SD_HS_SIM_SERVICE_NAME)) {
 						uri = new URI(url.toLowerCase().replace("https", "http"));
 					}
-					HomeServer homeServer = new HomeServerImpl(uri, homeServerPassword);
+					HomeServer homeServer = new HomeServerImpl(uri, homeServerPassword, userFeedbackManager);
 					HomeServerController controller = new HomeServerController(scheduler, userFeedbackManager, homeServer);
 					LOG.info("Starting new " + controller.getClass().getSimpleName() + " for '" + e.getName() + "' at " + uri);
 					controller.start();

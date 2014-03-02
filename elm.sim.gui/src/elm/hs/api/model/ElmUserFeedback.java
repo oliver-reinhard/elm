@@ -1,26 +1,49 @@
 package elm.hs.api.model;
 
+
 public class ElmUserFeedback {
 
 	/** Device id. */
 	public String id;
+
+	/** Cannot be {@code null}. */
 	public ElmStatus deviceStatus;
-	public ElmStatus schedulerStatus;
-	public Integer expectedWaitingTimeMillis;
+
+	public int expectedWaitingTimeMillis;
 
 	public ElmUserFeedback() {
 		// for GSON
 	}
-	
-	public ElmUserFeedback(ElmStatus schedulerStatus) {
-		assert schedulerStatus != null;
-		this.schedulerStatus = schedulerStatus;
+
+	public ElmUserFeedback(String deviceId, ElmStatus deviceStatus, Integer expectedWaitingTimeMillis) {
+		assert deviceId != null && !deviceId.isEmpty();
+		assert deviceStatus != null;
+		this.id = deviceId;
+		this.deviceStatus = deviceStatus;
+		this.expectedWaitingTimeMillis = expectedWaitingTimeMillis;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		} else if (obj instanceof ElmUserFeedback) {
+			ElmUserFeedback other = (ElmUserFeedback) obj;
+			return id.equals(other.id) && deviceStatus == other.deviceStatus && expectedWaitingTimeMillis == other.expectedWaitingTimeMillis;
+		}
+		return false;
 	}
 	
-	public ElmUserFeedback(String id, ElmStatus deviceStatus) {
-		assert id != null && ! id.isEmpty();
-		assert deviceStatus != null;
-		this.id = id;
-		this.deviceStatus = deviceStatus;
+	@Override
+	public String toString() {
+		final StringBuilder b = new StringBuilder("(");
+		b.append(id);
+		b.append(", ");
+		b.append(deviceStatus);
+		b.append(", ");
+		b.append(expectedWaitingTimeMillis);
+		b.append("ms");
+		b.append(")");
+		return b.toString();
 	}
 }

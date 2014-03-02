@@ -14,28 +14,44 @@ import java.util.Map;
 import elm.hs.api.model.Device;
 import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
 import elm.hs.api.model.ElmStatus;
+import elm.hs.api.model.ElmUserFeedback;
 import elm.hs.api.model.Error;
 import elm.hs.api.model.Info;
 import elm.hs.api.model.Status;
-import elm.scheduler.model.AsynchRemoteDeviceUpdate;
+import elm.scheduler.ElmTimeService;
+import elm.scheduler.ElmUserFeedbackClient;
+import elm.scheduler.ElmUserFeedbackManager;
 import elm.scheduler.model.DeviceController;
 import elm.scheduler.model.HomeServer;
-import elm.scheduler.model.UnsupportedModelException;
+import elm.scheduler.model.RemoteDeviceUpdate;
+import elm.scheduler.model.UnsupportedDeviceModelException;
 
 public class ModelTestUtil {
 	private static final String SIM_TYPE_ID = "D012"; // Model SIM
 	private static final short SIM_POWER_MAX_UNITS = 180; // Model SIM
 	private static final int SIM_POWER_MAX_WATT = DeviceModel.SIM.getPowerMaxWatt(); // Model SIM
 
-	public static HomeServer createHomeServer(int id, int devices) {
-		HomeServer hs = new HomeServerImpl(URI.create("http://hs" + id), "pw", "hs" + id);
+	public static HomeServer createHomeServer(int id, int devices, ElmUserFeedbackManager feedbackManager, ElmUserFeedbackClient feedbackClient) {
+		return createHomeServer(id, devices, feedbackManager, feedbackClient, null);
+	}
+
+	public static HomeServer createHomeServer(int id, int devices, ElmUserFeedbackManager feedbackManager, ElmUserFeedbackClient feedbackClient,
+			ElmTimeService timeService) {
 		try {
-			hs.updateDeviceControllers(ModelTestUtil.createDevicesWithInfo(id, devices));
+			HomeServerImpl hs = new HomeServerImpl(URI.create("http://hs" + id), "pw", "hs" + id, feedbackManager);
+			if (timeService != null) {
+				hs.setTimeService(timeService);
+			}
+			final List<Device> deviceList = ModelTestUtil.createDevicesWithInfo(id, devices);
+			feedbackManager.addFeedbackServer(feedbackClient, getDeviceIds(deviceList));
+
+			// initialize HomeServer and DeviceControllers:
+			hs.updateDeviceControllers(deviceList);
 			hs.updateDeviceControllers(ModelTestUtil.createDevicesWithStatus(id, devices, 0));
-		} catch (UnsupportedModelException e) {
+			return hs;
+		} catch (UnsupportedDeviceModelException e) {
 			throw new IllegalArgumentException(e);
 		}
-		return hs;
 	}
 
 	public static Device createDeviceWithInfo(int homeServerId, int deviceId) {
@@ -158,6 +174,14 @@ public class ModelTestUtil {
 		return list;
 	}
 
+	public static List<String> getDeviceIds(List<Device> devices) {
+		List<String> result = new ArrayList<String>();
+		for (Device device : devices) {
+			result.add(device.id);
+		}
+		return result;
+	}
+
 	public static Map<String, DeviceController> getDeviceMap(HomeServer server) {
 		assert server != null;
 		Map<String, DeviceController> map = new HashMap<String, DeviceController>();
@@ -167,12 +191,11 @@ public class ModelTestUtil {
 		return map;
 	}
 
-	public static AsynchRemoteDeviceUpdate getDeviceUpdate(HomeServer server, Device device) {
+	public static RemoteDeviceUpdate getDeviceUpdate(HomeServer server, Device device) {
 		assert server != null;
 		assert device != null;
-		for (AsynchRemoteDeviceUpdate upd : ((HomeServerImpl) server).getPendingUpdates()) {
-			assert upd.getDevice() != null : "expected a device update not a scheduler-state update";
-			if (upd.getDevice().getId().equals(device.id)) {
+		for (RemoteDeviceUpdate upd : ((HomeServerImpl) server).getPendingUpdates()) {
+			if (upd.getId().equals(device.id)) {
 				return upd;
 			}
 		}
@@ -187,23 +210,34 @@ public class ModelTestUtil {
 		}
 	}
 
-	public static void checkDeviceUpdate(HomeServer server, Device device, ElmStatus deviceStatus, int expectedLimitWatt) {
+	public static void checkNoDeviceUpdates(HomeServer server) {
+		assertNull(((HomeServerImpl) server).getPendingUpdates());
+	}
+
+	public static void checkDeviceUpdate(HomeServer server, Device device, int expectedLimitWatt) {
 		final DeviceController deviceManager = server.getDeviceController(device.id);
 		assertEquals(expectedLimitWatt == DeviceController.UNLIMITED_POWER ? deviceManager.getDeviceModel().getPowerMaxWatt() : expectedLimitWatt,
 				deviceManager.getApprovedPowerWatt());
-		final AsynchRemoteDeviceUpdate deviceUpdate = getDeviceUpdate(server, device);
+		final RemoteDeviceUpdate deviceUpdate = getDeviceUpdate(server, device);
 		assertNotNull(deviceUpdate);
-		if (deviceStatus != null) {
-			assertNotNull(deviceUpdate.getFeedback());
-			assertEquals(deviceStatus, deviceUpdate.getFeedback().deviceStatus);
-		}
 	}
 
-	public static void checkDeviceUpdate(HomeServer server, ElmStatus schedulerStatus, int expectedLimitWatt) {
-		final AsynchRemoteDeviceUpdate deviceUpdate = ((HomeServerImpl) server).getPendingUpdates().get(0);
-		assertNotNull(deviceUpdate);
-		assertNotNull(deviceUpdate.getFeedback());
-		assertNull(deviceUpdate.getFeedback().id);
-		assertEquals(schedulerStatus, deviceUpdate.getFeedback().schedulerStatus);
+	public static void checkUserFeedback(HomeServer server, Device device, ElmStatus deviceStatus, int expectedWaitingTimeMillis) {
+		ElmUserFeedback feedback = ((HomeServerImpl) server).getUserFeedbackManager().getFeedback(device.id);
+		assertNotNull("user feedback expected for device " + device.id, feedback);
+		assertEquals(deviceStatus, feedback.deviceStatus);
+		assertEquals(expectedWaitingTimeMillis, feedback.expectedWaitingTimeMillis);
+	}
+
+	public static void checkNoUserFeedback(HomeServer server, Device device) {
+		ElmUserFeedback feedback = ((HomeServerImpl) server).getUserFeedbackManager().getFeedback(device.id);
+		assertNull("no user feedback expected for device " + device.id, feedback);
+	}
+
+	public static void checkNoUserFeedback(HomeServer server) {
+		for (DeviceController device : server.getDeviceControllers()) {
+			ElmUserFeedback feedback = ((HomeServerImpl) server).getUserFeedbackManager().getFeedback(device.getId());
+			assertNull("no user feedback expected for device " + device.getId(), feedback);
+		}
 	}
 }

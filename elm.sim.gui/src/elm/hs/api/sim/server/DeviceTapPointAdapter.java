@@ -1,7 +1,7 @@
 package elm.hs.api.sim.server;
 
 import elm.hs.api.model.Device;
-import elm.scheduler.model.UnsupportedModelException;
+import elm.scheduler.model.UnsupportedDeviceModelException;
 import elm.sim.metamodel.SimModelEvent;
 import elm.sim.metamodel.SimModelListener;
 import elm.sim.model.IntakeWaterTemperature;
@@ -12,7 +12,7 @@ public class DeviceTapPointAdapter implements SimModelListener {
 
 	private final Device device;
 	private final TapPoint point;
-	public DeviceTapPointAdapter(TapPoint point, Device device) throws UnsupportedModelException {
+	public DeviceTapPointAdapter(TapPoint point, Device device) throws UnsupportedDeviceModelException {
 		assert point != null;
 		assert device != null;
 		assert device.status != null;

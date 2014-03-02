@@ -8,9 +8,10 @@ import org.eclipse.jetty.http.HttpStatus;
 
 import elm.hs.api.HomeServerService;
 import elm.hs.api.model.HomeServerResponse;
+import elm.scheduler.model.RemoteDeviceUpdateClient;
 import elm.util.ClientException;
 
-public class HomeServerInternalApiClient extends AbstractHomeServerClient {
+public class HomeServerInternalApiClient extends AbstractHomeServerClient implements RemoteDeviceUpdateClient {
 
 	protected final HomeServerPublicApiClient publicClient;
 

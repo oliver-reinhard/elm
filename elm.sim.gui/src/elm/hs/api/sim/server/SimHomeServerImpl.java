@@ -24,7 +24,7 @@ import elm.hs.api.model.Response;
 import elm.hs.api.model.Server;
 import elm.hs.api.model.Service;
 import elm.hs.api.model.Status;
-import elm.scheduler.model.UnsupportedModelException;
+import elm.scheduler.model.UnsupportedDeviceModelException;
 import elm.sim.metamodel.AbstractSimObject;
 import elm.sim.metamodel.SimAttribute;
 import elm.sim.model.HotWaterTemperature;
@@ -162,10 +162,10 @@ public class SimHomeServerImpl extends AbstractSimObject implements SimHomeServe
 	 *            reference temperature in [1/10°C]
 	 * @param point
 	 * @return never {@code null}
-	 * @throws UnsupportedModelException
+	 * @throws UnsupportedDeviceModelException
 	 *             if the id does not represent a supported device model (see {@link DeviceModel})
 	 */
-	public DeviceTapPointAdapter addDevice(String id, short setpoint, TapPoint point) throws UnsupportedModelException {
+	public DeviceTapPointAdapter addDevice(String id, short setpoint, TapPoint point) throws UnsupportedDeviceModelException {
 		assert point != null;
 		Device device = addDevice(id, setpoint, point.isSimDevice());
 		final DeviceTapPointAdapter adapter = new DeviceTapPointAdapter(point, device);
@@ -273,26 +273,18 @@ public class SimHomeServerImpl extends AbstractSimObject implements SimHomeServe
 	}
 
 	@Override
-	public void processUserFeedback(ElmUserFeedback feedback) {
+	public void processUserFeedback(List<ElmUserFeedback> feedback) {
 		assert feedback != null;
-		if (feedback.id != null) {
+		for (ElmUserFeedback f : feedback) {
+			assert f.id != null;
+			assert f.deviceStatus != null;
 			// update the given tap point:
-			assert feedback.deviceStatus != null;
-			if (feedbackDevices.containsKey(feedback.id)) {
-				DeviceTapPointAdapter adapter = adapters.get(feedback.id);
+			assert f.deviceStatus != null;
+			if (feedbackDevices.containsKey(f.id)) {
+				DeviceTapPointAdapter adapter = adapters.get(f.id);
 				if (adapter != null) {
-					adapter.getPoint().setStatus(feedback.deviceStatus);
-					if (feedback.expectedWaitingTimeMillis != null) {
-						adapter.getPoint().setWaitingTimePercent(50); // TODO convert time to percent!
-					}
-				}
-			}
-		} else {
-			// update all tap points:
-			assert feedback.schedulerStatus != null;
-			for (DeviceTapPointAdapter adapter : adapters.values()) {
-				if (feedbackDevices.containsKey(adapter.getDevice().id)) {
-					adapter.getPoint().setStatus(feedback.schedulerStatus);
+					adapter.getPoint().setStatus(f.deviceStatus);
+					adapter.getPoint().setWaitingTimePercent(50); // TODO convert time to percent!
 				}
 			}
 		}

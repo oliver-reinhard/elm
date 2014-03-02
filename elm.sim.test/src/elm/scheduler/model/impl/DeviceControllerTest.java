@@ -19,33 +19,34 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import elm.hs.api.model.Device;
-import elm.hs.api.model.ElmStatus;
 import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
-import elm.scheduler.model.AsynchRemoteDeviceUpdate;
+import elm.hs.api.model.ElmStatus;
 import elm.scheduler.model.DeviceController.UpdateResult;
 import elm.scheduler.model.HomeServer;
-import elm.scheduler.model.UnsupportedModelException;
+import elm.scheduler.model.RemoteDeviceUpdate;
+import elm.scheduler.model.UnsupportedDeviceModelException;
 
 public class DeviceControllerTest {
 
 	static final String ID = "d1";
 	static final int EXPECTED_WAITING_TIME = 5_000;
 
-	HomeServer hs1;
+	HomeServer hs;
 	DeviceControllerImpl di1;
 
 	@Before
 	public void setup() {
-		hs1 = mock(HomeServer.class);
+		hs = mock(HomeServer.class);
 		try {
-			di1 = new DeviceControllerImpl(hs1, createDeviceWithInfo(1, 1), ID);
-		} catch (UnsupportedModelException e) {
+			di1 = new DeviceControllerImpl(hs, createDeviceWithInfo(1, 1), ID);
+		} catch (UnsupportedDeviceModelException e) {
 			throw new IllegalArgumentException(e);
 		}
 	}
@@ -79,7 +80,7 @@ public class DeviceControllerTest {
 		result = di1.update(d);
 		assertEquals(UpdateResult.URGENT_UPDATES, result);
 		//
-		d = createDeviceWithStatus(1, 1, 0);  // heater OFF
+		d = createDeviceWithStatus(1, 1, 0); // heater OFF
 		result = di1.update(d);
 		assertEquals(UpdateResult.URGENT_UPDATES, result);
 		assertEquals(CONSUMPTION_ENDED, di1.getStatus());
@@ -92,13 +93,13 @@ public class DeviceControllerTest {
 		assertEquals(0, di1.getDemandPowerWatt());
 		assertEquals(DeviceModel.SIM.getPowerMaxWatt(), di1.getApprovedPowerWatt());
 
-		UpdateResult result = di1.update(createDeviceWithStatus(1, 1, 10_000));  // device turned ON
+		UpdateResult result = di1.update(createDeviceWithStatus(1, 1, 10_000)); // device turned ON
 		assertEquals(round(10_000), di1.getDemandPowerWatt());
 		assertEquals(DeviceModel.SIM.getPowerMaxWatt(), di1.getApprovedPowerWatt());
 		assertEquals(UpdateResult.URGENT_UPDATES, result);
 		assertEquals(CONSUMPTION_STARTED, di1.getStatus());
 
-		result = di1.update(createDeviceWithStatus(1, 1, 0));  // device turned OFF
+		result = di1.update(createDeviceWithStatus(1, 1, 0)); // device turned OFF
 		assertEquals(0, di1.getDemandPowerWatt());
 		assertEquals(DeviceModel.SIM.getPowerMaxWatt(), di1.getApprovedPowerWatt());
 		assertEquals(UpdateResult.URGENT_UPDATES, result);
@@ -137,22 +138,82 @@ public class DeviceControllerTest {
 	}
 
 	@Test
+	public void updateUserFeedback() {
+		final String id = di1.getId();
+		di1.setStatus(READY);
+		di1.updateUserFeedback(ElmStatus.ON, 0);
+		verify(hs, times(1)).dispatchElmUserFeedback(id, ElmStatus.ON, 0);
+		//
+		di1.updateUserFeedback(ElmStatus.SATURATION, 0);
+		verify(hs, times(1)).dispatchElmUserFeedback(id, ElmStatus.SATURATION, 0);
+		//
+		di1.updateUserFeedback(ElmStatus.OVERLOAD, 0);
+		verify(hs, times(1)).dispatchElmUserFeedback(id, ElmStatus.OVERLOAD, 0);
+
+		di1.setStatus(CONSUMPTION_STARTED);
+		// schedulerStatus is irrelevant => device status is always ON:
+		for (ElmStatus schedulerStatus : ElmStatus.values()) {
+			di1.updateUserFeedback(schedulerStatus, 0);
+			// feedback is only dispatched after values changed => no changes after first iteration
+			verify(hs, times(2)).dispatchElmUserFeedback(id, ElmStatus.ON, 0);
+		}
+		verifyNoMoreInteractions(hs);
+
+		di1.setStatus(CONSUMPTION_APPROVED);
+		// schedulerStatus is irrelevant:
+		for (ElmStatus schedulerStatus : ElmStatus.values()) {
+			di1.updateUserFeedback(schedulerStatus, 0);
+			verify(hs, times(2)).dispatchElmUserFeedback(id, ElmStatus.ON, 0);
+		}
+		verifyNoMoreInteractions(hs);
+
+		di1.setStatus(CONSUMPTION_LIMITED);
+		// schedulerStatus is irrelevant:
+		for (ElmStatus schedulerStatus : ElmStatus.values()) {
+			di1.updateUserFeedback(schedulerStatus, 0);
+			verify(hs, times(2)).dispatchElmUserFeedback(id, ElmStatus.SATURATION, 0);
+		}
+		verifyNoMoreInteractions(hs);
+
+		di1.setStatus(CONSUMPTION_DENIED);
+		// schedulerStatus is irrelevant:
+		for (ElmStatus schedulerStatus : ElmStatus.values()) {
+			di1.updateUserFeedback(schedulerStatus, 10_000);
+			// called for the first time with (OVERLOAD, 10_000):
+			verify(hs, times(1)).dispatchElmUserFeedback(id, ElmStatus.OVERLOAD, 10_000);
+		}
+		verifyNoMoreInteractions(hs);
+
+		di1.setStatus(ERROR);
+		// schedulerStatus is irrelevant:
+		for (ElmStatus schedulerStatus : ElmStatus.values()) {
+			di1.updateUserFeedback(schedulerStatus, 0);
+			verify(hs, times(1)).dispatchElmUserFeedback(id, ElmStatus.ERROR, 0);
+		}
+		verifyNoMoreInteractions(hs);
+	}
+
+	@Test
 	public void updatePowerConsumption_Unlimited() {
 		// updateMaximumPowerConsumption():
-		di1.update(createDeviceWithStatus(1, 1, 10_000));  // turn ON
+		di1.update(createDeviceWithStatus(1, 1, 10_000)); // turn ON
 		assertEquals(CONSUMPTION_STARTED, di1.getStatus());
+		verify(hs).dispatchElmUserFeedback(di1.getId(), ElmStatus.ON, 0);
 		//
-		di1.updateMaximumPowerConsumption(UNLIMITED_POWER, ElmStatus.ON, 0);
+		di1.updateMaximumPowerConsumption(ElmStatus.ON, UNLIMITED_POWER);
+		di1.updateUserFeedback(ElmStatus.ON, 0);
 		assertEquals(CONSUMPTION_APPROVED, di1.getStatus());
 		assertEquals(DeviceModel.SIM.getPowerMaxWatt(), di1.getApprovedPowerWatt());
 		assertEquals(UNDEFINED_TEMPERATURE, di1.getScaldProtectionTemperature());
-		verify(hs1).putDeviceUpdate(Mockito.<AsynchRemoteDeviceUpdate> any());
+		verify(hs, times(2)).dispatchElmUserFeedback(di1.getId(), ElmStatus.ON, 0);
 		//
-		di1.update(createDeviceWithStatus(1, 1, 0));  // turn OFF
+		di1.update(createDeviceWithStatus(1, 1, 0)); // turn OFF
 		assertEquals(CONSUMPTION_ENDED, di1.getStatus());
 		//
-		di1.updateMaximumPowerConsumption(UNLIMITED_POWER, ElmStatus.ON, 0);
+		di1.updateMaximumPowerConsumption(ElmStatus.ON, UNLIMITED_POWER);
+		di1.updateUserFeedback(ElmStatus.ON, 0);
 		assertEquals(READY, di1.getStatus());
+		verify(hs, times(2)).dispatchElmUserFeedback(di1.getId(), ElmStatus.ON, 0);
 	}
 
 	@Test
@@ -163,12 +224,13 @@ public class DeviceControllerTest {
 		di1.update(d);
 		assertEquals(CONSUMPTION_STARTED, di1.getStatus());
 
-		// APPROVED = 5_000
-		di1.updateMaximumPowerConsumption(5_000, ElmStatus.OVERLOAD, EXPECTED_WAITING_TIME);
+		// APPROVED = 5_000 W
+		di1.updateMaximumPowerConsumption(ElmStatus.OVERLOAD, 5_000);
+		di1.updateUserFeedback(ElmStatus.OVERLOAD, EXPECTED_WAITING_TIME);
 		assertEquals(CONSUMPTION_LIMITED, di1.getStatus());
 		assertEquals(5_000, di1.getApprovedPowerWatt());
 		assertEquals(242, di1.getScaldProtectionTemperature());
-		verify(hs1).putDeviceUpdate(Mockito.<AsynchRemoteDeviceUpdate> any());
+		verify(hs).putDeviceUpdate(Mockito.<RemoteDeviceUpdate> any());
 		// next poll returns setpoint = scald-protection temperature:
 		d.status.setpoint = 242;
 		di1.update(d);
@@ -176,11 +238,12 @@ public class DeviceControllerTest {
 		assertEquals(referenceTemperature, di1.getUserDemandTemperature());
 
 		// APPROVED = Unlimited
-		di1.updateMaximumPowerConsumption(UNLIMITED_POWER, ElmStatus.SATURATION, 0);
+		di1.updateMaximumPowerConsumption(ElmStatus.SATURATION, UNLIMITED_POWER);
+		di1.updateUserFeedback(ElmStatus.SATURATION, 0);
 		assertEquals(CONSUMPTION_APPROVED, di1.getStatus());
 		assertEquals(DeviceModel.SIM.getPowerMaxWatt(), di1.getApprovedPowerWatt());
 		assertEquals(UNDEFINED_TEMPERATURE, di1.getScaldProtectionTemperature());
-		verify(hs1, times(2)).putDeviceUpdate(Mockito.<AsynchRemoteDeviceUpdate> any());
+		verify(hs, times(2)).putDeviceUpdate(Mockito.<RemoteDeviceUpdate> any());
 		// next poll returns restored setpoint temperature:
 		d.status.setpoint = referenceTemperature;
 		di1.update(d);
@@ -195,24 +258,26 @@ public class DeviceControllerTest {
 		di1.update(d);
 		assertEquals(CONSUMPTION_STARTED, di1.getStatus());
 		//
-		di1.updateMaximumPowerConsumption(NO_POWER, ElmStatus.OVERLOAD, EXPECTED_WAITING_TIME);
+		di1.updateMaximumPowerConsumption(ElmStatus.OVERLOAD, NO_POWER);
+		di1.updateUserFeedback(ElmStatus.OVERLOAD, EXPECTED_WAITING_TIME);
 		assertEquals(CONSUMPTION_DENIED, di1.getStatus());
 		assertEquals(0, di1.getApprovedPowerWatt());
 		final short minScaldTemp = DeviceModel.SIM.getTemperatureOff();
 		assertEquals(minScaldTemp, di1.getScaldProtectionTemperature());
-		verify(hs1).putDeviceUpdate(Mockito.<AsynchRemoteDeviceUpdate> any());
+		verify(hs).putDeviceUpdate(Mockito.<RemoteDeviceUpdate> any());
 		// next poll returns setpoint = scald-protection temperature:
 		d.status.setpoint = minScaldTemp;
 		di1.update(d);
 		assertEquals(minScaldTemp, di1.getActualDemandTemperature());
 		assertEquals(380, di1.getUserDemandTemperature());
 
-		// APPROVED = 5_000
-		di1.updateMaximumPowerConsumption(5_000, ElmStatus.OVERLOAD, EXPECTED_WAITING_TIME);
+		// APPROVED = 5_000 W
+		di1.updateMaximumPowerConsumption(ElmStatus.OVERLOAD, 5_000);
+		di1.updateUserFeedback(ElmStatus.OVERLOAD, EXPECTED_WAITING_TIME);
 		assertEquals(CONSUMPTION_LIMITED, di1.getStatus());
 		assertEquals(5_000, di1.getApprovedPowerWatt());
 		assertEquals(242, di1.getScaldProtectionTemperature());
-		verify(hs1, times(2)).putDeviceUpdate(Mockito.<AsynchRemoteDeviceUpdate> any());
+		verify(hs, times(2)).putDeviceUpdate(Mockito.<RemoteDeviceUpdate> any());
 		// next poll returns setpoint = scald-protection temperature:
 		d.status.setpoint = 242;
 		di1.update(d);
@@ -220,64 +285,15 @@ public class DeviceControllerTest {
 		assertEquals(380, di1.getUserDemandTemperature());
 
 		// APPROVED = Unlimited
-		di1.updateMaximumPowerConsumption(UNLIMITED_POWER, ElmStatus.SATURATION, 0);
+		di1.updateMaximumPowerConsumption(ElmStatus.SATURATION, UNLIMITED_POWER);
+		di1.updateUserFeedback(ElmStatus.SATURATION, 0);
 		assertEquals(CONSUMPTION_APPROVED, di1.getStatus());
 		assertEquals(DeviceModel.SIM.getPowerMaxWatt(), di1.getApprovedPowerWatt());
 		assertEquals(UNDEFINED_TEMPERATURE, di1.getScaldProtectionTemperature());
-		verify(hs1, times(3)).putDeviceUpdate(Mockito.<AsynchRemoteDeviceUpdate> any());
+		verify(hs, times(3)).putDeviceUpdate(Mockito.<RemoteDeviceUpdate> any());
 		d.status.setpoint = 380;
 		di1.update(d);
 		assertEquals(380, di1.getActualDemandTemperature());
 		assertEquals(UNDEFINED_TEMPERATURE, di1.getUserDemandTemperature());
-	}
-
-	@Test
-	public void putElmStatus() {
-		AsynchRemoteDeviceUpdate deviceUpdate = new AsynchRemoteDeviceUpdate(di1);
-		di1.setStatus(READY);
-		di1.putElmStatus(deviceUpdate, READY, ElmStatus.ON, 0);
-		assertEquals(ElmStatus.ON, deviceUpdate.getFeedback().deviceStatus);
-		//
-		di1.putElmStatus(deviceUpdate, READY, ElmStatus.SATURATION, 0);
-		assertEquals(ElmStatus.SATURATION, deviceUpdate.getFeedback().deviceStatus);
-		//
-		di1.putElmStatus(deviceUpdate, READY, ElmStatus.OVERLOAD, 0);
-		assertEquals(ElmStatus.OVERLOAD, deviceUpdate.getFeedback().deviceStatus);
-		
-
-		di1.setStatus(CONSUMPTION_STARTED);
-		// elmStatus is irrelevant:
-		for (ElmStatus elmStatus : ElmStatus.values()) {
-			di1.putElmStatus(deviceUpdate, CONSUMPTION_STARTED, elmStatus, 0);
-			assertEquals(ElmStatus.ON, deviceUpdate.getFeedback().deviceStatus);
-		}
-		
-		di1.setStatus(CONSUMPTION_APPROVED);
-		// elmStatus is irrelevant:
-		for (ElmStatus elmStatus : ElmStatus.values()) {
-			di1.putElmStatus(deviceUpdate, CONSUMPTION_APPROVED, elmStatus, 0);
-			assertEquals(ElmStatus.ON, deviceUpdate.getFeedback().deviceStatus);
-		}
-		
-		di1.setStatus(CONSUMPTION_LIMITED);
-		// elmStatus is irrelevant:
-		for (ElmStatus elmStatus : ElmStatus.values()) {
-			di1.putElmStatus(deviceUpdate, CONSUMPTION_LIMITED, elmStatus, 0);
-			assertEquals(ElmStatus.SATURATION, deviceUpdate.getFeedback().deviceStatus);
-		}
-		
-		di1.setStatus(CONSUMPTION_DENIED);
-		// elmStatus is irrelevant:
-		for (ElmStatus elmStatus : ElmStatus.values()) {
-			di1.putElmStatus(deviceUpdate, CONSUMPTION_DENIED, elmStatus, 0);
-			assertEquals(ElmStatus.OVERLOAD, deviceUpdate.getFeedback().deviceStatus);
-		}
-		
-		di1.setStatus(ERROR);
-		// elmStatus is irrelevant:
-		for (ElmStatus elmStatus : ElmStatus.values()) {
-			di1.putElmStatus(deviceUpdate, ERROR, elmStatus, 0);
-			assertEquals(ElmStatus.ERROR, deviceUpdate.getFeedback().deviceStatus);
-		}
 	}
 }

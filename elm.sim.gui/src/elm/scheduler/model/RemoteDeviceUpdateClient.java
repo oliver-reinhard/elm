@@ -1,8 +1,10 @@
 package elm.scheduler.model;
 
-import elm.hs.api.model.ElmUserFeedback;
 import elm.util.ClientException;
 
+/**
+ * This interface defines the methods of a client used to perform {@link RemoteDeviceUpdate}s at a remote server.
+ */
 public interface RemoteDeviceUpdateClient {
 
 	/**
@@ -23,7 +25,5 @@ public interface RemoteDeviceUpdateClient {
 	 * @throws ClientException if the operation ended in a status {@code != 200} or if the execution threw an exception
 	 */
 	void clearScaldProtection(String deviceID, Integer previousTemp) throws ClientException;
-	
-	void updateUserFeedback(ElmUserFeedback feedback) throws ClientException;
 
 }

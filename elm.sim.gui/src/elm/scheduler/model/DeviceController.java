@@ -9,8 +9,9 @@ import elm.scheduler.HomeServerController;
 import elm.scheduler.Scheduler;
 
 /**
- * A {@link DeviceController} manages one physical {@link Device} and is the devices interface for the scheduler. Despite its name the {@link DeviceController} is a
- * re-active object rather than an object with its own {@link Thread}. It reacts to events from the {@link HomeServerController} and from the {@link Scheduler}.
+ * A {@link DeviceController} manages one physical {@link Device} and is the devices interface for the scheduler. Despite its name the {@link DeviceController}
+ * is a re-active object rather than an object with its own {@link Thread}. It reacts to events from the {@link HomeServerController} and from the
+ * {@link Scheduler}.
  * <p>
  * {@link DeviceController} has the following responsibilities:
  * <ul>
@@ -150,23 +151,29 @@ public interface DeviceController {
 	 * <em>Note: </em>This method must not be long-running or blocking; this could delay the scheduler.
 	 * </p>
 	 * 
+	 * @param elmStatus
+	 *            the current {@link ElmStatus}, cannot be {@code null}
 	 * @param approvedPowerWatt
 	 *            the power (in [W] the device may consume)
+	 * 
+	 */
+	void updateMaximumPowerConsumption(ElmStatus elmStatus, int approvedPowerWatt);
+
+	/**
+	 * Invoked only by the scheduler on scheduler status changes.
+	 * <p>
+	 * <em>Note: </em>This method is always called by the scheduler after {@link #updateMaximumPowerConsumption(ElmStatus, int)}.
+	 * </p>
+	 * <p>
+	 * <em>Note 2: </em>This method must not be long-running or blocking; this could delay the scheduler.
+	 * </p>
+	 * 
 	 * @param elmStatus
 	 *            the current {@link ElmStatus}, cannot be {@code null}
 	 * @param expectedWaitingTimeMillis
 	 *            expected waiting time for this device if ELM status is {@code OVERLOAD}, in [ms]
-	 * 
 	 */
-	void updateMaximumPowerConsumption(int approvedPowerWatt, ElmStatus elmStatus, int expectedWaitingTimeMillis);
-
-	/**
-	 * Invoked only by the scheduler on scheduler status changes unless {@link #updateMaximumPowerConsumption(int, ElmStatus, int)} has already been invoked for
-	 * this device.
-	 * 
-	 * @param elmStatus
-	 */
-	void updateUserFeedback(ElmStatus newStatus);
+	void updateUserFeedback(ElmStatus newStatus, int expectedWaitingTimeMillis);
 
 	/**
 	 * The time the current consumption started, or {@link #NO_CONSUMPTION} if the device does not currently provide hot water.
@@ -184,5 +191,10 @@ public interface DeviceController {
 	 * The maximum power [W] the device may consume as granted by the scheduler.
 	 */
 	int getApprovedPowerWatt();
+	
+	/**
+	 * The mean duration this device is being used.
+	 */
+	int getMeanConsumptionMillis();
 
 }

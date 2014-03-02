@@ -6,8 +6,10 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import elm.hs.api.model.Device;
+import elm.hs.api.model.ElmStatus;
 import elm.hs.api.model.Info;
 import elm.hs.api.model.Status;
+import elm.scheduler.ElmUserFeedbackManager;
 import elm.scheduler.HomeServerController;
 
 public interface HomeServer {
@@ -38,10 +40,10 @@ public interface HomeServer {
 	 * @param devices
 	 *            cannot be {@code null}
 	 * @return list of device IDs for which to pass more detailed information immediately; can be {@code null}
-	 * @throws UnsupportedModelException
+	 * @throws UnsupportedDeviceModelException
 	 *             if one of the devices does is not suitable for ELM
 	 */
-	List<String> updateDeviceControllers(List<Device> devices) throws UnsupportedModelException;
+	List<String> updateDeviceControllers(List<Device> devices) throws UnsupportedDeviceModelException;
 
 	Collection<DeviceController> getDeviceControllers();
 
@@ -72,16 +74,28 @@ public interface HomeServer {
 	 * @param updates
 	 *            cannot be {@code null}
 	 */
-	void putDeviceUpdate(AsynchRemoteDeviceUpdate update);
+	void putDeviceUpdate(RemoteDeviceUpdate update);
 
 	/**
-	 * Device updates can be {@link #putDeviceUpdate(AsynchRemoteDeviceUpdate) put} one by one without the receiver even noticing. This method notifies all
+	 * Device updates can be {@link #putDeviceUpdate(RemoteDeviceUpdate) put} one by one without the receiver even noticing. This method notifies all
 	 * {@link HomeServerChangeListener}s of these changes, notably the {@link HomeServerController}.
 	 * <p>
 	 * <em>Note: </em>This method must not be long-running or blocking; this could delay the scheduler.
 	 * </p>
 	 */
-	void fireDeviceChangesPending();
+	void fireDeviceUpdatesPending();
+
+	/**
+	 * Dispatches user feedback to respective the {@link ElmUserFeedbackManager}.
+	 * 
+	 * @param deviceId
+	 *            cannot be {@code null} or empty
+	 * @param deviceStatus
+	 *            cannot be {@code null}
+	 * @param expectedWaitingTimeMillis
+	 *            must be {@code >= 0}
+	 */
+	void dispatchElmUserFeedback(String deviceId, ElmStatus deviceStatus, int expectedWaitingTimeMillis);
 
 	/**
 	 * Executes pending updates.

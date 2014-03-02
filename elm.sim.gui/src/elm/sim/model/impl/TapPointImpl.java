@@ -6,7 +6,7 @@ import static elm.sim.model.SimStatus.OVERLOAD;
 import static elm.sim.model.SimStatus.SATURATION;
 import elm.hs.api.model.ElmStatus;
 import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
-import elm.scheduler.model.UnsupportedModelException;
+import elm.scheduler.model.UnsupportedDeviceModelException;
 import elm.sim.metamodel.AbstractSimObject;
 import elm.sim.metamodel.SimAttribute;
 import elm.sim.model.Flow;
@@ -67,16 +67,16 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 	 *            is this device only a simulation (vs. a real, physical device)
 	 * @param referenceTemperature
 	 *            cannot be {@code null}
-	 * @throws UnsupportedModelException
+	 * @throws UnsupportedDeviceModelException
 	 */
-	public TapPointImpl(String name, String id, boolean simDevice, HotWaterTemperature referenceTemperature) throws UnsupportedModelException {
+	public TapPointImpl(String name, String id, boolean simDevice, HotWaterTemperature referenceTemperature) throws UnsupportedDeviceModelException {
 		assert name != null && !name.isEmpty();
 		assert id != null && !id.isEmpty();
 		this.name = name;
 		deviceId = id;
 		deviceModel = DeviceModel.getModel(id);
 		if (!deviceModel.getType().isRemoteControllable()) {
-			throw new UnsupportedModelException(id);
+			throw new UnsupportedDeviceModelException(id);
 		}
 		this.simDevice = simDevice;
 		this.referenceTemperature = referenceTemperature;

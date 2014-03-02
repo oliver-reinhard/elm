@@ -7,7 +7,6 @@ import java.util.logging.Logger;
 
 import elm.hs.api.model.Device;
 import elm.hs.api.model.ElmStatus;
-import elm.scheduler.model.AsynchRemoteDeviceUpdate;
 import elm.scheduler.model.DeviceController;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.HomeServerChangeListener;
@@ -100,15 +99,11 @@ public abstract class AbstractScheduler implements HomeServerChangeListener {
 		}
 		homeServers.add(server);
 		server.addChangeListener(this);
-		server.putDeviceUpdate(new AsynchRemoteDeviceUpdate(getStatus()));
-		server.fireDeviceChangesPending();
 	}
 
 	public synchronized void removeHomeServer(HomeServer server) {
 		if (homeServers.remove(server)) {
 			server.removeChangeListener(this);
-			server.putDeviceUpdate(new AsynchRemoteDeviceUpdate(ElmStatus.OFF));
-			server.fireDeviceChangesPending();
 		}
 	}
 
@@ -195,7 +190,7 @@ public abstract class AbstractScheduler implements HomeServerChangeListener {
 	}
 
 	@Override
-	public void deviceUpdatesPending(HomeServer server, boolean urgent) {
+	public void deviceUpdatesPending(HomeServer server) {
 		// ignore these notifications
 	}
 
