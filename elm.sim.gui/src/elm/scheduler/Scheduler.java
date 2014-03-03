@@ -42,7 +42,7 @@ public class Scheduler extends AbstractScheduler {
 
 	/** The total amount of power being requested. */
 	private int totalDemandPowerWatt;
-	
+
 	/** Enable deterministic testing via a replacement of this time service. */
 	private ElmTimeService timeService = ElmTimeService.INSTANCE;
 
@@ -86,6 +86,9 @@ public class Scheduler extends AbstractScheduler {
 			for (HomeServer server : homeServers) {
 				for (DeviceController device : server.getDeviceControllers()) {
 					device.updateUserFeedback(newStatus, 0);
+					if (newStatus.in(OFF, ERROR)) {
+						device.updateMaximumPowerConsumption(newStatus, DeviceController.NO_POWER);
+					}
 				}
 			}
 		}

@@ -214,6 +214,8 @@ public class DeviceControllerTest {
 		di1.updateUserFeedback(ElmStatus.ON, 0);
 		assertEquals(READY, di1.getStatus());
 		verify(hs, times(2)).dispatchElmUserFeedback(di1.getId(), ElmStatus.ON, 0);
+		
+		verifyNoMoreInteractions(hs);
 	}
 
 	@Test

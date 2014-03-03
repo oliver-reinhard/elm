@@ -251,6 +251,19 @@ public class SchedulerIntegrationTest {
 			assertEquals(READY, hs2.getDeviceController(d2_2.id).getStatus()); // tap 2-2 is OFF
 			assertEquals(READY, hs3.getDeviceController(d3_1.id).getStatus());
 			assertEquals(READY, hs3.getDeviceController(d3_2.id).getStatus()); // tap 3-2 is OFF
+			
+			// ON --> OFF
+			scheduler.stop();
+			scheduler.runOnce();
+			assertEquals(OFF, scheduler.getStatus());
+			assertFalse(scheduler.isInOverloadMode());
+			//
+			assertEquals(READY, hs1.getDeviceController(d1_1.id).getStatus());
+			assertEquals(READY, hs1.getDeviceController(d1_2.id).getStatus());
+			assertEquals(READY, hs2.getDeviceController(d2_1.id).getStatus());
+			assertEquals(READY, hs2.getDeviceController(d2_2.id).getStatus());
+			assertEquals(READY, hs3.getDeviceController(d3_1.id).getStatus());
+			assertEquals(READY, hs3.getDeviceController(d3_2.id).getStatus()); 
 
 		} catch (UnsupportedDeviceModelException e) {
 			fail(e.toString());
@@ -311,6 +324,7 @@ public class SchedulerIntegrationTest {
 			scheduler.addHomeServer(hs2);
 			checkNoDeviceUpdates(hs1);  // no influence on hs1
 			checkNoDeviceUpdates(hs2);
+			
 			checkNoUserFeedback(hs1);
 			checkNoUserFeedback(hs2);
 			
@@ -329,6 +343,7 @@ public class SchedulerIntegrationTest {
 			checkNoDeviceUpdates(hs1);
 			checkNoDeviceUpdates(hs2);
 			checkNoDeviceUpdates(hs3);
+			
 			checkUserFeedback(hs1, d1_1, ON, 0);
 			checkUserFeedback(hs1, d1_2, ON, 0);
 			checkUserFeedback(hs2, d2_1, ON, 0);
@@ -594,7 +609,7 @@ public class SchedulerIntegrationTest {
 
 			// ON --> ON
 			d1_2.status.power = toPowerUnits(0); // *** Turn tap 1-2 OFF
-			hs2.updateDeviceControllers(hs2_Devices);
+			hs1.updateDeviceControllers(hs1_Devices);
 			//
 			// scheduler: run
 			scheduler.runOnce();
@@ -608,6 +623,27 @@ public class SchedulerIntegrationTest {
 			checkNoUserFeedback(hs1);
 			checkNoUserFeedback(hs2);
 			checkNoUserFeedback(hs3);
+			
+			// ON --> OFF
+			scheduler.stop();
+			scheduler.runOnce();
+			
+			checkDeviceUpdatesSize(hs1, 2);
+			checkDeviceUpdate(hs1, d1_1, DeviceController.NO_POWER);
+			checkDeviceUpdate(hs1, d1_2, DeviceController.NO_POWER);
+			checkDeviceUpdatesSize(hs2, 2);
+			checkDeviceUpdate(hs2, d2_1, DeviceController.NO_POWER);
+			checkDeviceUpdate(hs2, d2_2, DeviceController.NO_POWER);
+			checkDeviceUpdatesSize(hs3, 2);
+			checkDeviceUpdate(hs3, d3_1, DeviceController.NO_POWER);
+			checkDeviceUpdate(hs3, d3_2, DeviceController.NO_POWER);
+
+			checkUserFeedback(hs1, d1_1, OFF, 0);
+			checkUserFeedback(hs1, d1_2, OFF, 0);
+			checkUserFeedback(hs2, d2_1, OFF, 0);
+			checkUserFeedback(hs2, d2_2, OFF, 0);
+			checkUserFeedback(hs3, d3_1, OFF, 0);
+			checkUserFeedback(hs3, d3_2, OFF, 0);
 
 		} catch (UnsupportedDeviceModelException | ClientException e) {
 			fail(e.toString());

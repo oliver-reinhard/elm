@@ -168,6 +168,9 @@ public abstract class AbstractScheduler implements HomeServerChangeListener {
 	void runOnce() {
 		if (status == ElmStatus.OFF) {
 			setStatus(ElmStatus.ON);
+		} else if (shouldStop) {
+			setStatus(ElmStatus.OFF);
+			return;
 		}
 		schedulingRunCount++;
 		processDevices();
