@@ -28,7 +28,7 @@ public class AbstractSchedulerTest {
 	ElmUserFeedbackClient feedbackClient;
 	HomeServer hs1;
 	HomeServer hs2;
-	AbstractScheduler scheduler;
+	AbstractElmScheduler scheduler;
 	SchedulerChangeListener statusL;
 
 	@Before
@@ -39,7 +39,7 @@ public class AbstractSchedulerTest {
 		hs1 = createHomeServer(1, NUM_DEVICES, feedbackManager, feedbackClient);
 		hs2 = createHomeServer(2, NUM_DEVICES, feedbackManager, feedbackClient);
 		
-		scheduler = new AbstractScheduler() {
+		scheduler = new AbstractElmScheduler() {
 			@Override
 			protected void processDevices() {
 				for(HomeServer server : getHomeServers()) {

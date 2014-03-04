@@ -129,6 +129,7 @@ public class DeviceControllerTest {
 		assertEquals(UpdateResult.MINOR_UPDATES, result);
 
 		d.status.power = toPowerUnits(10_000);
+		d.setHeaterOn(true);
 		di1.update(d);
 		d.status.tIn = 100; // 10°C
 		result = di1.update(d);

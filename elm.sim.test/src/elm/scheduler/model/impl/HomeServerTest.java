@@ -110,11 +110,12 @@ public class HomeServerTest {
 	}
 
 	@Test
-	public void deviceManagerUpdates() {
+	public void devicesControllersUpdated() {
 		try {
 			// Turn a tap ON
 			List<Device> devices = createDevicesWithStatus(HS_ID, NUM_DEVICES, 0);
 			devices.get(1).status.power = toPowerUnits(10_000);
+			devices.get(1).setHeaterOn(true);
 			hs1.updateDeviceControllers(devices);
 			verify(hsL1).devicesControllersUpdated(hs1, true);
 

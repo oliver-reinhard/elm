@@ -17,7 +17,7 @@ import elm.scheduler.ElmUserFeedbackClient;
 import elm.util.ClientException;
 
 public class HomeServerPublicApiClient extends AbstractHomeServerClient implements ElmUserFeedbackClient {
-
+	
 	private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
 	/**
@@ -169,6 +169,6 @@ public class HomeServerPublicApiClient extends AbstractHomeServerClient implemen
 	public void updateUserFeedback(List<ElmUserFeedback> feedback) throws ClientException {
 		assert feedback != null;
 
-		doPost("/devices/feedback", gson.toJson(feedback), new int[] { HttpStatus.OK_200 });
+		doPost("/devices/feedback", gson.toJson(feedback, ElmUserFeedback.ELM_USER_FEEDBACK_LIST_TYPE), new int[] { HttpStatus.OK_200 });
 	}
 }

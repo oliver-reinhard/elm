@@ -154,7 +154,7 @@ public class ElmUserFeedbackManager {
 			}
 			feedback = entry.fetchUserFeedback();  // clears the feedback store
 		} // release lock
-		if (feedback != null) {
+		if (feedback != null && ! feedback.isEmpty()) {
 			client.updateUserFeedback(feedback);
 		}
 	}

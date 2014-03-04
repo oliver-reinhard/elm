@@ -19,8 +19,8 @@ import elm.util.ClientException;
 import elm.util.ClientUtil;
 
 /**
- * This controller is responsible for the connection to and the communication with a single Home Server server via HTTP and with the {@link Scheduler}. However,
- * it does not communicate to the {@link Scheduler} directly, but indirectly via a {@link HomeServer} object.
+ * This controller is responsible for the connection to and the communication with a single Home Server server via HTTP and with the {@link ElmScheduler}. However,
+ * it does not communicate to the {@link ElmScheduler} directly, but indirectly via a {@link HomeServer} object.
  * <p>
  * At each poll of the Home Server server, this controller updates an 'alive' flag at its {@link HomeServer}. This enables a separate thread to monitor the
  * health of this controller.
@@ -38,7 +38,7 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 		WAIT, POLL_HOME_SERVER, PROCESS_DEVICE_UPDATES, STOP
 	}
 
-	private final AbstractScheduler scheduler;
+	private final AbstractElmScheduler scheduler;
 	private final ElmUserFeedbackManager userFeedbackManager;
 	private final HomeServer homeServer;
 	private State state = State.NOT_CONNECTED;
@@ -64,7 +64,7 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 	 * @param homeServer
 	 *            cannot be {@code null}
 	 */
-	public HomeServerController(AbstractScheduler scheduler, ElmUserFeedbackManager userFeedbackManager, HomeServer homeServer) {
+	public HomeServerController(AbstractElmScheduler scheduler, ElmUserFeedbackManager userFeedbackManager, HomeServer homeServer) {
 		assert scheduler != null;
 		assert userFeedbackManager != null;
 		assert homeServer != null;
@@ -102,7 +102,7 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 		// ClientUtil.initSslContextFactory(internalClient.getClient());
 		
 		setState(State.CONNECTING);
-		runner = new Thread(this, HomeServerController.class.getSimpleName());
+		runner = new Thread(this, HomeServerController.class.getSimpleName() + " " + homeServer.getUri());
 		event = Event.POLL_HOME_SERVER;
 		runner.start();
 	}
@@ -169,7 +169,7 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 	 * </ul>
 	 * <p>
 	 * <em>Note: </em>The time spent in {@code synchronized} blocks must be kept short so as not to cause delays to callers of {@code synchronized} methods of
-	 * this class, most importantly the {@link Scheduler}.
+	 * this class, most importantly the {@link ElmScheduler}.
 	 * </p>
 	 * 
 	 * @throws InterruptedException

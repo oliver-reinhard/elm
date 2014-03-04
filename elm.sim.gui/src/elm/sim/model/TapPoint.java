@@ -2,7 +2,8 @@ package elm.sim.model;
 
 import elm.hs.api.model.ElmStatus;
 import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
-import elm.scheduler.Scheduler;
+import elm.hs.api.model.Status;
+import elm.scheduler.ElmScheduler;
 import elm.scheduler.model.DeviceController;
 import elm.sim.metamodel.SimAttribute;
 import elm.sim.metamodel.SimChangeNotifier;
@@ -19,7 +20,7 @@ public interface TapPoint extends SimChangeNotifier {
 		ACTUAL_FLOW("Ist-Menge"),
 		REFERENCE_TEMPERATURE("Soll-Temperatur"),
 		ACTUAL_TEMPERATURE("Ist-Temperatur"),
-		SCALD_TEMPERATURE("Verbrühschutztemperatur"),
+		SCALD_PROTECTION_TEMPERATURE("Verbrühschutztemperatur"),
 		STATUS("Status"),
 		WAITING_TIME_PERCENT("Wartezeit [%]"),
 		INTAKE_WATER_TEMPERATURE("Kaltwassertemp.");
@@ -78,7 +79,7 @@ public interface TapPoint extends SimChangeNotifier {
 	SimStatus getStatus();
 
 	/**
-	 * This method is used by the real ELM {@link Scheduler}.
+	 * This method is used by the real ELM {@link ElmScheduler}.
 	 * 
 	 * @param deviceStatus
 	 *            the actual ELM {@link DeviceController}'s status, cannot be {@code null}
@@ -116,5 +117,10 @@ public interface TapPoint extends SimChangeNotifier {
 	 * @return the currently consumed power in device units in relation to {@link DeviceModel#getPowerMaxUnits()} configuration.
 	 */
 	short getPowerUnits();
+	
+	/**
+	 * @return the {@link Status#flags} for this device
+	 */
+	short getFlags();
 
 }

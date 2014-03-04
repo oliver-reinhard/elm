@@ -1,7 +1,15 @@
 package elm.hs.api.model;
 
+import java.lang.reflect.Type;
+import java.util.List;
+
+import com.google.gson.reflect.TypeToken;
 
 public class ElmUserFeedback {
+	
+	/** Type information for Gson serialization. */
+	public static final Type ELM_USER_FEEDBACK_LIST_TYPE = new TypeToken<List<ElmUserFeedback>>() {
+	}.getType();
 
 	/** Device id. */
 	public String id;
@@ -33,7 +41,7 @@ public class ElmUserFeedback {
 		}
 		return false;
 	}
-	
+
 	@Override
 	public String toString() {
 		final StringBuilder b = new StringBuilder("(");

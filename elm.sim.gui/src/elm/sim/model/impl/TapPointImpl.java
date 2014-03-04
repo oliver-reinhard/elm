@@ -20,6 +20,9 @@ import elm.sim.model.TapPoint;
  */
 public class TapPointImpl extends AbstractSimObject implements TapPoint {
 
+	/** Joule per gram and Kelvin. */
+	private static final double WATER_HEAT_CAPACITY = 4.192;
+
 	/** Outlet identification within group. */
 	private final String name;
 
@@ -41,10 +44,10 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 	private HotWaterTemperature referenceTemperature;
 
 	/** Temperature as constrained by the scheduler. */
-	private HotWaterTemperature scaldProtectionTemperature = HotWaterTemperature.TEMP_MAX; // = no limit
+	private HotWaterTemperature scaldProtectionTemperature = HotWaterTemperature.TEMP_MAX_60; // = no limit
 
 	/** Temperature as granted by scheduler. */
-	private HotWaterTemperature actualTemperature = HotWaterTemperature.TEMP_MIN; // = cold water
+	private HotWaterTemperature actualTemperature = HotWaterTemperature.TEMP_MIN_19; // = cold water
 
 	/** The status of the outlet. */
 	private SimStatus status = OFF;
@@ -194,7 +197,7 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 		HotWaterTemperature oldValue = scaldProtectionTemperature;
 		if (oldValue != newValue) {
 			scaldProtectionTemperature = newValue;
-			fireModelChanged(Attribute.SCALD_TEMPERATURE, oldValue, newValue);
+			fireModelChanged(Attribute.SCALD_PROTECTION_TEMPERATURE, oldValue, newValue);
 			if (updateDerived) {
 				updateDerived();
 			}
@@ -251,24 +254,26 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 
 		if (schedulerStatus == null) {
 			if (status == OFF) {
-				setActualTemperature(HotWaterTemperature.TEMP_MIN);
+				setActualTemperature(HotWaterTemperature.TEMP_MIN_19);
 			} else {
 				setActualTemperature(referenceTemperature);
 			}
 
 		} else {
+			// schedulerStatus != null
+			//
 			// Are we in the middle of an actual flow?
 			if (actualFlow.isOn()) {
 				// Yes => interfere as little as possible with the user's reference temperature;
 				if (schedulerStatus.in(ON, SATURATION)) {
 					setInternalStatus(ON, false);
-					setInternalScaldProtectionTemperature(HotWaterTemperature.TEMP_MAX, false);
+					setInternalScaldProtectionTemperature(HotWaterTemperature.TEMP_MAX_60, false);
 					// allow to increase or decrease the reference temperature:
 					setActualTemperature(referenceTemperature);
 
-				} else if (schedulerStatus == OVERLOAD && scaldProtectionTemperature != HotWaterTemperature.TEMP_MIN) {
+				} else if (schedulerStatus == OVERLOAD && scaldProtectionTemperature != HotWaterTemperature.TEMP_MIN_19) {
 					setInternalStatus(ON, false);
-					setInternalScaldProtectionTemperature(HotWaterTemperature.TEMP_MAX, false);
+					setInternalScaldProtectionTemperature(HotWaterTemperature.TEMP_MAX_60, false);
 					// allow to increase or decrease the reference temperature:
 					setActualTemperature(referenceTemperature);
 
@@ -282,14 +287,14 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 			} else if (schedulerStatus.in(ON, SATURATION)) {
 				// No, there is no actual flow:
 				setInternalStatus(schedulerStatus, false);
-				setInternalScaldProtectionTemperature(HotWaterTemperature.TEMP_MAX, false);
+				setInternalScaldProtectionTemperature(HotWaterTemperature.TEMP_MAX_60, false);
 				// allow to increase or decrease the reference
 				setActualTemperature(referenceTemperature);
 
 			} else { // schedulerStatus.in(OFF, OVERLOAD, ERROR)
 				setInternalStatus(schedulerStatus, false);
-				setInternalScaldProtectionTemperature(HotWaterTemperature.TEMP_MIN, false);
-				setActualTemperature(HotWaterTemperature.TEMP_MIN);
+				setInternalScaldProtectionTemperature(HotWaterTemperature.TEMP_MIN_19, false);
+				setActualTemperature(HotWaterTemperature.TEMP_MIN_19);
 			}
 		}
 	}
@@ -333,10 +338,8 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 		if (deviceModel == null) {
 			throw new IllegalStateException("Must set a device ID before calling this method.");
 		}
-		final boolean heaterOn = getActualFlow().isOn() && getActualTemperature().getDegreesCelsius() > (deviceModel.getTemperatureOff() / 10)
-				&& getActualTemperature().getDegreesCelsius() > getIntakeWaterTemperature().getDegreesCelsius();
-		if (heaterOn) {
-			int powerWatt = (int) (4.192 * (getActualTemperature().getDegreesCelsius() - getIntakeWaterTemperature().getDegreesCelsius())
+		if (internalIsHeaterOn()) {
+			int powerWatt = (int) (WATER_HEAT_CAPACITY * (getActualTemperature().getDegreesCelsius() - getIntakeWaterTemperature().getDegreesCelsius())
 					* getActualFlow().getMillilitresPerMinute() / 60);
 			return Math.min(powerWatt, deviceModel.getPowerMaxWatt());
 		} else {
@@ -347,6 +350,26 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 	@Override
 	public short getPowerUnits() {
 		return toPowerUnits(getPowerWatt());
+	}
+
+	/**
+	 * @return {@code true} if heater actually draws power; this is different from {@link #getFlags()}
+	 */
+	private boolean internalIsHeaterOn() {
+		return getActualFlow().isOn() && getActualTemperature().getDegreesCelsius() > (deviceModel.getTemperatureOff() / 10)
+				&& getActualTemperature().getDegreesCelsius() > getIntakeWaterTemperature().getDegreesCelsius();
+	}
+
+	@Override
+	public short getFlags() {
+		if (internalIsHeaterOn()
+				|| getActualFlow().isOn()
+				// also return true when the heater is off due to the scald-protection temperature being at the temperature_OFF:
+				&& (getActualTemperature().getDegreesCelsius() == getScaldProtectionTemperature().getDegreesCelsius() && getScaldProtectionTemperature()
+						.getDegreesCelsius() == deviceModel.getTemperatureOff() / 10)) {
+			return 0;
+		}
+		return 1;
 	}
 
 	int toPowerWatt(short powerUnits) {

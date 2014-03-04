@@ -24,7 +24,7 @@ import elm.scheduler.model.HomeServer;
  * This scheduler implementation is <em>stateless</em> in that, each time it runs, it performs a full analysis of all known {@link HomeServer}s and their
  * devices. It does thus not depend on a previous state from which it might never recover. </p>
  */
-public class Scheduler extends AbstractScheduler {
+public class ElmScheduler extends AbstractElmScheduler {
 
 	/** The maximum power of any individual device managed by this scheduler. */
 	private static final int MAX_DEVICE_POWER_WATT = 27_000;
@@ -56,7 +56,7 @@ public class Scheduler extends AbstractScheduler {
 	 * @param maxElectricalPowerWatt
 	 *            the maximum total electrical power in [Watt] that all the devices managed by this scheduler can use at any given time
 	 */
-	public Scheduler(int maxElectricalPowerWatt) {
+	public ElmScheduler(int maxElectricalPowerWatt) {
 		this(maxElectricalPowerWatt, Math.min(maxElectricalPowerWatt - MAX_DEVICE_POWER_WATT, (int) (SATURATION_POWER_FACTOR * maxElectricalPowerWatt)));
 	}
 
@@ -68,7 +68,7 @@ public class Scheduler extends AbstractScheduler {
 	 *            the total electrical power threshold <em>before</em> the scheduler enters {@link ElmStatus#SATURATION} state.
 	 * 
 	 */
-	public Scheduler(int maxElectricalPowerWatt, int saturationPowerLimitWatt) {
+	public ElmScheduler(int maxElectricalPowerWatt, int saturationPowerLimitWatt) {
 		assert maxElectricalPowerWatt > MAX_DEVICE_POWER_WATT;
 		assert saturationPowerLimitWatt < maxElectricalPowerWatt;
 		overloadPowerLimitWatt = maxElectricalPowerWatt;
@@ -77,6 +77,18 @@ public class Scheduler extends AbstractScheduler {
 		kWFormat.setMinimumFractionDigits(1);
 		kWFormat.setMaximumFractionDigits(1);
 		log.info("saturation limit: " + formatPower(saturationPowerLimitWatt) + ", overload limit: " + formatPower(overloadPowerLimitWatt));
+	}
+
+	public int getTotalDemandPowerWatt() {
+		return totalDemandPowerWatt;
+	}
+
+	public int getSaturationPowerLimitWatt() {
+		return saturationPowerLimitWatt;
+	}
+
+	public int getOverloadPowerLimitWatt() {
+		return overloadPowerLimitWatt;
 	}
 
 	@Override
@@ -133,7 +145,11 @@ public class Scheduler extends AbstractScheduler {
 
 		if (totalDemandPowerWatt != this.totalDemandPowerWatt) {
 			log.info("Total requested power: " + formatPower(totalDemandPowerWatt));
+			int oldDemandPowerWatt = this.totalDemandPowerWatt;
 			this.totalDemandPowerWatt = totalDemandPowerWatt;
+			for(SchedulerChangeListener listener : listeners) {
+				listener.totalDemandPowerChanged(oldDemandPowerWatt, totalDemandPowerWatt);
+			}
 		}
 
 		// Analyze:
@@ -222,8 +238,8 @@ public class Scheduler extends AbstractScheduler {
 		ElmStatus oldStatus = getStatus();
 		setStatus(newStatus);
 		if (isInOverloadMode()) {
-			overloadModeBeginTime = NOT_IN_OVERLOAD;
 			log.info("Ending overload mode after " + (timeService.currentTimeMillis() - overloadModeBeginTime) + " ms");
+			overloadModeBeginTime = NOT_IN_OVERLOAD;
 			// Notify consuming devices first as there may be some that had the Power level reduced earlier
 			updateDevices(newStatus, consumingDevices, standbyDevices, false);
 
@@ -252,8 +268,8 @@ public class Scheduler extends AbstractScheduler {
 		}
 	}
 
-	private final String formatPower(int totalDemandPowerWatt) {
-		return kWFormat.format(totalDemandPowerWatt / 1000.0) + " kW";
+	public final String formatPower(int powerWatt) {
+		return kWFormat.format(powerWatt / 1000.0) + " kW";
 	}
 
 	private void sortByConsumptionStartTime(List<DeviceController> consumingDevices) {

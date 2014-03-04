@@ -19,7 +19,7 @@ import elm.hs.api.model.Device;
 import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
 import elm.hs.api.model.ElmStatus;
 import elm.scheduler.ElmTimeService;
-import elm.scheduler.Scheduler;
+import elm.scheduler.ElmScheduler;
 import elm.scheduler.model.DeviceController;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.RemoteDeviceUpdate;
@@ -27,8 +27,8 @@ import elm.scheduler.model.UnsupportedDeviceModelException;
 
 /**
  * This device-controller implementation is close to <em>stateless</em> in that, each time it runs, it performs a full analysis of all locally stored
- * {@link Device} fields and {@link Scheduler} input. It keeps only minimal state and status information and thus depend only weakly on its previous state from
- * which it might never recover. </p>
+ * {@link Device} fields and {@link ElmScheduler} input. It keeps only minimal state and status information and thus depend only weakly on its previous state
+ * from which it might never recover. </p>
  */
 public class DeviceControllerImpl implements DeviceController {
 
@@ -47,7 +47,7 @@ public class DeviceControllerImpl implements DeviceController {
 
 	/** Model-dependent. */
 	private short powerMaxUnits;
-	
+
 	/** Enable deterministic testing via a replacement of this time service. */
 	private ElmTimeService timeService = ElmTimeService.INSTANCE;
 
@@ -148,8 +148,13 @@ public class DeviceControllerImpl implements DeviceController {
 		// however, the Status block must be requested individually for each device.
 		if (device.status == null) {
 			// device.info != null as per assertion, above
+			//
+			// NOTE: flags == 0 even if power has been limited and heater is off due to enabled scald protection !
+			//
 			final boolean deviceHeaterOn = device.info.flags == 0;
-			// The heater is turned ON, or it is OFF because of denied or limited power or update() is called for the first time:
+			// The heater is turned ON 
+			// - or it has been turned off but we are still consuming and need to stop it
+			// - or update() is called for the first time.
 			if (deviceHeaterOn || status.isConsuming() || status == INITIALIZING) {
 				if (status == INITIALIZING) {
 					// if the scheduler died earlier while scald protection was active, then we have to remove it now
@@ -173,21 +178,31 @@ public class DeviceControllerImpl implements DeviceController {
 
 		if (device.status != null) {
 			powerMaxUnits = device.status.powerMax;
+			actualDemandTemperature = device.status.setpoint; // if power has been limited, this is not the user-defined setpoint !
 
-			final int newDemandPowerWatt = toPowerWatt(device.status.power);
-			if (newDemandPowerWatt != demandPowerWatt) {
-				info("demand power change: " + newDemandPowerWatt / 1000 + " kW");
-				if (demandPowerWatt == 0) {
-					waterConsumptionStarted(newDemandPowerWatt);
-				} else if (newDemandPowerWatt == 0) {
-					waterConsumptionEnded();
-				} else {
-					waterConsumptionChanged(newDemandPowerWatt);
-				}
+			//
+			// NOTE: flags == 0 even if power has been limited and heater is off due to enabled scald protection !
+			//
+			final boolean deviceHeaterOn = device.status.flags == 0;
+
+			final int newDemandPowerWatt = toPowerWatt(device.status.power); // if power has been limited, this can be 0 even if user WANTS hot water
+
+			if (deviceHeaterOn && !status.isConsuming()) {
+				info("consumption started: " + newDemandPowerWatt / 1000 + " kW");
+				waterConsumptionStarted(newDemandPowerWatt);
 				result = result.and(UpdateResult.URGENT_UPDATES);
-			}
 
-			actualDemandTemperature = device.status.setpoint;
+			} else if (deviceHeaterOn && status.isConsuming() && newDemandPowerWatt != demandPowerWatt) {
+				info("demand power change: " + newDemandPowerWatt / 1000 + " kW");
+				waterConsumptionChanged(newDemandPowerWatt);
+				result = result.and(UpdateResult.URGENT_UPDATES);
+
+			} else if (!deviceHeaterOn && status.isConsuming()) {
+				info("consumption ended");
+				waterConsumptionEnded();
+				result = result.and(UpdateResult.URGENT_UPDATES);
+
+			} // else no state change
 
 			if (intakeWaterTemperature == UNDEFINED_TEMPERATURE || Math.abs(intakeWaterTemperature - device.status.tIn) > INTAKE_WATER_TEMP_CHANGE_IGNORE_DELTA) {
 				intakeWaterTemperature = device.status.tIn;
@@ -201,8 +216,8 @@ public class DeviceControllerImpl implements DeviceController {
 	/**
 	 * Invocation prompted by the actual physical device.
 	 * 
-	 * @param demandPowerUnits
-	 *            the power needed to satisfy the user demand (temperature, flow).
+	 * @param demandPowerWatt
+	 *            the power needed to satisfy the user demand (temperature, flow)
 	 */
 	void waterConsumptionStarted(int demandPowerWatt) {
 		assert demandPowerWatt >= 0 && demandPowerWatt <= deviceModel.getPowerMaxWatt();
@@ -213,9 +228,12 @@ public class DeviceControllerImpl implements DeviceController {
 
 	/**
 	 * Invocation prompted by the actual physical device.
+	 * 
+	 * @param newDemandPowerWatt
+	 *            the changed power needed to satisfy the user demand (temperature, flow)
 	 */
 	void waterConsumptionChanged(final int newDemandPowerWatt) {
-		demandPowerWatt = newDemandPowerWatt;
+		this.demandPowerWatt = newDemandPowerWatt;
 	}
 
 	/**
@@ -223,6 +241,7 @@ public class DeviceControllerImpl implements DeviceController {
 	 */
 	void waterConsumptionEnded() {
 		demandPowerWatt = 0;
+		this.userDemandTemperature = UNDEFINED_TEMPERATURE;
 		consumptionStartTime = NO_CONSUMPTION;
 		setStatus(DeviceStatus.CONSUMPTION_ENDED); // requires approval by scheduler
 	}
@@ -256,11 +275,11 @@ public class DeviceControllerImpl implements DeviceController {
 			if (internalApprovedPowerWatt != newApprovedPowerWatt) {
 				internalApprovedPowerWatt = newApprovedPowerWatt;
 				RemoteDeviceUpdate deviceUpdate = new RemoteDeviceUpdate(this.id);
-				// scald protection
+				// scald protection disablement / enablement
 				if (internalApprovedPowerWatt == UNLIMITED_POWER) {
 					scaldProtectionTemperature = UNDEFINED_TEMPERATURE;
 					// restore user-defined demand temperature (ASYNCHRONOUS device update):
-					deviceUpdate.clearScaldProtection(userDemandTemperature == UNDEFINED_TEMPERATURE ? actualDemandTemperature : userDemandTemperature);
+					deviceUpdate.clearScaldProtection(getDemandTemperature());
 					userDemandTemperature = UNDEFINED_TEMPERATURE;
 
 				} else { // limited power

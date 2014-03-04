@@ -250,7 +250,7 @@ public class SimHomeServerImpl extends AbstractSimObject implements SimHomeServe
 	public HomeServerResponse processSetScaldProtectionFlag(String id, boolean on) {
 		DeviceTapPointAdapter adapter = adapters.get(id);
 		if (adapter != null && !on) {
-			adapter.getPoint().setScaldProtectionTemperature(HotWaterTemperature.TEMP_MAX);
+			adapter.getPoint().setScaldProtectionTemperature(HotWaterTemperature.TEMP_MAX_60);
 		}
 		if (simDevices.containsKey(id)) {
 			return createResponse(false, false);

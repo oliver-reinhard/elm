@@ -36,8 +36,9 @@ public class DeviceTapPointAdapter implements SimModelListener {
 		case ACTUAL_TEMPERATURE:
 		case ACTUAL_FLOW:
 		case INTAKE_WATER_TEMPERATURE:
+		case SCALD_PROTECTION_TEMPERATURE:
 			device.status.power = point.getPowerUnits();
-			device.setHeaterOn(device.status.power > 0);
+			device.setHeaterOn(point.getFlags() == 0);
 			break;
 		case REFERENCE_TEMPERATURE:
 			device.setSetpoint(((HotWaterTemperature) event.getNewValue()).getUnits());

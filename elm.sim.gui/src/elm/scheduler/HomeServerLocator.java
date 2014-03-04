@@ -22,13 +22,13 @@ public class HomeServerLocator implements ServiceListener {
 
 	private static final Logger LOG = Logger.getLogger(HomeServerLocator.class.getName());
 
-	private final AbstractScheduler scheduler;
+	private final AbstractElmScheduler scheduler;
 	private final ElmUserFeedbackManager userFeedbackManager;
 	private final String homeServerPassword;
 
 	private JmDNS jmDNS;
 
-	public HomeServerLocator(AbstractScheduler scheduler, String homeServerPassword) {
+	public HomeServerLocator(AbstractElmScheduler scheduler, String homeServerPassword) {
 		assert scheduler != null;
 		assert homeServerPassword != null;
 		this.scheduler = scheduler;

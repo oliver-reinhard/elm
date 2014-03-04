@@ -56,7 +56,7 @@ public class SchedulerIntegrationTest {
 	HomeServerChangeListener hsL1;
 	HomeServerChangeListener hsL2;
 	HomeServerChangeListener hsL3;
-	Scheduler scheduler;
+	ElmScheduler scheduler;
 	SchedulerChangeListener statusL;
 
 	@Before
@@ -77,7 +77,7 @@ public class SchedulerIntegrationTest {
 		hsL3 = mock(HomeServerChangeListener.class);
 		hs3.addChangeListener(hsL3);
 
-		scheduler = new Scheduler(50_000, 30_000);
+		scheduler = new ElmScheduler(50_000, 30_000);
 		scheduler.setTimeService(timeService);
 		statusL = mock(SchedulerChangeListener.class);
 		scheduler.addChangeListener(statusL);
@@ -114,6 +114,7 @@ public class SchedulerIntegrationTest {
 			Device d1_1 = hs1_Devices.get(0);
 			Device d1_2 = hs1_Devices.get(1);
 			d1_2.status.power = toPowerUnits(20_000); // Turn tap 1-2 ON
+			d1_2.setHeaterOn(true);
 			//
 			// the following command would normally trigger a run but we have not started the scheduler => no run
 			hs1.updateDeviceControllers(hs1_Devices);
@@ -156,6 +157,7 @@ public class SchedulerIntegrationTest {
 			
 			// ON --> SATURATION
 			d2_2.status.power = toPowerUnits(20_000); // Turn tap 2-2 ON
+			d2_2.setHeaterOn(true);
 			hs2.updateDeviceControllers(hs2_Devices);
 			assertEquals(CONSUMPTION_STARTED, hs2.getDeviceController(d2_2.id).getStatus());
 			//
@@ -173,6 +175,7 @@ public class SchedulerIntegrationTest {
 
 			// SATURATION --> OVERLOAD
 			d3_2.status.power = toPowerUnits(20_000); // Turn tap 3-2 ON
+			d3_2.setHeaterOn(true);
 			hs3.updateDeviceControllers(hs3_Devices);
 			assertEquals(CONSUMPTION_STARTED, hs3.getDeviceController(d3_2.id).getStatus()); // tap 3-2 is CONSUMING (new)
 			//
@@ -190,6 +193,7 @@ public class SchedulerIntegrationTest {
 
 			// OVERLOAD --> SATURATION
 			d1_2.status.power = toPowerUnits(10_000); // Reduce tap 1-2 power => tap 3-2 can run as well
+			d1_2.setHeaterOn(true);
 			hs1.updateDeviceControllers(hs1_Devices);
 			//
 			// scheduler: run
@@ -206,6 +210,7 @@ public class SchedulerIntegrationTest {
 
 			// SATURATION --> ON
 			d2_2.status.power = toPowerUnits(0); // Turn tap 2-2 OFF
+			d2_2.setHeaterOn(false);
 			hs2.updateDeviceControllers(hs2_Devices);
 			//
 			// scheduler: run
@@ -222,6 +227,7 @@ public class SchedulerIntegrationTest {
 
 			// ON --> ON
 			d1_2.status.power = toPowerUnits(0); // Turn tap 1-2 OFF
+			d1_2.setHeaterOn(false);
 			hs1.updateDeviceControllers(hs1_Devices);
 			//
 			// scheduler: run
@@ -238,6 +244,7 @@ public class SchedulerIntegrationTest {
 
 			// ON --> ON
 			d3_2.status.power = toPowerUnits(0); // Turn tap 3-2 OFF
+			d3_2.setHeaterOn(false);
 			hs3.updateDeviceControllers(hs3_Devices);
 			//
 			// scheduler: run
@@ -388,6 +395,7 @@ public class SchedulerIntegrationTest {
 
 			// ON --> ON
 			d1_2.status.power = toPowerUnits(20_000); // *** Turn tap 1-2 ON
+			d1_2.setHeaterOn(true);
 			hs1.updateDeviceControllers(hs1_Devices);
 			//
 			// scheduler: run
@@ -405,6 +413,7 @@ public class SchedulerIntegrationTest {
 			
 			// ON --> ON
 			d2_2.status.power = toPowerUnits(5_000); // *** Turn tap 2-2 ON (low)
+			d2_2.setHeaterOn(true);
 			hs2.updateDeviceControllers(hs2_Devices);
 			//
 			// scheduler: run
@@ -422,6 +431,7 @@ public class SchedulerIntegrationTest {
 
 			// ON --> SATURATION
 			d2_2.status.power = toPowerUnits(20_000); // *** Turn tap 2-2 ON (high)
+			d2_2.setHeaterOn(true);
 			hs2.updateDeviceControllers(hs2_Devices);
 			//
 			// scheduler: run
@@ -444,6 +454,7 @@ public class SchedulerIntegrationTest {
 
 			// SATURATION --> SATURATION
 			d1_1.status.power = toPowerUnits(5_000); // *** Turn tap 1-1 ON (low)
+			d1_1.setHeaterOn(true);
 			hs1.updateDeviceControllers(hs1_Devices);
 			//
 			// scheduler: run
@@ -464,6 +475,7 @@ public class SchedulerIntegrationTest {
 
 			// SATURATION --> SATURATION
 			d1_1.status.power = toPowerUnits(0); // *** Turn tap 1-1 OFF
+			d1_1.setHeaterOn(false);
 			hs1.updateDeviceControllers(hs1_Devices);
 			//
 			// scheduler: run
@@ -484,6 +496,7 @@ public class SchedulerIntegrationTest {
 
 			// SATURATION --> OVERLOAD
 			d3_2.status.power = toPowerUnits(15_000); // *** Turn tap 3-2 ON => will not be allowed
+			d3_2.setHeaterOn(true);
 			hs3.updateDeviceControllers(hs3_Devices);
 			//
 			// scheduler: run
@@ -514,6 +527,7 @@ public class SchedulerIntegrationTest {
 
 			// OVERLOAD --> OVERLOAD
 			d3_2.status.power = toPowerUnits(11_000); // *** Turn tap 3-2 DOWN
+			d3_2.setHeaterOn(true);
 			hs3.updateDeviceControllers(hs3_Devices);
 			//
 			// scheduler: run
@@ -536,6 +550,7 @@ public class SchedulerIntegrationTest {
 
 			// OVERLOAD --> SATURATION
 			d3_2.status.power = toPowerUnits(4000); // *** Turn tap 3-2 DOWN => will now be allowed
+			d3_2.setHeaterOn(true);
 			hs3.updateDeviceControllers(hs3_Devices);
 			//
 			// scheduler: run
@@ -567,6 +582,7 @@ public class SchedulerIntegrationTest {
 
 			// SATURATION --> ON
 			d2_2.status.power = toPowerUnits(5_000); // *** Turn tap 2-2 ON (low)
+			d2_2.setHeaterOn(true);
 			hs2.updateDeviceControllers(hs2_Devices);
 			//
 			// scheduler: run
@@ -590,8 +606,10 @@ public class SchedulerIntegrationTest {
 
 			// ON --> ON
 			d2_2.status.power = toPowerUnits(0); // *** Turn tap 2-2 OFF
+			d2_2.setHeaterOn(false);
 			hs2.updateDeviceControllers(hs2_Devices);
 			d3_2.status.power = toPowerUnits(0); // *** Turn tap 3-2 OFF
+			d3_2.setHeaterOn(false);
 			hs3.updateDeviceControllers(hs3_Devices);
 			//
 			// scheduler: run
@@ -609,6 +627,7 @@ public class SchedulerIntegrationTest {
 
 			// ON --> ON
 			d1_2.status.power = toPowerUnits(0); // *** Turn tap 1-2 OFF
+			d1_2.setHeaterOn(false);
 			hs1.updateDeviceControllers(hs1_Devices);
 			//
 			// scheduler: run

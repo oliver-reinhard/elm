@@ -6,12 +6,12 @@ import elm.hs.api.model.ElmStatus;
 import elm.hs.api.model.Info;
 import elm.hs.api.model.Status;
 import elm.scheduler.HomeServerController;
-import elm.scheduler.Scheduler;
+import elm.scheduler.ElmScheduler;
 
 /**
  * A {@link DeviceController} manages one physical {@link Device} and is the devices interface for the scheduler. Despite its name the {@link DeviceController}
  * is a re-active object rather than an object with its own {@link Thread}. It reacts to events from the {@link HomeServerController} and from the
- * {@link Scheduler}.
+ * {@link ElmScheduler}.
  * <p>
  * {@link DeviceController} has the following responsibilities:
  * <ul>

@@ -40,7 +40,7 @@ public class SimTapPointUI extends AbstractTapPointUI {
 	class TemperaturePanel extends EnumSelectorPanel<HotWaterTemperature> {
 
 		TemperaturePanel() {
-			super("Temperatur", true, HotWaterTemperature.TEMP_MIN, HotWaterTemperature.TEMP_1, HotWaterTemperature.TEMP_2, HotWaterTemperature.TEMP_3, HotWaterTemperature.TEMP_4);
+			super("Temperatur", true, HotWaterTemperature.TEMP_MIN_19, HotWaterTemperature.TEMP_30, HotWaterTemperature.TEMP_38, HotWaterTemperature.TEMP_42, HotWaterTemperature.TEMP_48);
 		}
 
 		@Override
@@ -83,7 +83,7 @@ public class SimTapPointUI extends AbstractTapPointUI {
 					case ACTUAL_TEMPERATURE:
 						updateFromModel(); // power
 						break;
-					case SCALD_TEMPERATURE:
+					case SCALD_PROTECTION_TEMPERATURE:
 						updateReferenceTemperatureEnablement();
 						break;
 					case STATUS:
@@ -168,7 +168,7 @@ public class SimTapPointUI extends AbstractTapPointUI {
 	private void updateReferenceTemperatureEnablement() {
 		temperature.setEnabled(false); // disable all
 		List<HotWaterTemperature> toEnable = new ArrayList<HotWaterTemperature>();
-		if (HotWaterTemperature.TEMP_MIN.lessThan(model.getScaldProtectionTemperature())) {
+		if (HotWaterTemperature.TEMP_MIN_19.lessThan(model.getScaldProtectionTemperature())) {
 			// enable only those lower than the current reference:
 			for (HotWaterTemperature literal : temperature.getLiterals()) {
 				if (literal.getDegreesCelsius() <= model.getScaldProtectionTemperature().getDegreesCelsius()) {

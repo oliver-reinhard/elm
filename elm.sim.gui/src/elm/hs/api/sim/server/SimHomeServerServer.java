@@ -131,7 +131,7 @@ public class SimHomeServerServer {
 		private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
 		/**
-		 * Parses a POST request of {@code /devices/feedback} with a content of one JSON'ed {@link ElmUserFeedback} object.
+		 * Parses a POST request of {@code /devices/feedback} with a content of one JSON'ed {@link List} of {@link ElmUserFeedback}.
 		 */
 		@Override
 		protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -141,8 +141,7 @@ public class SimHomeServerServer {
 				int len = stream.read(buf);
 				if (len > 0) {
 					String requestAsString = new String(buf, 0, len);
-					@SuppressWarnings("unchecked")
-					final List<ElmUserFeedback> feedback = gson.fromJson(requestAsString, List.class);
+					final List<ElmUserFeedback> feedback = gson.fromJson(requestAsString, ElmUserFeedback.ELM_USER_FEEDBACK_LIST_TYPE);
 					if (feedback != null) {
 						database.processUserFeedback(feedback);
 						response.setStatus(HttpStatus.OK_200);
@@ -152,7 +151,7 @@ public class SimHomeServerServer {
 			} catch (IOException e) {
 				log.log(Level.SEVERE, "Unexpected request data: \"" + buf + "\"", e);
 			}
-			response.sendError(HttpStatus.BAD_REQUEST_400, "ElmDeviceUserFeedback object expected");
+			response.sendError(HttpStatus.BAD_REQUEST_400, "List of ElmDeviceUserFeedback expected");
 		}
 
 		/**

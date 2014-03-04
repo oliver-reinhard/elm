@@ -23,7 +23,7 @@ import elm.scheduler.model.HomeServerChangeListener;
  * scheduling cycle.
  * </p>
  */
-public abstract class AbstractScheduler implements HomeServerChangeListener {
+public abstract class AbstractElmScheduler implements HomeServerChangeListener {
 
 	/** Default scheduler cycle interval after which the scheduler checks for non-urgent device updates: {@value #SCHEDULING_INTERVAL_MILLIS_DEFAULT} */
 	public static final int SCHEDULING_INTERVAL_MILLIS_DEFAULT = 1_000;
