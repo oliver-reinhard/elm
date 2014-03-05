@@ -113,18 +113,18 @@ public class DeviceControllerTest {
 		assert d.status.tIn == 100; // 10°C
 		// initialize DeviceManager:
 		UpdateResult result = di1.update(d);
-		assertEquals(100, di1.getIntakeWaterTemperature());
+		assertEquals(100, di1.getIntakeWaterTemperatureUnits());
 		assertEquals(UpdateResult.MINOR_UPDATES, result);
 
 		d.status.tIn = 110; // 11°C
 		result = di1.update(d);
 		// minor difference ignored:
-		assertEquals(100, di1.getIntakeWaterTemperature());
+		assertEquals(100, di1.getIntakeWaterTemperatureUnits());
 		assertEquals(UpdateResult.NO_UPDATES, result);
 
 		d.status.tIn = 125; // 12.5°C
 		result = di1.update(d);
-		assertEquals(125, di1.getIntakeWaterTemperature());
+		assertEquals(125, di1.getIntakeWaterTemperatureUnits());
 		// minor update while not consuming:
 		assertEquals(UpdateResult.MINOR_UPDATES, result);
 
@@ -133,7 +133,7 @@ public class DeviceControllerTest {
 		di1.update(d);
 		d.status.tIn = 100; // 10°C
 		result = di1.update(d);
-		assertEquals(100, di1.getIntakeWaterTemperature());
+		assertEquals(100, di1.getIntakeWaterTemperatureUnits());
 		// urgent update while consuming:
 		assertEquals(UpdateResult.URGENT_UPDATES, result);
 	}
@@ -205,7 +205,7 @@ public class DeviceControllerTest {
 		di1.updateUserFeedback(ElmStatus.ON, 0);
 		assertEquals(CONSUMPTION_APPROVED, di1.getStatus());
 		assertEquals(DeviceModel.SIM.getPowerMaxWatt(), di1.getApprovedPowerWatt());
-		assertEquals(UNDEFINED_TEMPERATURE, di1.getScaldProtectionTemperature());
+		assertEquals(UNDEFINED_TEMPERATURE, di1.getScaldProtectionTemperatureUnits());
 		verify(hs, times(2)).dispatchElmUserFeedback(di1.getId(), ElmStatus.ON, 0);
 		//
 		di1.update(createDeviceWithStatus(1, 1, 0)); // turn OFF
@@ -232,26 +232,26 @@ public class DeviceControllerTest {
 		di1.updateUserFeedback(ElmStatus.OVERLOAD, EXPECTED_WAITING_TIME);
 		assertEquals(CONSUMPTION_LIMITED, di1.getStatus());
 		assertEquals(5_000, di1.getApprovedPowerWatt());
-		assertEquals(242, di1.getScaldProtectionTemperature());
+		assertEquals(242, di1.getScaldProtectionTemperatureUnits());
 		verify(hs).putDeviceUpdate(Mockito.<RemoteDeviceUpdate> any());
 		// next poll returns setpoint = scald-protection temperature:
 		d.status.setpoint = 242;
 		di1.update(d);
-		assertEquals(242, di1.getActualDemandTemperature());
-		assertEquals(referenceTemperature, di1.getUserDemandTemperature());
+		assertEquals(242, di1.getActualDemandTemperatureUnits());
+		assertEquals(referenceTemperature, di1.getUserDemandTemperatureUnits());
 
 		// APPROVED = Unlimited
 		di1.updateMaximumPowerConsumption(ElmStatus.SATURATION, UNLIMITED_POWER);
 		di1.updateUserFeedback(ElmStatus.SATURATION, 0);
 		assertEquals(CONSUMPTION_APPROVED, di1.getStatus());
 		assertEquals(DeviceModel.SIM.getPowerMaxWatt(), di1.getApprovedPowerWatt());
-		assertEquals(UNDEFINED_TEMPERATURE, di1.getScaldProtectionTemperature());
+		assertEquals(UNDEFINED_TEMPERATURE, di1.getScaldProtectionTemperatureUnits());
 		verify(hs, times(2)).putDeviceUpdate(Mockito.<RemoteDeviceUpdate> any());
 		// next poll returns restored setpoint temperature:
 		d.status.setpoint = referenceTemperature;
 		di1.update(d);
-		assertEquals(referenceTemperature, di1.getActualDemandTemperature());
-		assertEquals(UNDEFINED_TEMPERATURE, di1.getUserDemandTemperature());
+		assertEquals(referenceTemperature, di1.getActualDemandTemperatureUnits());
+		assertEquals(UNDEFINED_TEMPERATURE, di1.getUserDemandTemperatureUnits());
 	}
 
 	@Test
@@ -266,37 +266,37 @@ public class DeviceControllerTest {
 		assertEquals(CONSUMPTION_DENIED, di1.getStatus());
 		assertEquals(0, di1.getApprovedPowerWatt());
 		final short minScaldTemp = DeviceModel.SIM.getTemperatureOff();
-		assertEquals(minScaldTemp, di1.getScaldProtectionTemperature());
+		assertEquals(minScaldTemp, di1.getScaldProtectionTemperatureUnits());
 		verify(hs).putDeviceUpdate(Mockito.<RemoteDeviceUpdate> any());
 		// next poll returns setpoint = scald-protection temperature:
 		d.status.setpoint = minScaldTemp;
 		di1.update(d);
-		assertEquals(minScaldTemp, di1.getActualDemandTemperature());
-		assertEquals(380, di1.getUserDemandTemperature());
+		assertEquals(minScaldTemp, di1.getActualDemandTemperatureUnits());
+		assertEquals(380, di1.getUserDemandTemperatureUnits());
 
 		// APPROVED = 5_000 W
 		di1.updateMaximumPowerConsumption(ElmStatus.OVERLOAD, 5_000);
 		di1.updateUserFeedback(ElmStatus.OVERLOAD, EXPECTED_WAITING_TIME);
 		assertEquals(CONSUMPTION_LIMITED, di1.getStatus());
 		assertEquals(5_000, di1.getApprovedPowerWatt());
-		assertEquals(242, di1.getScaldProtectionTemperature());
+		assertEquals(242, di1.getScaldProtectionTemperatureUnits());
 		verify(hs, times(2)).putDeviceUpdate(Mockito.<RemoteDeviceUpdate> any());
 		// next poll returns setpoint = scald-protection temperature:
 		d.status.setpoint = 242;
 		di1.update(d);
-		assertEquals(242, di1.getActualDemandTemperature());
-		assertEquals(380, di1.getUserDemandTemperature());
+		assertEquals(242, di1.getActualDemandTemperatureUnits());
+		assertEquals(380, di1.getUserDemandTemperatureUnits());
 
 		// APPROVED = Unlimited
 		di1.updateMaximumPowerConsumption(ElmStatus.SATURATION, UNLIMITED_POWER);
 		di1.updateUserFeedback(ElmStatus.SATURATION, 0);
 		assertEquals(CONSUMPTION_APPROVED, di1.getStatus());
 		assertEquals(DeviceModel.SIM.getPowerMaxWatt(), di1.getApprovedPowerWatt());
-		assertEquals(UNDEFINED_TEMPERATURE, di1.getScaldProtectionTemperature());
+		assertEquals(UNDEFINED_TEMPERATURE, di1.getScaldProtectionTemperatureUnits());
 		verify(hs, times(3)).putDeviceUpdate(Mockito.<RemoteDeviceUpdate> any());
 		d.status.setpoint = 380;
 		di1.update(d);
-		assertEquals(380, di1.getActualDemandTemperature());
-		assertEquals(UNDEFINED_TEMPERATURE, di1.getUserDemandTemperature());
+		assertEquals(380, di1.getActualDemandTemperatureUnits());
+		assertEquals(UNDEFINED_TEMPERATURE, di1.getUserDemandTemperatureUnits());
 	}
 }

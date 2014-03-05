@@ -45,33 +45,37 @@ public class HomeServerInternalApiClient extends AbstractHomeServerClient implem
 	 * 
 	 * @param deviceID
 	 *            cannot be {@code null} or empty
-	 * @param newTemp
+	 * @param newTemperatureUnits
 	 *            in 1/10°C, cannot be {@code < 0}
-	 * @return the new scald temperature in in 1/10 degree Celsius, or {@code null}; never {@code null} (the value is a {@link Short} for mocking purposes)
+	 * @return the new scald temperature in 1/10°C, or {@code null}; never {@code null} (the value is a {@link Short} for mocking purposes)
 	 * @throws ClientException
 	 *             if the operation ended in a status {@code != 200} or if the execution threw an exception
 	 */
-	public Short setScaldProtectionTemperature(String deviceID, int newTemp) throws ClientException {
-		assert newTemp >= 0;
+	public Short setScaldProtectionTemperature(String deviceID, int newTemperatureUnits) throws ClientException {
+		assert newTemperatureUnits >= 100;
 		assert deviceID != null && !deviceID.isEmpty();
 
-		publicClient.setReferenceTemperature(deviceID, newTemp);
+		// Remove reference-temperature protection flag => changeable (this enables multiple successive calls of this method):
+		doPost("/cmd/VF/" + deviceID, "data=0", new int[] { HttpStatus.OK_200, HomeServerPublicApiClient.ERROR_500_FIX});
+		// Set actual temperature:
+		publicClient.setReferenceTemperature(deviceID, newTemperatureUnits);
 		// Set reference-temperature protection flag => no longer user-changeable
 		doPost("/cmd/VF/" + deviceID, "data=1", new int[] { HttpStatus.OK_200, HomeServerPublicApiClient.ERROR_500_FIX});
-		// scald protection value is in FULL DEGREES Celcius!
-		ContentResponse response = doPost("/cmd/Vv/" + deviceID, "data=" + (newTemp / 10), new int[] { HttpStatus.OK_200, HomeServerPublicApiClient.ERROR_500_FIX});
+		// scald-protection temperature value is in FULL DEGREES Celsius!
+		ContentResponse response = doPost("/cmd/Vv/" + deviceID, "data=" + (newTemperatureUnits / 10), new int[] { HttpStatus.OK_200, HomeServerPublicApiClient.ERROR_500_FIX});
 		if (response != null) {
 			final HomeServerResponse result = getGson().fromJson(response.getContentAsString(), HomeServerResponse.class);
 			if (result.response == null || result.response.data == null) {
 				log.severe("Setting scald temperature failed: no result returned");
-				throw new ClientException(ClientException.Error.APPLICATION_DATA_ERROR);
+				throw new ClientException(ClientException.Error.APPLICATION_DATA_ERROR, "Device " + deviceID, null);
 			}
 			final String confirmedTemp = result.response.data; // response is "Vv??" where ?? is a number
-			short value = Short.parseShort(confirmedTemp.substring(2));
-			log.info("New scald temperature = " + value);
+			// return temperature value is in FULL DEGREES Celsius!
+			short value = (short) (Short.parseShort(confirmedTemp.substring(2))*10);
+			log.info("Device " + deviceID + ": Returned scald temperature = " + value);
 			return value;
 		}
-		throw new ClientException(ClientException.Error.APPLICATION_DATA_ERROR);
+		throw new ClientException(ClientException.Error.APPLICATION_DATA_ERROR, "Device " + deviceID + ": no response", null);
 	}
 
 	/**
@@ -88,6 +92,7 @@ public class HomeServerInternalApiClient extends AbstractHomeServerClient implem
 		assert previousTemp == null || previousTemp >= 0;
 		assert deviceID != null && !deviceID.isEmpty();
 
+		// Remove reference-temperature protection flag => changeable:
 		doPost("/cmd/VF/" + deviceID, "data=0", new int[] { HttpStatus.OK_200, HomeServerPublicApiClient.ERROR_500_FIX });
 		if (previousTemp != null) {
 			publicClient.setReferenceTemperature(deviceID, previousTemp);

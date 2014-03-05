@@ -29,7 +29,7 @@ public class HomeServerTestClient extends AbstractCommandLineClient {
 
 		HomeServerInternalApiClient internalClient = null;
 		if (useInternalClient) {
-			internalClient = new HomeServerInternalApiClient(internalBaseUri, user, password, publicClient);
+			internalClient = new HomeServerInternalApiClient(user, password, publicClient);
 			// ClientUtil.initSslContextFactory(internalClient.getClient());
 			internalClient.setLogLevel(verbose ? Level.INFO : Level.SEVERE);
 		}

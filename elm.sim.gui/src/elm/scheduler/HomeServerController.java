@@ -98,8 +98,8 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 		publicClient = new HomeServerPublicApiClient(homeServer.getUri(), HomeServerService.ADMIN_USER, homeServer.getPassword());
 		ClientUtil.initSslContextFactory(publicClient.getClient());
 
-		internalClient = new HomeServerInternalApiClient(homeServer.getUri(), HomeServerService.ADMIN_USER, homeServer.getPassword(), publicClient);
-		// ClientUtil.initSslContextFactory(internalClient.getClient());
+		internalClient = new HomeServerInternalApiClient(HomeServerService.ADMIN_USER, homeServer.getPassword(), publicClient);
+//		ClientUtil.initSslContextFactory(internalClient.getClient());
 		
 		setState(State.CONNECTING);
 		runner = new Thread(this, HomeServerController.class.getSimpleName() + " " + homeServer.getUri());
@@ -119,7 +119,9 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 		try {
 			try {
 				publicClient.start();
+				log.info(publicClient.getBaseUri() + ": public client started");
 				internalClient.start();
+				log.info(internalClient.getBaseUri() + ": internal client started");
 				scheduler.addHomeServer(homeServer);
 
 				// Feedback management

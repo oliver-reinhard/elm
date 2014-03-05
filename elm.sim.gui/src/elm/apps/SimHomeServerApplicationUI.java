@@ -11,17 +11,18 @@ import javax.swing.JFrame;
 
 import elm.hs.api.HomeServerService;
 import elm.hs.api.sim.server.SimHomeServerServer;
+import elm.sim.ui.AbstractSimServerApplicationConfiguration;
 import elm.sim.ui.SimServerApplicationUI;
 import elm.sim.ui.SimpleSimServerApplicationConfiguration;
 import elm.util.ElmLogFormatter;
 
 public class SimHomeServerApplicationUI {
 
-	public static final int REGISTERED_SERVER_PORT = 9090;
+	public static final int REGISTERED_SERVER_PORT = HomeServerService.INTERNAL_API_PORT;
 
 	private static Logger LOG;
 
-	public static void main(String[] args) {
+	public static void run(AbstractSimServerApplicationConfiguration configuration, String title, int width, int height) {
 		try {
 			ElmLogFormatter.init();
 			LOG = Logger.getLogger(SimHomeServerApplicationUI.class.getName());
@@ -29,11 +30,12 @@ public class SimHomeServerApplicationUI {
 			final JmDNS jmDNS = JmDNS.create();
 			final ServiceInfo serviceInfo = ServiceInfo.create(HomeServerService.DNS_SD_HS_SERVICE_TYPE, HomeServerService.DNS_SD_HS_SIM_SERVICE_NAME,
 					REGISTERED_SERVER_PORT, "Home Server and ELM-Feedback Provider");
-
-			SimpleSimServerApplicationConfiguration configuration = new SimpleSimServerApplicationConfiguration();
+			
 			configuration.init(false, REGISTERED_SERVER_PORT); // don't show SimpleSchedulerUI
+			
 			SimServerApplicationUI ui = new SimServerApplicationUI(configuration);
-			ui.setTitle(HomeServerService.DNS_SD_HS_SIM_SERVICE_NAME);
+			ui.setTitle(title);
+			ui.setSize(width, height);
 			ui.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 			ui.addWindowListener(new WindowAdapter() {
 				@Override
@@ -59,6 +61,10 @@ public class SimHomeServerApplicationUI {
 			LOG.log(Level.SEVERE, HomeServerService.DNS_SD_HS_SIM_SERVICE_NAME + " start failed", e);
 			System.exit(1);
 		}
+	}
+
+	public static void main(String[] args) {
+		run(new SimpleSimServerApplicationConfiguration(), HomeServerService.DNS_SD_HS_SIM_SERVICE_NAME, 700, 600);
 	}
 
 	static void info(String action) {

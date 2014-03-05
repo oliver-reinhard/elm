@@ -240,7 +240,7 @@ public class SimHomeServerImpl extends AbstractSimObject implements SimHomeServe
 		if (simDevices.containsKey(id)) {
 			HomeServerResponse response = createResponse(false, false);
 			response.response = new Response();
-			response.response.data = Short.toString(temperature);
+			response.response.data = "Vv" + Short.toString(temperature);
 			return response;
 		}
 		return null;

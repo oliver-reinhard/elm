@@ -108,7 +108,7 @@ public abstract class AbstractJSONClient {
 			final String responseAsString = response.getContentAsString();
 			int status = response.getStatus();
 			if (!isSuccess(httpSuccessStatuses, status)) {
-				log.log(Level.SEVERE, "Querying resource path failed: " + (resourcePath.isEmpty() ? "\"\"" : resourcePath) + ", Status: " + status);
+				log.log(Level.SEVERE, "Querying resource path failed: " + getBaseUri() + (resourcePath.isEmpty() ? "\"\"" : resourcePath) + ", Status: " + status);
 				if (log.isLoggable(Level.INFO)) {
 					final String desc = "GET " + resourcePath + " Response";
 					System.out.println(desc + " status    = " + status);
@@ -209,7 +209,7 @@ public abstract class AbstractJSONClient {
 
 			final String desc = log.isLoggable(Level.INFO) ? methodStr + " " + resourcePath + " (" + content + ") Response" : null;
 			if (!isSuccess(httpSuccessStatuses, status)) {
-				log.log(Level.SEVERE, methodStr + ": resource path failed: " + resourcePath + ", Status: " + status);
+				log.log(Level.SEVERE, methodStr + ": resource path failed: "  + getBaseUri() + resourcePath + ", Status: " + status);
 				if (log.isLoggable(Level.INFO)) {
 					System.out.println(desc + " status    = " + status);
 				}

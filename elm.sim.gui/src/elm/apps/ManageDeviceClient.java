@@ -1,6 +1,5 @@
 package elm.apps;
 
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.logging.Level;
 
@@ -25,7 +24,7 @@ public class ManageDeviceClient extends AbstractCommandLineClient {
 	private HomeServerPublicApiClient publicClient;
 	private HomeServerInternalApiClient internalClient;
 	private Command cmd = Command.LIST;
-	private int temperature;
+	private int temperatureCelcius;
 
 	enum Command {
 		LIST("ls"), POLL("poll"), ADD("add"), REMOVE("rm"), SET("set"), REDUCE("reduce"), UNREDUCE("unreduce");
@@ -80,7 +79,7 @@ public class ManageDeviceClient extends AbstractCommandLineClient {
 			if (temperatureStr == null) {
 				throw new ParseException("temperature missing (-" + OPT_TEMPERATURE + ")");
 			}
-			temperature = Integer.parseInt(temperatureStr);
+			temperatureCelcius = Integer.parseInt(temperatureStr);
 			useInternalClient = true;
 		}
 	}
@@ -93,8 +92,8 @@ public class ManageDeviceClient extends AbstractCommandLineClient {
 
 		internalClient = null;
 		if (useInternalClient) {
-			internalClient = new HomeServerInternalApiClient(URI.create("http://192.168.204.204:8080"), user, password, publicClient);
-			ClientUtil.initSslContextFactory(internalClient.getClient());
+			internalClient = new HomeServerInternalApiClient(user, password, publicClient);
+//			ClientUtil.initSslContextFactory(internalClient.getClient());
 			internalClient.setLogLevel(verbose ? Level.INFO : Level.SEVERE);
 		}
 
@@ -181,17 +180,18 @@ public class ManageDeviceClient extends AbstractCommandLineClient {
 	}
 
 	private void cmdSet() throws ClientException {
-		publicClient.setReferenceTemperature(deviceID, temperature*10);
+		publicClient.setReferenceTemperature(deviceID, temperatureCelcius*10);
 		cmdList();
 	}
 
 	private void cmdReduce() throws ClientException {
-		internalClient.setScaldProtectionTemperature(deviceID, temperature*10);
+		Short actualTemperatureUnits = internalClient.setScaldProtectionTemperature(deviceID, temperatureCelcius*10);
+		LOG.info("Actual scald-protection temperature: " + actualTemperatureUnits/10 + "°C");
 		cmdList();
 	}
 
 	private void cmdUnreduce() throws ClientException {
-		internalClient.clearScaldProtection(deviceID, temperature*10);
+		internalClient.clearScaldProtection(deviceID, temperatureCelcius*10);
 		cmdList();
 	}
 

@@ -18,9 +18,9 @@ import elm.scheduler.ElmUserFeedbackClient;
 import elm.util.ClientException;
 
 public class HomeServerPublicApiClient extends AbstractHomeServerClient implements ElmUserFeedbackClient {
-	
+
 	/** FIXME As of 2014-03-05 certain POST and PUT operations return an error 500 while still processing the request OK. */
-	public static final int ERROR_500_FIX =  HttpStatus.INTERNAL_SERVER_ERROR_500;
+	public static final int ERROR_500_FIX = HttpStatus.INTERNAL_SERVER_ERROR_500;
 
 	private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 

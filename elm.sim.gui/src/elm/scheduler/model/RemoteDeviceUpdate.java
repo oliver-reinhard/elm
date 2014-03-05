@@ -11,12 +11,12 @@ public class RemoteDeviceUpdate {
 	private final String id;
 	
 	/** The new scald-protection temperature, in [1/10°C]. */
-	private Short scaldProtectionTemperature;
+	private Short scaldProtectionTemperatureUnits;
 	
 	private boolean clearScaldProtectionFlag;
 	
 	/** The temperature before scald protection became effective, in [1/10°C]. */
-	private Short previousDemandTemperature;
+	private Short previousDemandTemperatureUnits;
 
 	/**
 	 * @param deviceId
@@ -34,28 +34,28 @@ public class RemoteDeviceUpdate {
 	/**
 	 * Sets the scald-protection temperature (i.e. a hard <em>upper</em> temperature limit) on the physical device.
 	 * 
-	 * @param temperature
+	 * @param temperatureUnits
 	 *            the new scald-protection temperature in [1/10°C]
 	 */
-	public void setScaldProtectionTemperature(short temperature) {
-		assert temperature != DeviceController.UNDEFINED_TEMPERATURE && temperature > 0;
+	public void setScaldProtectionTemperature(short temperatureUnits) {
+		assert temperatureUnits != DeviceController.UNDEFINED_TEMPERATURE && temperatureUnits > 0;
 		this.clearScaldProtectionFlag = false;
-		this.scaldProtectionTemperature = temperature;
-		this.previousDemandTemperature = null;
+		this.scaldProtectionTemperatureUnits = temperatureUnits;
+		this.previousDemandTemperatureUnits = null;
 	}
 
 	/**
 	 * Clears the scald-protection (i.e. the hard <em>upper</em> temperature limit) the on the physical device and restore the reference temperature as set by
 	 * the user before scald-protection became effective.
 	 * 
-	 * @param previousDemandTemperature
-	 *            reference temperature as set by the user before scald-protection became effective in [1/10°C]
+	 * @param previousDemandTemperatureUnits
+	 *            reference temperature as set by the user before scald-protection became effective, in [1/10°C]
 	 */
-	public void clearScaldProtection(Short previousDemandTemperature) {
-		assert previousDemandTemperature == null || previousDemandTemperature != DeviceController.UNDEFINED_TEMPERATURE && previousDemandTemperature > 0;
+	public void clearScaldProtection(Short previousDemandTemperatureUnits) {
+		assert previousDemandTemperatureUnits == null || previousDemandTemperatureUnits != DeviceController.UNDEFINED_TEMPERATURE && previousDemandTemperatureUnits > 0;
 		this.clearScaldProtectionFlag = true;
-		this.previousDemandTemperature = previousDemandTemperature;
-		this.scaldProtectionTemperature = null;
+		this.previousDemandTemperatureUnits = previousDemandTemperatureUnits;
+		this.scaldProtectionTemperatureUnits = null;
 	}
 
 	/**
@@ -67,13 +67,18 @@ public class RemoteDeviceUpdate {
 	 *            cannot be {@code null}
 	 */
 	public void execute(RemoteDeviceUpdateClient client, Logger log) throws ClientException {
-		if (scaldProtectionTemperature != null) {
-			short actualValue = (short) client.setScaldProtectionTemperature(id, scaldProtectionTemperature);
-			log.info("Device " + id + ": scald-protection temperature set to: " + (actualValue / 10) + "°C");
+		if (scaldProtectionTemperatureUnits != null) {
+			log.info("Device " + id + ": setting scald-protection temperature to " + (scaldProtectionTemperatureUnits / 10) + "°C");
+			short actualValueUnits = (short) client.setScaldProtectionTemperature(id, scaldProtectionTemperatureUnits);
+			if (actualValueUnits == 0) {
+				log.severe("Device " + id + ": scald-protection could not be set. Requested: " + (scaldProtectionTemperatureUnits / 10) + "°C");
+			}
 
 		} else if (clearScaldProtectionFlag) {
-			client.clearScaldProtection(id, previousDemandTemperature == null ? null : new Integer(previousDemandTemperature));
-			log.info("Device " + id + ": cleared scald-protection");
+			final Integer previousTemperatureUnits = previousDemandTemperatureUnits == null ? null : new Integer(previousDemandTemperatureUnits);
+			final String previousTemperatureCelsius = previousDemandTemperatureUnits == null ? "unknown" : (previousDemandTemperatureUnits/10) + "°C";
+			log.info("Device " + id + ": clearing scald protection, restoring previous temperature: " + previousTemperatureCelsius);
+			client.clearScaldProtection(id, previousTemperatureUnits);
 		}
 	}
 }

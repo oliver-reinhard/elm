@@ -12,6 +12,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -152,8 +153,8 @@ public class HomeServerTest {
 			//
 			RemoteDeviceUpdateClient client = mock(RemoteDeviceUpdateClient.class);
 			hs1.executeRemoteDeviceUpdates(client, log);
-			verify(client).clearScaldProtection(d1_1.id, null);
-			verify(client).clearScaldProtection(d1_2.id, null);
+			verify(client).clearScaldProtection(d1_1.id, 380);
+			verify(client).clearScaldProtection(d1_2.id, 380);
 			
 			// Scheduler approves only LIMITED power:
 			di1_2.updateMaximumPowerConsumption(ElmStatus.OVERLOAD, ACTUAL_POWER_WATT);
@@ -163,7 +164,7 @@ public class HomeServerTest {
 			hs1.fireDeviceUpdatesPending();
 			verify(hsL1).deviceUpdatesPending(hs1); // listener was notified
 			//
-			short scaldProtectionTemperature = ((DeviceControllerImpl) di1_2).getScaldProtectionTemperature();
+			short scaldProtectionTemperature = ((DeviceControllerImpl) di1_2).getScaldProtectionTemperatureUnits();
 			when(client.setScaldProtectionTemperature(di1_2.getId(), scaldProtectionTemperature)).thenReturn(scaldProtectionTemperature);
 			hs1.executeRemoteDeviceUpdates(client, log);
 			assertNull(hs1.getPendingUpdates());
@@ -182,7 +183,7 @@ public class HomeServerTest {
 			hs1.executeRemoteDeviceUpdates(client, log);
 			assertNull(hs1.getPendingUpdates());
 			// ensure the original reference Temperature is restored:
-			verify(client).clearScaldProtection(di1_2.getId(), new Integer(referenceTemperature));
+			verify(client, times(2)).clearScaldProtection(di1_2.getId(), new Integer(referenceTemperature));
 			
 		} catch (ClientException | UnsupportedDeviceModelException e) {
 			fail(e.toString());
