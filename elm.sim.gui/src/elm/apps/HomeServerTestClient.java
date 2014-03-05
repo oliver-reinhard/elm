@@ -42,6 +42,24 @@ public class HomeServerTestClient extends AbstractCommandLineClient {
 					print("Server Status", publicClient, response);
 				}
 			}
+			
+			{
+				HomeServerResponse response = publicClient.getAllDevices();
+				if (response.devices != null) {
+					for (Device dev : response.devices) {
+						if (!dev._isAlive()) {
+							LOG.warning("All devices: Device " + dev.id + ": " + dev._getError().name());
+							// Do not send request with this device ID.
+						} else if (!dev._isOk()) {
+							LOG.warning("All devices: Device " + dev.id + ": " + dev._getError());
+						}
+					}
+					if (verbose) {
+						print("All Devices", publicClient, response);
+					}
+				}
+			}
+			
 			{
 				HomeServerResponse response = publicClient.getRegisteredDevices();
 				if (response.devices != null) {

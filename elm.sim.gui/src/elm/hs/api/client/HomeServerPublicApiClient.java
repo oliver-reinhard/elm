@@ -13,11 +13,15 @@ import elm.hs.api.HomeServerService;
 import elm.hs.api.model.ElmUserFeedback;
 import elm.hs.api.model.HomeServerResponse;
 import elm.hs.api.model.Service;
+import elm.hs.api.model.Status;
 import elm.scheduler.ElmUserFeedbackClient;
 import elm.util.ClientException;
 
 public class HomeServerPublicApiClient extends AbstractHomeServerClient implements ElmUserFeedbackClient {
 	
+	/** FIXME As of 2014-03-05 certain POST and PUT operations return an error 500 while still processing the request OK. */
+	public static final int ERROR_500_FIX =  HttpStatus.INTERNAL_SERVER_ERROR_500;
+
 	private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
 	/**
@@ -74,7 +78,7 @@ public class HomeServerPublicApiClient extends AbstractHomeServerClient implemen
 	}
 
 	/**
-	 * Initializes a device discovery an an update of the its device list at the Home Server.
+	 * Initializes a device discovery and an update of the its device list at the Home Server.
 	 * <p>
 	 * <b>Note: </b>this method does not need to be called. Discovery is used before new devices can be registered at the Home Server.
 	 * </p>
@@ -105,8 +109,13 @@ public class HomeServerPublicApiClient extends AbstractHomeServerClient implemen
 	}
 
 	/**
+	 * Gets the {@link Status} information for the given device.
+	 * <p>
+	 * <em>Note: </em>This method only succeeds for devices that have been {@link #manageDevice(String) added} as a managed device.
+	 * </p>
 	 * 
 	 * @param deviceID
+	 *            cannot be {@code null} or empty
 	 * @return never {@code null}
 	 * @throws ClientException
 	 *             if the operation ended in a status {@code != 200} or if the execution threw an exception
@@ -114,6 +123,32 @@ public class HomeServerPublicApiClient extends AbstractHomeServerClient implemen
 	public HomeServerResponse getDeviceStatus(String deviceID) throws ClientException {
 		assert deviceID != null && !deviceID.isEmpty();
 		return doGet("/devices/status/" + deviceID, HomeServerResponse.class);
+	}
+
+	/**
+	 * Configures a device as managed by this Home Server.
+	 * 
+	 * @param deviceID
+	 *            cannot be {@code null} or empty
+	 * @throws ClientException
+	 *             if the operation ended in a status {@code != 200} or if the execution threw an exception
+	 */
+	public void manageDevice(String deviceID) throws ClientException {
+		assert deviceID != null && !deviceID.isEmpty();
+		doPut("/devices/" + deviceID, "forcedConnect=true", new int[] { HttpStatus.OK_200 });
+	}
+
+	/**
+	 * Frees a device from being managed this Home Server.
+	 * 
+	 * @param deviceID
+	 *            cannot be {@code null} or empty
+	 * @throws ClientException
+	 *             if the operation ended in a status {@code != 200} or if the execution threw an exception
+	 */
+	public void unmanageDevice(String deviceID) throws ClientException {
+		assert deviceID != null && !deviceID.isEmpty();
+		doDelete("/devices/" + deviceID, "", new int[] { HttpStatus.OK_200 });
 	}
 
 	/**
@@ -145,7 +180,7 @@ public class HomeServerPublicApiClient extends AbstractHomeServerClient implemen
 		assert newTemp >= 0;
 		assert deviceID != null && !deviceID.isEmpty();
 
-		doPost("/devices/setpoint/" + deviceID, "data=" + newTemp, new int[] { HttpStatus.OK_200 });
+		doPost("/devices/setpoint/" + deviceID, "data=" + newTemp, new int[] { HttpStatus.OK_200, ERROR_500_FIX });
 	}
 
 	// ------ Services offered by Sim Home Servers ------
@@ -160,6 +195,7 @@ public class HomeServerPublicApiClient extends AbstractHomeServerClient implemen
 		}
 		return false;
 	}
+
 	@Override
 	public HomeServerResponse getFeedbackDevices() throws ClientException {
 		return doGet("/devices/feedback", HomeServerResponse.class);
@@ -168,7 +204,6 @@ public class HomeServerPublicApiClient extends AbstractHomeServerClient implemen
 	@Override
 	public void updateUserFeedback(List<ElmUserFeedback> feedback) throws ClientException {
 		assert feedback != null;
-
 		doPost("/devices/feedback", gson.toJson(feedback, ElmUserFeedback.ELM_USER_FEEDBACK_LIST_TYPE), new int[] { HttpStatus.OK_200 });
 	}
 }

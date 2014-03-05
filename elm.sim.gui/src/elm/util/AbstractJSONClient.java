@@ -151,21 +151,65 @@ public abstract class AbstractJSONClient {
 	 * @return {@code null} if the post ended in a non-success status or if it threw an exception, else the response object
 	 */
 	protected synchronized ContentResponse doPost(String resourcePath, String content, int[] httpSuccessStatuses) throws ClientException {
+		return internalRequest(resourcePath, content, httpSuccessStatuses, HttpMethod.POST);
+	}
+
+	/**
+	 * Sends a PUT request, processes the return status, handles exceptions.
+	 * 
+	 * @param resourcePath
+	 *            cannot be {@code null} or empty
+	 * @param content
+	 *            can be {@code null} or empty
+	 * @param httpSuccessStatuses
+	 *            the list of HTTP statuses that are to be considered a success
+	 * @return {@code null} if the post ended in a non-success status or if it threw an exception, else the response object
+	 */
+	protected synchronized ContentResponse doPut(String resourcePath, String content, int[] httpSuccessStatuses) throws ClientException {
+		return internalRequest(resourcePath, content, httpSuccessStatuses, HttpMethod.PUT);
+	}
+
+	/**
+	 * Sends a DELETE request, processes the return status, handles exceptions.
+	 * 
+	 * @param resourcePath
+	 *            cannot be {@code null} or empty
+	 * @param content
+	 *            can be {@code null} or empty
+	 * @param httpSuccessStatuses
+	 *            the list of HTTP statuses that are to be considered a success
+	 * @return {@code null} if the post ended in a non-success status or if it threw an exception, else the response object
+	 */
+	protected synchronized ContentResponse doDelete(String resourcePath, String content, int[] httpSuccessStatuses) throws ClientException {
+		return internalRequest(resourcePath, content, httpSuccessStatuses, HttpMethod.DELETE);
+	}
+
+	private ContentResponse internalRequest(String resourcePath, String content, int[] httpSuccessStatuses, HttpMethod method) throws ClientException {
 		assert resourcePath != null && !resourcePath.isEmpty();
+		String methodStr = null;
+		if (method == HttpMethod.PUT) {
+			methodStr = "PUT";
+		} else if (method == HttpMethod.POST) {
+			methodStr = "POST";
+		} else if (method == HttpMethod.DELETE) {
+			methodStr = "DELETE";
+		} else {
+			throw new IllegalArgumentException("Illegeal method: " + method);
+		}
 		ClientException exception;
 
 		final String uri = getBaseUri() + resourcePath;
 		try {
-			Request postRequest = client.newRequest(uri).method(HttpMethod.POST);
+			Request request = client.newRequest(uri).method(method);
 			if (content != null) {
-				postRequest.content(new StringContentProvider(content), "application/x-www-form-urlencoded");
+				request.content(new StringContentProvider(content), "application/x-www-form-urlencoded");
 			}
-			ContentResponse response = postRequest.send();
+			ContentResponse response = request.send();
 			int status = response.getStatus();
 
-			final String desc = log.isLoggable(Level.INFO) ? "POST " + resourcePath + " (" + content + ") Response" : null;
+			final String desc = log.isLoggable(Level.INFO) ? methodStr + " " + resourcePath + " (" + content + ") Response" : null;
 			if (!isSuccess(httpSuccessStatuses, status)) {
-				log.log(Level.SEVERE, "Posting resource path failed: " + resourcePath + ", Status: " + status);
+				log.log(Level.SEVERE, methodStr + ": resource path failed: " + resourcePath + ", Status: " + status);
 				if (log.isLoggable(Level.INFO)) {
 					System.out.println(desc + " status    = " + status);
 				}
@@ -183,7 +227,7 @@ public abstract class AbstractJSONClient {
 		} catch (TimeoutException e) {
 			exception = new ClientException(e);
 		}
-		log.log(Level.WARNING, "POST request failed: " + uri + " (" + exception.getCause().getMessage() + ")");
+		log.log(Level.WARNING, methodStr + " request failed: " + uri + " (" + exception.getCause().getMessage() + ")");
 		throw exception;
 	}
 

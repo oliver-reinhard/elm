@@ -20,7 +20,7 @@ public class HomeServerInternalApiClient extends AbstractHomeServerClient implem
 	}
 
 	public HomeServerInternalApiClient(String user, String pass, HomeServerPublicApiClient publicClient) throws URISyntaxException {
-		this(new URI(publicClient.getBaseUri().getScheme(), null, publicClient.getBaseUri().getHost(), HomeServerService.INTERNAL_API_PORT, null, null, null),
+		this(new URI("http", null, publicClient.getBaseUri().getHost(), HomeServerService.INTERNAL_API_PORT, null, null, null),
 				user, pass, publicClient);
 	}
 
@@ -57,17 +57,17 @@ public class HomeServerInternalApiClient extends AbstractHomeServerClient implem
 
 		publicClient.setReferenceTemperature(deviceID, newTemp);
 		// Set reference-temperature protection flag => no longer user-changeable
-		doPost("/cmd/VF/" + deviceID, "data=1", new int[] { HttpStatus.OK_200 });
+		doPost("/cmd/VF/" + deviceID, "data=1", new int[] { HttpStatus.OK_200, HomeServerPublicApiClient.ERROR_500_FIX});
 		// scald protection value is in FULL DEGREES Celcius!
-		ContentResponse response = doPost("/cmd/Vv/" + deviceID, "data=" + (newTemp / 10), new int[] { HttpStatus.OK_200 });
+		ContentResponse response = doPost("/cmd/Vv/" + deviceID, "data=" + (newTemp / 10), new int[] { HttpStatus.OK_200, HomeServerPublicApiClient.ERROR_500_FIX});
 		if (response != null) {
 			final HomeServerResponse result = getGson().fromJson(response.getContentAsString(), HomeServerResponse.class);
 			if (result.response == null || result.response.data == null) {
 				log.severe("Setting scald temperature failed: no result returned");
 				throw new ClientException(ClientException.Error.APPLICATION_DATA_ERROR);
 			}
-			final String confirmedTemp = result.response.data;
-			short value = Short.parseShort(confirmedTemp);
+			final String confirmedTemp = result.response.data; // response is "Vv??" where ?? is a number
+			short value = Short.parseShort(confirmedTemp.substring(2));
 			log.info("New scald temperature = " + value);
 			return value;
 		}
@@ -88,7 +88,7 @@ public class HomeServerInternalApiClient extends AbstractHomeServerClient implem
 		assert previousTemp == null || previousTemp >= 0;
 		assert deviceID != null && !deviceID.isEmpty();
 
-		doPost("/cmd/VF/" + deviceID, "data=0", new int[] { HttpStatus.OK_200 });
+		doPost("/cmd/VF/" + deviceID, "data=0", new int[] { HttpStatus.OK_200, HomeServerPublicApiClient.ERROR_500_FIX });
 		if (previousTemp != null) {
 			publicClient.setReferenceTemperature(deviceID, previousTemp);
 		}
