@@ -39,6 +39,8 @@ public interface DeviceController {
 		NOT_CONNECTED(false, false),
 		/** Device is ready for hot-water consumption without power limit. */
 		READY(false, false),
+		/** Device is ready for but hot-water consumption will not be granted. */
+		DENIED(false, false),
 		/** Device has recently started a hot-water consumption that has not been approved by the scheduler yet. */
 		CONSUMPTION_STARTED(true, true),
 		/** Device is currently consuming hot water after approval by the scheduler; the power consumption will not be interrupted. */

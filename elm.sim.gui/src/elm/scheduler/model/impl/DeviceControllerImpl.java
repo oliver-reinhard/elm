@@ -5,6 +5,7 @@ import static elm.scheduler.model.DeviceController.DeviceStatus.CONSUMPTION_DENI
 import static elm.scheduler.model.DeviceController.DeviceStatus.CONSUMPTION_ENDED;
 import static elm.scheduler.model.DeviceController.DeviceStatus.CONSUMPTION_LIMITED;
 import static elm.scheduler.model.DeviceController.DeviceStatus.CONSUMPTION_STARTED;
+import static elm.scheduler.model.DeviceController.DeviceStatus.DENIED;
 import static elm.scheduler.model.DeviceController.DeviceStatus.ERROR;
 import static elm.scheduler.model.DeviceController.DeviceStatus.INITIALIZING;
 import static elm.scheduler.model.DeviceController.DeviceStatus.NOT_CONNECTED;
@@ -65,6 +66,15 @@ public class DeviceControllerImpl implements DeviceController {
 	/** The true flow at the physical device [1/10 litre]. */
 	private short deviceFlowUnits = 0;
 
+	/** The true reference temperature [1/10°C] at the physical device. */
+	private short deviceReferenceTemperatureUnits = 0;
+
+	/**
+	 * The reference temperature [1/10°C] (aka setpoint) as last defined by the USER. This value is not changed by the scheduler and is used to replace the
+	 * scheduler-set reference temperature at a later time. A value of {@value #UNDEFINED_TEMPERATURE} means undefined.
+	 */
+	private short userDemandTemperatureUnits = UNDEFINED_TEMPERATURE;
+
 	/** The true temperature [1/10°C] of the intake water at the physical device. */
 	private short deviceIntakeWaterTemperatureUnits = 0;
 
@@ -73,12 +83,6 @@ public class DeviceControllerImpl implements DeviceController {
 
 	/** The power to consume allowed by the scheduler, can be {@link #UNLIMITED_POWER} (value {@value #UNLIMITED_POWER}). */
 	private int internalApprovedPowerWatt = UNLIMITED_POWER;
-
-	/**
-	 * Reference temperature [1/10°C] (aka setpoint) as last defined by the USER. This value is not changed by the scheduler and is used to replace the
-	 * scheduler-set reference temperature at a later time. A value of {@value #UNDEFINED_TEMPERATURE} means undefined.
-	 */
-	private short userDemandTemperatureUnits = UNDEFINED_TEMPERATURE;
 
 	/** Temperature [1/10°C] set for scald protection. A value of {@value #UNDEFINED_TEMPERATURE} means scald protection is inactive. */
 	private short scaldProtectionTemperatureUnits = UNDEFINED_TEMPERATURE;
@@ -192,11 +196,11 @@ public class DeviceControllerImpl implements DeviceController {
 			boolean potentialPowerChange = false;
 
 			//
-			// NOTE: if power has been limited, this is NOT the user-defined setpoint !
+			// NOTE: if power has been limited, device.status.setpoint is NOT the user-defined setpoint !
 			//
-			final short newDeviceTemperatureUnits = device.status.setpoint;
+			deviceReferenceTemperatureUnits = device.status.setpoint;
 			if (userDemandTemperatureUnits == UNDEFINED_TEMPERATURE
-					|| Math.abs(userDemandTemperatureUnits - newDeviceTemperatureUnits) > TEMP_CHANGE_IGNORE_DELTA_UNITS) {
+					|| Math.abs(userDemandTemperatureUnits - deviceReferenceTemperatureUnits) > TEMP_CHANGE_IGNORE_DELTA_UNITS) {
 				potentialPowerChange = true;
 			}
 
@@ -216,20 +220,29 @@ public class DeviceControllerImpl implements DeviceController {
 			}
 
 			//
-			// NOTE: if power has been limited, this can be 0 even if user WANTS hot water
+			// NOTE: if power has been limited, device.status.power can be 0 even if user WANTS hot water
 			//
 			final int newDevicePowerWatt = toPowerWatt(device.status.power);
 
+			// START
 			if (newDeviceFlowUnits > 0 && oldDeviceFlowUnits == 0) {
-				setUserDemandTemperatureUnits(newDeviceTemperatureUnits);
+				if (status != DENIED) {
+					setUserDemandTemperatureUnits(deviceReferenceTemperatureUnits);
+				}
+				// else: userDemandTemperatureUnits has been set when DENIED was set
 				waterConsumptionStarted(newDevicePowerWatt);
 				result = result.and(UpdateResult.URGENT_UPDATES);
 
-			} else if (newDeviceFlowUnits > 0 && status == CONSUMPTION_APPROVED && potentialPowerChange) {
-				setUserDemandTemperatureUnits(newDeviceTemperatureUnits);
+				// CHANGE POWER
+			} else if (newDeviceFlowUnits > 0 && potentialPowerChange) {
+				if (status == CONSUMPTION_APPROVED) {
+					setUserDemandTemperatureUnits(deviceReferenceTemperatureUnits);
+				}
+				// else: deviceReferenceTemperatureUnits is NOT a user-set reference temperature
 				powerConsumptionChanged(newDevicePowerWatt, "demand power change.");
 				result = result.and(UpdateResult.URGENT_UPDATES);
 
+				// END
 			} else if (newDeviceFlowUnits == 0 && oldDeviceFlowUnits > 0) {
 				waterConsumptionEnded();
 				result = result.and(UpdateResult.URGENT_UPDATES);
@@ -278,14 +291,15 @@ public class DeviceControllerImpl implements DeviceController {
 
 	@Override
 	public synchronized void updateMaximumPowerConsumption(ElmStatus schedulerStatus, int approvedPowerWatt) {
-		if (calculatedPowerWatt > 0 && LOG.isLoggable(Level.INFO)) {
+		assert approvedPowerWatt >= 0 && approvedPowerWatt <= deviceModel.getPowerMaxWatt() || approvedPowerWatt == UNLIMITED_POWER;
+
+		if (LOG.isLoggable(Level.INFO)) {
 			info("power consumption: demand " + formatPower(calculatedPowerWatt) + ", approved "
 					+ formatPower(approvedPowerWatt == UNLIMITED_POWER ? deviceModel.getPowerMaxWatt() : approvedPowerWatt) + ", ELM " + schedulerStatus);
 		}
 		if (status == NOT_CONNECTED) {
 			return;
 		}
-		assert approvedPowerWatt >= 0 && approvedPowerWatt <= deviceModel.getPowerMaxWatt() || approvedPowerWatt == UNLIMITED_POWER;
 		final int newApprovedPowerWatt = approvedPowerWatt == deviceModel.getPowerMaxWatt() ? UNLIMITED_POWER : approvedPowerWatt;
 
 		if (internalApprovedPowerWatt != newApprovedPowerWatt || status.isTransitioning()) {
@@ -298,7 +312,11 @@ public class DeviceControllerImpl implements DeviceController {
 				} else {
 					setStatus(CONSUMPTION_LIMITED);
 				}
-			} else if (status == CONSUMPTION_ENDED) {
+			} else if (status == READY && newApprovedPowerWatt == NO_POWER) {
+				setStatus(DENIED);
+				// set last recorded reference temperature as reported by device
+				setUserDemandTemperatureUnits(deviceReferenceTemperatureUnits);
+			} else if (status == CONSUMPTION_ENDED || status == DENIED && newApprovedPowerWatt == UNLIMITED_POWER) {
 				setStatus(READY);
 			}
 
@@ -330,6 +348,9 @@ public class DeviceControllerImpl implements DeviceController {
 		switch (status) {
 		case READY:
 			deviceFeedbackStatus = schedulerStatus;
+			break;
+		case DENIED:
+			deviceFeedbackStatus = ElmStatus.OVERLOAD;
 			break;
 		case CONSUMPTION_STARTED:
 		case CONSUMPTION_APPROVED:
@@ -410,7 +431,7 @@ public class DeviceControllerImpl implements DeviceController {
 
 	private void setUserDemandTemperatureUnits(short newValue) {
 		if (newValue != userDemandTemperatureUnits) {
-			info("reference temperature change: " + formatTemperature(newValue));
+			info("reference temperature change (user): " + formatTemperature(newValue));
 			userDemandTemperatureUnits = newValue;
 		}
 	}
@@ -425,7 +446,7 @@ public class DeviceControllerImpl implements DeviceController {
 	 * @return Watt
 	 */
 	private int calculatePowerWatt(short intakeTemperatureUnits, short demandTemperatureUnits, short flow) {
-		if (demandTemperatureUnits <= deviceModel.getTemperatureOff()  || demandTemperatureUnits <= intakeTemperatureUnits  || flow == 0) {
+		if (demandTemperatureUnits <= deviceModel.getTemperatureOff() || demandTemperatureUnits <= intakeTemperatureUnits || flow == 0) {
 			return 0;
 		}
 		int power = (int) (WATER_HEAT_CAPACITY * (demandTemperatureUnits - intakeTemperatureUnits) / 10 * flow * 100 / 60);

@@ -7,6 +7,7 @@ import static elm.hs.api.model.ElmStatus.SATURATION;
 import static elm.scheduler.model.DeviceController.DeviceStatus.CONSUMPTION_APPROVED;
 import static elm.scheduler.model.DeviceController.DeviceStatus.CONSUMPTION_DENIED;
 import static elm.scheduler.model.DeviceController.DeviceStatus.CONSUMPTION_STARTED;
+import static elm.scheduler.model.DeviceController.DeviceStatus.DENIED;
 import static elm.scheduler.model.DeviceController.DeviceStatus.READY;
 import static elm.scheduler.model.impl.ModelTestUtil.FLOW_OFF;
 import static elm.scheduler.model.impl.ModelTestUtil.FLOW_ON;
@@ -185,11 +186,11 @@ public class SchedulerIntegrationTest {
 			assertEquals(OVERLOAD, scheduler.getStatus());
 			assertTrue(scheduler.isInOverloadMode());
 			//
-			assertEquals(READY, hs1.getDeviceController(d1_1.id).getStatus());
+			assertEquals(DENIED, hs1.getDeviceController(d1_1.id).getStatus());
 			assertEquals(CONSUMPTION_APPROVED, hs1.getDeviceController(d1_2.id).getStatus());
-			assertEquals(READY, hs2.getDeviceController(d2_1.id).getStatus());
+			assertEquals(DENIED, hs2.getDeviceController(d2_1.id).getStatus());
 			assertEquals(CONSUMPTION_APPROVED, hs2.getDeviceController(d2_2.id).getStatus());
-			assertEquals(READY, hs3.getDeviceController(d3_1.id).getStatus());
+			assertEquals(DENIED, hs3.getDeviceController(d3_1.id).getStatus());
 			assertEquals(CONSUMPTION_DENIED, hs3.getDeviceController(d3_2.id).getStatus());
 
 			// OVERLOAD --> SATURATION
@@ -266,12 +267,12 @@ public class SchedulerIntegrationTest {
 			assertEquals(OFF, scheduler.getStatus());
 			assertFalse(scheduler.isInOverloadMode());
 			//
-			assertEquals(READY, hs1.getDeviceController(d1_1.id).getStatus());
-			assertEquals(READY, hs1.getDeviceController(d1_2.id).getStatus());
-			assertEquals(READY, hs2.getDeviceController(d2_1.id).getStatus());
-			assertEquals(READY, hs2.getDeviceController(d2_2.id).getStatus());
-			assertEquals(READY, hs3.getDeviceController(d3_1.id).getStatus());
-			assertEquals(READY, hs3.getDeviceController(d3_2.id).getStatus());
+			assertEquals(DENIED, hs1.getDeviceController(d1_1.id).getStatus());
+			assertEquals(DENIED, hs1.getDeviceController(d1_2.id).getStatus());
+			assertEquals(DENIED, hs2.getDeviceController(d2_1.id).getStatus());
+			assertEquals(DENIED, hs2.getDeviceController(d2_2.id).getStatus());
+			assertEquals(DENIED, hs3.getDeviceController(d3_1.id).getStatus());
+			assertEquals(DENIED, hs3.getDeviceController(d3_2.id).getStatus());
 
 		} catch (UnsupportedDeviceModelException e) {
 			fail(e.toString());
