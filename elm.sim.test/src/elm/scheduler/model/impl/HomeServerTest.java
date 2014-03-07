@@ -1,18 +1,19 @@
 package elm.scheduler.model.impl;
 
+import static elm.scheduler.model.impl.ModelTestUtil.FLOW_OFF;
+import static elm.scheduler.model.impl.ModelTestUtil.FLOW_ON;
 import static elm.scheduler.model.impl.ModelTestUtil.checkDeviceUpdatesSize;
+import static elm.scheduler.model.impl.ModelTestUtil.createDeviceWithStatus;
 import static elm.scheduler.model.impl.ModelTestUtil.createDevicesWithStatus;
 import static elm.scheduler.model.impl.ModelTestUtil.createHomeServer;
 import static elm.scheduler.model.impl.ModelTestUtil.getDeviceMap;
 import static elm.scheduler.model.impl.ModelTestUtil.sleep;
-import static elm.scheduler.model.impl.ModelTestUtil.toPowerUnits;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -85,11 +86,11 @@ public class HomeServerTest {
 	public void addRemoveDeviceManagerUpdates() {
 		try {
 			// add 2 more
-			hs1.updateDeviceControllers(createDevicesWithStatus(HS_ID, 4, 0));
+			hs1.updateDeviceControllers(createDevicesWithStatus(HS_ID, 4, 0, FLOW_OFF));
 			assertEquals(4, hs1.getDeviceControllers().size());
 
 			// remove 2
-			List<Device> devices = createDevicesWithStatus(HS_ID, 4, 0);
+			List<Device> devices = createDevicesWithStatus(HS_ID, 4, 0, FLOW_OFF);
 			Device d0 = devices.get(0);
 			Device d1 = devices.get(1);
 			Device d2 = devices.get(2);
@@ -114,15 +115,14 @@ public class HomeServerTest {
 	public void devicesControllersUpdated() {
 		try {
 			// Turn a tap ON
-			List<Device> devices = createDevicesWithStatus(HS_ID, NUM_DEVICES, 0);
-			devices.get(1).status.power = toPowerUnits(10_000);
-			devices.get(1).setHeaterOn(true);
+			List<Device> devices = createDevicesWithStatus(HS_ID, NUM_DEVICES, 0, FLOW_OFF);
+			devices.set(1, createDeviceWithStatus(1, 2, 10_000, FLOW_ON));
 			hs1.updateDeviceControllers(devices);
 			verify(hsL1).devicesControllersUpdated(hs1, true);
 
 			// Turn a tap OFF
 			resetListener();
-			devices = createDevicesWithStatus(HS_ID, NUM_DEVICES, 0);
+			devices = createDevicesWithStatus(HS_ID, NUM_DEVICES, 0, FLOW_OFF);
 			hs1.updateDeviceControllers(devices);
 			verify(hsL1).devicesControllersUpdated(hs1, true);
 
@@ -142,22 +142,24 @@ public class HomeServerTest {
 		try {
 			DeviceController[] deviceManagers = hs1.getDeviceControllers().toArray(new DeviceController[] {});
 			DeviceController di1_2 = deviceManagers[1];
-			
-			List<Device> devices = createDevicesWithStatus(1, NUM_DEVICES, 0);
+
+			List<Device> devices = createDevicesWithStatus(1, NUM_DEVICES, 0, FLOW_OFF);
 			Device d1_1 = devices.get(0);
+			devices.set(1, createDeviceWithStatus(1, 2, 20_000, FLOW_ON)); // Turn tap 1-2 ON
 			Device d1_2 = devices.get(1);
 			final short referenceTemperature = d1_2.status.setpoint;
-			d1_2.status.power = toPowerUnits(20_000); // Turn tap 1-2 ON
 			hs1.updateDeviceControllers(devices);
-			checkDeviceUpdatesSize(hs1, 2);  // => clear-scald protection flag
+			// setpoint was accepted as user temperature:
+			assertEquals(referenceTemperature, hs1.getDeviceController(d1_2.id).getUserDemandTemperatureUnits());
+			checkDeviceUpdatesSize(hs1, 2); // => clear-scald protection flag
 			//
 			RemoteDeviceUpdateClient client = mock(RemoteDeviceUpdateClient.class);
 			hs1.executeRemoteDeviceUpdates(client, log);
-			verify(client).clearScaldProtection(d1_1.id, 380);
-			verify(client).clearScaldProtection(d1_2.id, 380);
-			
+			verify(client).clearScaldProtection(d1_1.id, (int) ModelTestUtil.INITIAL_INFO_SETPOINT); // initial value
+			verify(client).clearScaldProtection(d1_2.id, (int) ModelTestUtil.INITIAL_INFO_SETPOINT);
+
 			// Scheduler approves only LIMITED power:
-			di1_2.updateMaximumPowerConsumption(ElmStatus.OVERLOAD, ACTUAL_POWER_WATT);
+			di1_2.updateMaximumPowerConsumption(ElmStatus.OVERLOAD, ACTUAL_POWER_WATT / 2);
 			di1_2.updateUserFeedback(ElmStatus.OVERLOAD, EXPECTED_WAITING_TIME);
 			checkDeviceUpdatesSize(hs1, 1);
 			//
@@ -170,10 +172,13 @@ public class HomeServerTest {
 			assertNull(hs1.getPendingUpdates());
 			verify(client).setScaldProtectionTemperature(di1_2.getId(), scaldProtectionTemperature);
 
-			// next poll returns setpoint = scald-protection temperature:
-			d1_2.status.setpoint = 265;
+			// next poll returns reduced power and setpoint == scald-protection temperature:
+			devices.set(1, createDeviceWithStatus(1, 2, 10_000, FLOW_ON)); // Turn tap 1-2 ON
+			d1_2 = devices.get(1);
 			hs1.updateDeviceControllers(devices);
 			assertNull(hs1.getPendingUpdates());
+			// original user temperature remains unchanged:
+			assertEquals(referenceTemperature, hs1.getDeviceController(d1_2.id).getUserDemandTemperatureUnits());
 
 			// Scheduler approves UNLIMITED power:
 			di1_2.updateMaximumPowerConsumption(ElmStatus.OVERLOAD, DeviceController.UNLIMITED_POWER);
@@ -183,8 +188,8 @@ public class HomeServerTest {
 			hs1.executeRemoteDeviceUpdates(client, log);
 			assertNull(hs1.getPendingUpdates());
 			// ensure the original reference Temperature is restored:
-			verify(client, times(2)).clearScaldProtection(di1_2.getId(), new Integer(referenceTemperature));
-			
+			verify(client).clearScaldProtection(di1_2.getId(), new Integer(referenceTemperature));
+
 		} catch (ClientException | UnsupportedDeviceModelException e) {
 			fail(e.toString());
 			e.printStackTrace();

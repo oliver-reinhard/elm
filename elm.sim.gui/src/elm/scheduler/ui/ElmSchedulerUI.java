@@ -1,5 +1,7 @@
 package elm.scheduler.ui;
 
+import static elm.util.ElmLogFormatter.formatPower;
+
 import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -35,7 +37,7 @@ public class ElmSchedulerUI extends JFrame {
 
 		// Set defaults; can be changed later before making the frame visible
 		setTitle("ELM Scheduler");
-		setSize(400, 400);
+		setSize(250, 200);
 		setLocationRelativeTo(null);
 		setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
 
@@ -59,13 +61,13 @@ public class ElmSchedulerUI extends JFrame {
 		JLabel saturationLimitLabel = new JLabel("Saturation limit:");
 		panel.add(saturationLimitLabel, createLabelConstraints(0, 2));
 
-		saturationLimit = new JLabel(scheduler.formatPower(scheduler.getSaturationPowerLimitWatt()));
+		saturationLimit = new JLabel(formatPower(scheduler.getSaturationPowerLimitWatt()));
 		panel.add(saturationLimit, createLabelConstraints(1, 2));
 
 		JLabel overloadLimitLabel = new JLabel("Overload limit:");
 		panel.add(overloadLimitLabel, createLabelConstraints(0, 3));
 
-		overloadLimit = new JLabel(scheduler.formatPower(scheduler.getOverloadPowerLimitWatt()));
+		overloadLimit = new JLabel(formatPower(scheduler.getOverloadPowerLimitWatt()));
 		panel.add(overloadLimit, createLabelConstraints(1, 3));
 
 		scheduler.addChangeListener(new SchedulerChangeListener() {
@@ -100,7 +102,7 @@ public class ElmSchedulerUI extends JFrame {
 							status.setBackground(statusBackground);
 						}
 						
-						totalPower.setText(scheduler.formatPower(newPowerWatt));
+						totalPower.setText(formatPower(newPowerWatt));
 						if (newPowerWatt > 0) {
 							totalPower.setForeground(Color.RED);
 						} else {

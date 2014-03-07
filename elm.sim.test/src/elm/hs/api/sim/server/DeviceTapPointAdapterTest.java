@@ -1,5 +1,6 @@
 package elm.hs.api.sim.server;
 
+import static elm.scheduler.model.impl.ModelTestUtil.FLOW_OFF;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -32,7 +33,7 @@ public class DeviceTapPointAdapterTest {
 	@Before
 	public void setup() {
 		try {
-			device = ModelTestUtil.createDeviceWithStatus(1, 1, 0);
+			device = ModelTestUtil.createDeviceWithStatus(1, 1, 0, FLOW_OFF);
 			point = new TapPointImpl("Dusche", device.id, true, HotWaterTemperature.TEMP_38);
 			point.setStatus(ElmStatus.ON);
 			final Device device2 = ModelTestUtil.createDeviceWithInfo(1, 1);

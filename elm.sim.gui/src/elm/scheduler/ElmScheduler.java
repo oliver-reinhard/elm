@@ -5,8 +5,8 @@ import static elm.hs.api.model.ElmStatus.OFF;
 import static elm.hs.api.model.ElmStatus.ON;
 import static elm.hs.api.model.ElmStatus.OVERLOAD;
 import static elm.hs.api.model.ElmStatus.SATURATION;
+import static elm.util.ElmLogFormatter.formatPower;
 
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -50,8 +50,6 @@ public class ElmScheduler extends AbstractElmScheduler {
 
 	private boolean isAliveCheckDisabled;
 
-	private final DecimalFormat kWFormat;
-
 	/**
 	 * @param maxElectricalPowerWatt
 	 *            the maximum total electrical power in [Watt] that all the devices managed by this scheduler can use at any given time
@@ -73,9 +71,6 @@ public class ElmScheduler extends AbstractElmScheduler {
 		assert saturationPowerLimitWatt < maxElectricalPowerWatt;
 		overloadPowerLimitWatt = maxElectricalPowerWatt;
 		this.saturationPowerLimitWatt = saturationPowerLimitWatt;
-		kWFormat = new DecimalFormat();
-		kWFormat.setMinimumFractionDigits(1);
-		kWFormat.setMaximumFractionDigits(1);
 		log.info("saturation limit: " + formatPower(saturationPowerLimitWatt) + ", overload limit: " + formatPower(overloadPowerLimitWatt));
 	}
 
@@ -245,6 +240,7 @@ public class ElmScheduler extends AbstractElmScheduler {
 
 		} else if (newStatus != oldStatus) {
 			updateDevices(newStatus, consumingDevices, standbyDevices, false);
+			
 		} else {
 			// confirm only started or ended consumptions:
 			updateDevices(newStatus, consumingDevices, standbyDevices, true);
@@ -266,10 +262,6 @@ public class ElmScheduler extends AbstractElmScheduler {
 		for (HomeServer server : affectedHomeServers) {
 			server.fireDeviceUpdatesPending();
 		}
-	}
-
-	public final String formatPower(int powerWatt) {
-		return kWFormat.format(powerWatt / 1000.0) + " kW";
 	}
 
 	private void sortByConsumptionStartTime(List<DeviceController> consumingDevices) {

@@ -1,5 +1,7 @@
 package elm.scheduler.model;
 
+import static elm.util.ElmLogFormatter.formatTemperature;
+
 import java.util.logging.Logger;
 
 import elm.hs.api.model.Device;
@@ -9,12 +11,12 @@ public class RemoteDeviceUpdate {
 
 	/** {@link Device#id}. */
 	private final String id;
-	
+
 	/** The new scald-protection temperature, in [1/10°C]. */
 	private Short scaldProtectionTemperatureUnits;
-	
+
 	private boolean clearScaldProtectionFlag;
-	
+
 	/** The temperature before scald protection became effective, in [1/10°C]. */
 	private Short previousDemandTemperatureUnits;
 
@@ -23,7 +25,7 @@ public class RemoteDeviceUpdate {
 	 *            cannot be {@code null} or empty
 	 */
 	public RemoteDeviceUpdate(String deviceId) {
-		assert deviceId != null && ! deviceId.isEmpty();
+		assert deviceId != null && !deviceId.isEmpty();
 		this.id = deviceId;
 	}
 
@@ -52,7 +54,8 @@ public class RemoteDeviceUpdate {
 	 *            reference temperature as set by the user before scald-protection became effective, in [1/10°C]
 	 */
 	public void clearScaldProtection(Short previousDemandTemperatureUnits) {
-		assert previousDemandTemperatureUnits == null || previousDemandTemperatureUnits != DeviceController.UNDEFINED_TEMPERATURE && previousDemandTemperatureUnits > 0;
+		assert previousDemandTemperatureUnits == null || previousDemandTemperatureUnits != DeviceController.UNDEFINED_TEMPERATURE
+				&& previousDemandTemperatureUnits > 0;
 		this.clearScaldProtectionFlag = true;
 		this.previousDemandTemperatureUnits = previousDemandTemperatureUnits;
 		this.scaldProtectionTemperatureUnits = null;
@@ -68,15 +71,15 @@ public class RemoteDeviceUpdate {
 	 */
 	public void execute(RemoteDeviceUpdateClient client, Logger log) throws ClientException {
 		if (scaldProtectionTemperatureUnits != null) {
-			log.info("Device " + id + ": setting scald-protection temperature to " + (scaldProtectionTemperatureUnits / 10) + "°C");
+			log.info("Device " + id + ": setting scald-protection temperature to " + formatTemperature(scaldProtectionTemperatureUnits));
 			short actualValueUnits = (short) client.setScaldProtectionTemperature(id, scaldProtectionTemperatureUnits);
 			if (actualValueUnits == 0) {
-				log.severe("Device " + id + ": scald-protection could not be set. Requested: " + (scaldProtectionTemperatureUnits / 10) + "°C");
+				log.severe("Device " + id + ": scald-protection could not be set. Requested: " + formatTemperature(scaldProtectionTemperatureUnits));
 			}
 
 		} else if (clearScaldProtectionFlag) {
 			final Integer previousTemperatureUnits = previousDemandTemperatureUnits == null ? null : new Integer(previousDemandTemperatureUnits);
-			final String previousTemperatureCelsius = previousDemandTemperatureUnits == null ? "unknown" : (previousDemandTemperatureUnits/10) + "°C";
+			final String previousTemperatureCelsius = previousDemandTemperatureUnits == null ? "unknown" : formatTemperature(previousDemandTemperatureUnits);
 			log.info("Device " + id + ": clearing scald protection, restoring previous temperature: " + previousTemperatureCelsius);
 			client.clearScaldProtection(id, previousTemperatureUnits);
 		}

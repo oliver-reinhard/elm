@@ -27,6 +27,14 @@ import elm.scheduler.model.RemoteDeviceUpdate;
 import elm.scheduler.model.UnsupportedDeviceModelException;
 
 public class ModelTestUtil {
+
+	public static final short INITIAL_INFO_SETPOINT = 330;
+	public static final boolean FLOW_ON = true;
+	public static final boolean FLOW_OFF = false;
+
+	/** Joule per gram and Kelvin. */
+	private static final double WATER_HEAT_CAPACITY = 4.192;
+
 	private static final String SIM_TYPE_ID = "D012"; // Model SIM
 	private static final short SIM_POWER_MAX_UNITS = 180; // Model SIM
 	private static final int SIM_POWER_MAX_WATT = DeviceModel.SIM.getPowerMaxWatt(); // Model SIM
@@ -47,7 +55,7 @@ public class ModelTestUtil {
 
 			// initialize HomeServer and DeviceControllers:
 			hs.updateDeviceControllers(deviceList);
-			hs.updateDeviceControllers(ModelTestUtil.createDevicesWithStatus(id, devices, 0));
+			hs.updateDeviceControllers(ModelTestUtil.createDevicesWithStatus(id, devices, 0, false));
 			return hs;
 		} catch (UnsupportedDeviceModelException e) {
 			throw new IllegalArgumentException(e);
@@ -72,6 +80,7 @@ public class ModelTestUtil {
 		d.info = new Info();
 		d.info.flags = 1; // = heater off
 		d.info.error = Error.OK.getCode();
+		d.info.setpoint = INITIAL_INFO_SETPOINT;
 		return d;
 	}
 
@@ -103,12 +112,21 @@ public class ModelTestUtil {
 	 *            currently used power [W]
 	 * @return
 	 */
-	public static Device createDeviceWithStatus(int homeServerNr, int deviceNr, int powerWatt) {
+	public static Device createDeviceWithStatus(int homeServerNr, int deviceNr, int powerWatt, boolean on) {
 		assert deviceNr > 0 && deviceNr < 100;
+		assert powerWatt >= 0 && powerWatt <= DeviceModel.SIM.getPowerMaxWatt();
+		assert on || (!on && powerWatt == 0);
 		Device d = createDeviceWithInfo(homeServerNr, deviceNr);
 		d.status = new Status();
-		d.status.setpoint = 380; // 38°C
+		d.status.flow = (short) (on ? 80 : 0);
 		d.status.tIn = 100; // 10°C
+		short setpoint = (short) (d.status.tIn + powerWatt / (WATER_HEAT_CAPACITY * d.status.flow * 100 / 60) * 10);
+		if (setpoint < DeviceModel.SIM.getTemperatureOff()) {
+			setpoint = DeviceModel.SIM.getTemperatureOff();
+		} else if (setpoint > DeviceModel.SIM.getTemperatureMax()) {
+			setpoint = DeviceModel.SIM.getTemperatureMax();
+		}
+		d.status.setpoint = setpoint;
 		d.status.tOut = (short) (d.status.setpoint - 2);
 		d.status.powerMax = SIM_POWER_MAX_UNITS;
 		d.status.power = toPowerUnits(powerWatt);
@@ -128,13 +146,13 @@ public class ModelTestUtil {
 	 *            first deviceID is {@code 1}; a value of {@code 0} yields an empty list
 	 * @return never {@code null}
 	 */
-	public static List<Device> createDevicesWithStatus(int homeServerId, int n, int powerWatt) {
+	public static List<Device> createDevicesWithStatus(int homeServerId, int n, int powerWatt, boolean on) {
 		assert homeServerId >= 0 && homeServerId < 100;
 		assert n >= 0 && n < 100;
 		List<Device> result = new ArrayList<Device>();
 		if (n > 0) {
 			for (int i = 1; i <= n; i++) {
-				result.add(createDeviceWithStatus(homeServerId, i, powerWatt));
+				result.add(createDeviceWithStatus(homeServerId, i, powerWatt, on));
 			}
 		}
 		return result;

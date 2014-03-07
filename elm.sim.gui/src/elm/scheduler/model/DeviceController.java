@@ -183,6 +183,11 @@ public interface DeviceController {
 	long getConsumptionStartTime();
 
 	/**
+	 * The reference temperature (in 1/10°C) set at the device by the user. This remains unchanged even while the device power is being limited.
+	 */
+	short getUserDemandTemperatureUnits();
+
+	/**
 	 * The power in [W] the device should consume to satisfy the user's choice of temperature and flow.
 	 */
 	int getDemandPowerWatt();
@@ -191,7 +196,7 @@ public interface DeviceController {
 	 * The maximum power [W] the device may consume as granted by the scheduler.
 	 */
 	int getApprovedPowerWatt();
-	
+
 	/**
 	 * The mean duration this device is being used.
 	 */

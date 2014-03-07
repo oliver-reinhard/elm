@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.logging.Formatter;
@@ -15,6 +16,12 @@ import java.util.logging.Logger;
 public class ElmLogFormatter extends Formatter {
 
 	public static final String ELM_LOGGING_CONFIG_FILE_NAME = "elm.logging";
+
+	private static final DecimalFormat decimal1Format = new DecimalFormat();
+	static {
+		decimal1Format.setMinimumFractionDigits(1);
+		decimal1Format.setMaximumFractionDigits(1);
+	}
 
 	final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	int classNameWidth = 0; // field with for class name; this grows if longer class names are encountered
@@ -89,5 +96,19 @@ public class ElmLogFormatter extends Formatter {
 					"Cannot load logging configuration file: " + e.getMessage() + " (using class loader)", e);
 			throw e;
 		}
+	}
+
+	public static final String formatPower(int powerWatt) {
+		return decimal1Format.format(powerWatt / 1000.0) + " kW";
+	}
+
+	/**
+	 * 
+	 * @param temperatureUnits
+	 *            in 1/10°C
+	 * @return never {@code null}
+	 */
+	public static final String formatTemperature(int temperatureUnits) {
+		return decimal1Format.format(temperatureUnits / 10.0) + "°C";
 	}
 }

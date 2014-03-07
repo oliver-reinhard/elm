@@ -1,5 +1,6 @@
 package elm.sim.model;
 
+import static elm.scheduler.model.impl.ModelTestUtil.FLOW_OFF;
 import static elm.sim.model.Flow.MEDIUM;
 import static elm.sim.model.Flow.NONE;
 import static elm.sim.model.HotWaterTemperature.TEMP_25;
@@ -33,7 +34,7 @@ public class TapPointTest {
 	@Before
 	public void setup() {
 		try {
-			Device device = ModelTestUtil.createDeviceWithStatus(1, 1, 0);
+			Device device = ModelTestUtil.createDeviceWithStatus(1, 1, 0, FLOW_OFF);
 			point = new TapPointImpl("Name", device.id, true, INITIAL_REFERENCE_TEMP);
 			point.setSchedulerStatus(OFF);
 			assertStatus(OFF, TEMP_MIN_19, NONE);

@@ -39,9 +39,13 @@ public class DeviceTapPointAdapter implements SimModelListener {
 		case SCALD_PROTECTION_TEMPERATURE:
 			device.status.power = point.getPowerUnits();
 			device.setHeaterOn(point.getFlags() == 0);
+			device.status.flow = (short) (point.getActualFlow().getMillilitresPerMinute() / 100);
 			break;
 		case REFERENCE_TEMPERATURE:
-			device.setSetpoint(((HotWaterTemperature) event.getNewValue()).getUnits());
+			short setpoint = ((HotWaterTemperature) event.getNewValue()).getUnits();
+			assert setpoint >= point.getDeviceModel().getTemperatureOff();
+			assert setpoint <= point.getDeviceModel().getTemperatureMax();
+			device.setSetpoint(setpoint);
 			break;
 		default:
 			// ignore
