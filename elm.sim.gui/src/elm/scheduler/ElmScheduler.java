@@ -142,7 +142,7 @@ public class ElmScheduler extends AbstractElmScheduler {
 			log.info("Total requested power: " + formatPower(totalDemandPowerWatt));
 			int oldDemandPowerWatt = this.totalDemandPowerWatt;
 			this.totalDemandPowerWatt = totalDemandPowerWatt;
-			for(SchedulerChangeListener listener : listeners) {
+			for (SchedulerChangeListener listener : listeners) {
 				listener.totalDemandPowerChanged(oldDemandPowerWatt, totalDemandPowerWatt);
 			}
 		}
@@ -159,9 +159,9 @@ public class ElmScheduler extends AbstractElmScheduler {
 
 		// Act:
 		if (nextStatus == OVERLOAD) {
-			beginOverloadMode(consumingDevices, standbyDevices);
+			overloadMode(consumingDevices, standbyDevices);
 		} else {
-			handleNormalMode(consumingDevices, standbyDevices, nextStatus);
+			normalMode(consumingDevices, standbyDevices, nextStatus);
 		}
 	}
 
@@ -178,7 +178,7 @@ public class ElmScheduler extends AbstractElmScheduler {
 	 * Also used for testing.
 	 * </p>
 	 */
-	void beginOverloadMode(List<DeviceController> consumingDevices, List<DeviceController> standbyDevices) {
+	void overloadMode(List<DeviceController> consumingDevices, List<DeviceController> standbyDevices) {
 		setStatus(OVERLOAD);
 		if (!isInOverloadMode()) {
 			overloadModeBeginTime = timeService.currentTimeMillis();
@@ -186,7 +186,7 @@ public class ElmScheduler extends AbstractElmScheduler {
 		}
 		// Sort devices in ascending order of consumption start time. Later we grant power to consuming devices in the order they started their consumption.
 		// Devices with an approved consumption will not be preempted.
-		sortByConsumptionStartTime(consumingDevices);
+		sortByConsumption(consumingDevices);
 
 		int totalDemandPowerWatt = 0;
 		int[] expectedWaitingTimeMillis = new int[] { 0 }; // no waiting time
@@ -229,7 +229,7 @@ public class ElmScheduler extends AbstractElmScheduler {
 	 * Also used for testing.
 	 * </p>
 	 */
-	void handleNormalMode(List<DeviceController> consumingDevices, List<DeviceController> standbyDevices, ElmStatus newStatus) {
+	void normalMode(List<DeviceController> consumingDevices, List<DeviceController> standbyDevices, ElmStatus newStatus) {
 		ElmStatus oldStatus = getStatus();
 		setStatus(newStatus);
 		if (isInOverloadMode()) {
@@ -240,7 +240,7 @@ public class ElmScheduler extends AbstractElmScheduler {
 
 		} else if (newStatus != oldStatus) {
 			updateDevices(newStatus, consumingDevices, standbyDevices, false);
-			
+
 		} else {
 			// confirm only started or ended consumptions:
 			updateDevices(newStatus, consumingDevices, standbyDevices, true);
@@ -264,10 +264,38 @@ public class ElmScheduler extends AbstractElmScheduler {
 		}
 	}
 
-	private void sortByConsumptionStartTime(List<DeviceController> consumingDevices) {
+	/**
+	 * Sort the consuming devices. First the algorithm devides the devices into two groups:
+	 * <ol>
+	 * <li>devices that already have the power they need; these will always be granted their requested power again.</li>
+	 * <li>devices that need power or need more power; this will be granted in ascending order</li>
+	 * </ol>
+	 * The devices in a group are then sorted among themselves:
+	 * <ol>
+	 * <li>by consumption start time, or if they are equal</li>
+	 * <li>by requested power.</li>
+	 * </ol>
+	 * 
+	 * @param consumingDevices
+	 */
+	private void sortByConsumption(List<DeviceController> consumingDevices) {
 		Collections.sort(consumingDevices, new Comparator<DeviceController>() {
 			@Override
 			public int compare(DeviceController d1, DeviceController d2) {
+				// sort those devices first that already have the power they need => will never interrupt these
+				boolean d1_hasRequestedPower = d1.getDemandPowerWatt() <= d1.getApprovedPowerWatt();
+				boolean d2_hasRequestedPower = d2.getDemandPowerWatt() <= d2.getApprovedPowerWatt();
+				if (d1_hasRequestedPower == d2_hasRequestedPower) {
+					// if two consumptions are both satisfied, then we favor the one that started earlier:
+					return compareStartTime(d1, d2);
+				} else if (d1_hasRequestedPower) {
+					return -1;
+				} else {
+					return 1;
+				}
+			}
+
+			private int compareStartTime(DeviceController d1, DeviceController d2) {
 				if (d1.getConsumptionStartTime() == d2.getConsumptionStartTime()) {
 					// if two consumptions started at the same time, then we favor the one with the lower power consumption:
 					return Integer.compare(d1.getDemandPowerWatt(), d2.getDemandPowerWatt());
