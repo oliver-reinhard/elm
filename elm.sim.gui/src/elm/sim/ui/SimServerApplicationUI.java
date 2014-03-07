@@ -33,7 +33,7 @@ public class SimServerApplicationUI extends JFrame {
 	}
 
 	private final AbstractSimServerApplicationConfiguration configuration;
-	private final SimpleSchedulerUI schedulerUI;
+	private final SimpleSchedulerUI simpleSchedulerUI;
 	private final AbstractTapPointUI[][] pointUIs;
 
 	/**
@@ -57,16 +57,16 @@ public class SimServerApplicationUI extends JFrame {
 		panel.setLayout(gbl);
 
 		if (configuration.getScheduler() != null) {
-			schedulerUI = new SimpleSchedulerUI(configuration.getScheduler());
+			simpleSchedulerUI = new SimpleSchedulerUI(configuration.getScheduler());
 			GridBagConstraints gbc_scheduler = new GridBagConstraints();
 			gbc_scheduler.insets = new Insets(5, 5, 5, 5);
 			gbc_scheduler.anchor = GridBagConstraints.NORTH;
 			gbc_scheduler.fill = GridBagConstraints.VERTICAL;
 			gbc_scheduler.gridx = 0;
 			gbc_scheduler.gridy = 0;
-			panel.add(schedulerUI, gbc_scheduler);
+			panel.add(simpleSchedulerUI, gbc_scheduler);
 		} else {
-			schedulerUI = null;
+			simpleSchedulerUI = null;
 		}
 
 		IntakeWaterTemperaturePanel intake = new IntakeWaterTemperaturePanel();
@@ -98,8 +98,9 @@ public class SimServerApplicationUI extends JFrame {
 
 		getContentPane().add(panel);
 
-		if (schedulerUI != null) {
-			schedulerUI.getModel().addModelListener(new SimModelListener() {
+		// Do this only if we use the SimpleScheduler that allows manual setting of the ELM status
+		if (simpleSchedulerUI != null) {
+			simpleSchedulerUI.getModel().addModelListener(new SimModelListener() {
 
 				@Override
 				public void modelChanged(SimModelEvent e) {

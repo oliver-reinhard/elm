@@ -268,7 +268,7 @@ public class ElmScheduler extends AbstractElmScheduler {
 	 * Sort the consuming devices. First the algorithm devides the devices into two groups:
 	 * <ol>
 	 * <li>devices that already have the power they need; these will always be granted their requested power again.</li>
-	 * <li>devices that need power or need more power; this will be granted in ascending order</li>
+	 * <li>devices that need power or need more power; these will be granted in ascending order (as long as power reserve lasts)</li>
 	 * </ol>
 	 * The devices in a group are then sorted among themselves:
 	 * <ol>

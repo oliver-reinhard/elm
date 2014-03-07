@@ -293,16 +293,17 @@ public class DeviceControllerImpl implements DeviceController {
 	public synchronized void updateMaximumPowerConsumption(ElmStatus schedulerStatus, int approvedPowerWatt) {
 		assert approvedPowerWatt >= 0 && approvedPowerWatt <= deviceModel.getPowerMaxWatt() || approvedPowerWatt == UNLIMITED_POWER;
 
-		if (LOG.isLoggable(Level.INFO)) {
-			info("power consumption: demand " + formatPower(calculatedPowerWatt) + ", approved "
-					+ formatPower(approvedPowerWatt == UNLIMITED_POWER ? deviceModel.getPowerMaxWatt() : approvedPowerWatt) + ", ELM " + schedulerStatus);
-		}
 		if (status == NOT_CONNECTED) {
 			return;
 		}
 		final int newApprovedPowerWatt = approvedPowerWatt == deviceModel.getPowerMaxWatt() ? UNLIMITED_POWER : approvedPowerWatt;
 
 		if (internalApprovedPowerWatt != newApprovedPowerWatt || status.isTransitioning()) {
+			
+			if (LOG.isLoggable(Level.INFO)) {
+				info("power consumption: demand " + formatPower(calculatedPowerWatt) + ", approved "
+						+ formatPower(approvedPowerWatt == UNLIMITED_POWER ? deviceModel.getPowerMaxWatt() : approvedPowerWatt) + ", ELM " + schedulerStatus);
+			}
 
 			if (status.isConsuming()) {
 				if (newApprovedPowerWatt == 0) {
@@ -502,6 +503,6 @@ public class DeviceControllerImpl implements DeviceController {
 
 	@Override
 	public int getMeanConsumptionMillis() {
-		return 10_000; // TODO base on past consumptions
+		return 40_000; // TODO base on past consumptions
 	}
 }
