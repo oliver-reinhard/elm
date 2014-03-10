@@ -156,7 +156,6 @@ public abstract class AbstractTapPointUI extends JPanel {
 			timeRounded = (((seconds + 9) / 10) * 10); // round up
 			timeUnit = "Sekunde";
 		}
-		System.out.println("Millis = " + value + ", seconds = " + seconds + ", rounded = " + timeRounded);
 		waitingTimeBar.setValue(percent);
 		waitingTimeBar.setString("Ca. " + timeRounded + " " + timeUnit + (timeRounded > 1 ? "n" : ""));
 	}
