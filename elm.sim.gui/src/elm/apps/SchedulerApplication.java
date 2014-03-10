@@ -5,7 +5,7 @@ import java.util.logging.Logger;
 
 import elm.hs.api.HomeServerService;
 import elm.hs.api.client.AbstractCommandLineClient;
-import elm.scheduler.HomeServerLocator;
+import elm.scheduler.HomeServerDiscovery;
 import elm.scheduler.ElmScheduler;
 import elm.util.ElmLogFormatter;
 
@@ -22,7 +22,7 @@ public class SchedulerApplication extends AbstractCommandLineClient {
 			// scheduler.setSchedulingIntervalMillis(5_000);
 			scheduler.start();
 
-			HomeServerLocator locator = new HomeServerLocator(scheduler, HomeServerService.DEFAULT_PASSWORD);
+			HomeServerDiscovery locator = new HomeServerDiscovery(scheduler, HomeServerService.DEFAULT_PASSWORD);
 			locator.start();
 
 		} catch (Exception e) {

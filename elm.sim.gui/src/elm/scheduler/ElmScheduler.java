@@ -114,6 +114,7 @@ public class ElmScheduler extends AbstractElmScheduler {
 	/**
 	 * <em>Note: </em>This method is invoked from inside a {@code synchronized} section. Do not invoke long-running or blocking operations.
 	 */
+	@Override
 	protected void processDevices() {
 		int totalDemandPowerWatt = 0;
 		List<DeviceController> consumingDevices = new ArrayList<DeviceController>();

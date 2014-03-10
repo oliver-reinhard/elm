@@ -64,7 +64,7 @@ public class SimpleSchedulerUI extends JPanel {
 						statusPanel.setReference((SimStatus) event.getNewValue());
 						break;
 					case WAITING_TIME_SECONDS:
-						waitingTimeSeconds.setText(Integer.toString((int) event.getNewValue()));
+						waitingTimeSeconds.setText(Integer.toString((int) event.getNewValue() / SimpleScheduler.MILLIS_PER_SECOND));
 						break;
 					default:
 						throw new IllegalArgumentException(event.getAttribute().id());

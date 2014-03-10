@@ -284,18 +284,7 @@ public class SimHomeServerImpl extends AbstractSimObject implements SimHomeServe
 				DeviceTapPointAdapter adapter = adapters.get(f.id);
 				if (adapter != null) {
 					adapter.getPoint().setStatus(f.deviceStatus);
-					int time = f.expectedWaitingTimeMillis / 1000;
-					int percent;
-					if (time >= 300) { // > 5 minutes => 100 %
-						percent = 100;
-					} else if (time > 60) { // 5 min .. 60 sec => top 50 .. 100 %
-						percent = 50 + 50 * (time - 60) / (300 - 60);
-					} else if (time > 10) { // 60 .. 10 sec => 25 .. 50 %
-						percent = 25 + 25 * (time - 10) / (60 - 20);
-					} else { // => 0 .. 25 %
-						percent = 25 * time / 10;
-					}
-					adapter.getPoint().setWaitingTimePercent(percent);
+					adapter.getPoint().setWaitingTimeMillis(f.expectedWaitingTimeMillis);
 				}
 			}
 		}

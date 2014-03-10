@@ -7,7 +7,7 @@ import elm.sim.model.SimStatus;
 
 public class SimpleSchedulerImpl extends AbstractSimObject implements SimpleScheduler {
 
-	public static final int SIMULATED_WAITING_TIME_SECONDS = 10;
+	public static final int SIMULATED_WAITING_TIME_SECONDS = 45;
 
 	private SimStatus status = SimStatus.OFF;
 
@@ -53,7 +53,7 @@ public class SimpleSchedulerImpl extends AbstractSimObject implements SimpleSche
 	 * @param newValue
 	 *            must be {@code >= 0}
 	 */
-	public void setWaitingTimeSeconds(int newValue) {
+	public void updateWaitingTimeSeconds(int newValue) {
 		assert newValue >= 0;
 		int oldValue = waitingTimeSeconds;
 		if (oldValue != newValue) {
@@ -68,7 +68,7 @@ public class SimpleSchedulerImpl extends AbstractSimObject implements SimpleSche
 	 * @return a value between {@code 0} and {@code 100}
 	 */
 	@Override
-	public int getWaitingTimePercent() {
+	public int getWaitingTimeSeconds() {
 		return waitingTimeSeconds;
 	}
 }

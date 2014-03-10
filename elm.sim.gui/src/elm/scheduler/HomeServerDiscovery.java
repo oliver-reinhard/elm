@@ -18,9 +18,9 @@ import elm.scheduler.model.impl.HomeServerImpl;
  * This class listens for DNS Service Discovery events for CLAGE Home Servers. Whenever a new Home Server instance is detected, a new
  * {@link HomeServerController} is started and the scheduler is notified.
  */
-public class HomeServerLocator implements ServiceListener {
+public class HomeServerDiscovery implements ServiceListener {
 
-	private static final Logger LOG = Logger.getLogger(HomeServerLocator.class.getName());
+	private static final Logger LOG = Logger.getLogger(HomeServerDiscovery.class.getName());
 
 	private final AbstractElmScheduler scheduler;
 	private final ElmUserFeedbackManager userFeedbackManager;
@@ -28,7 +28,7 @@ public class HomeServerLocator implements ServiceListener {
 
 	private JmDNS jmDNS;
 
-	public HomeServerLocator(AbstractElmScheduler scheduler, String homeServerPassword) {
+	public HomeServerDiscovery(AbstractElmScheduler scheduler, String homeServerPassword) {
 		assert scheduler != null;
 		assert homeServerPassword != null;
 		this.scheduler = scheduler;

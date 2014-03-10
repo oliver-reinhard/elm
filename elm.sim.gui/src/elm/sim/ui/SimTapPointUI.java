@@ -90,8 +90,8 @@ public class SimTapPointUI extends AbstractTapPointUI {
 						setStatus((SimStatus) event.getNewValue());
 						updateReferenceTemperatureEnablement();
 						break;
-					case WAITING_TIME_PERCENT:
-						setWaitingTimePercent((int) event.getNewValue());
+					case WAITING_TIME_MILLIS:
+						setWaitingTimeMillis((int) event.getNewValue());
 						break;
 					case INTAKE_WATER_TEMPERATURE:
 						updateFromModel(); // power

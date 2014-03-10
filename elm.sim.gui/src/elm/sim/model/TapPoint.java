@@ -22,7 +22,7 @@ public interface TapPoint extends SimChangeNotifier {
 		ACTUAL_TEMPERATURE("Ist-Temperatur"),
 		SCALD_PROTECTION_TEMPERATURE("Verbrühschutztemperatur"),
 		STATUS("Status"),
-		WAITING_TIME_PERCENT("Wartezeit [%]"),
+		WAITING_TIME_MILLIS("Wartezeit"),
 		INTAKE_WATER_TEMPERATURE("Kaltwassertemp.");
 
 		private final String label;
@@ -40,9 +40,6 @@ public interface TapPoint extends SimChangeNotifier {
 			return label;
 		}
 	}
-
-	public static final int NO_WAITING_PERCENT = 0;
-	public static final int MAX_WAITING_PERCENT = 100;
 
 	/**
 	 * @return never {@code null} or empty
@@ -96,9 +93,9 @@ public interface TapPoint extends SimChangeNotifier {
 	 */
 	void setSchedulerStatus(SimStatus schedulerStatus);
 
-	void setWaitingTimePercent(int newValue);
+	void setWaitingTimeMillis(int newValue);
 
-	int getWaitingTimePercent();
+	int getWaitingTimeMillis();
 
 	void setIntakeWaterTemperature(IntakeWaterTemperature newValue);
 

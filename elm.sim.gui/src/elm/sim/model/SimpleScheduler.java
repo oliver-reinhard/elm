@@ -31,6 +31,7 @@ public interface SimpleScheduler extends SimChangeNotifier {
 	}
 
 	public static final int NO_WAITING_TIME = 0;
+	public static final int MILLIS_PER_SECOND = 1000;
 
 	String getLabel();
 
@@ -45,5 +46,5 @@ public interface SimpleScheduler extends SimChangeNotifier {
 	 * 
 	 * @return a value between {@code 0} and {@code 100}
 	 */
-	int getWaitingTimePercent();
+	int getWaitingTimeSeconds();
 }

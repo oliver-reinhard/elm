@@ -14,7 +14,6 @@ import elm.sim.model.IntakeWaterTemperature;
 import elm.sim.model.SimStatus;
 import elm.sim.model.SimpleScheduler;
 import elm.sim.model.TapPoint;
-import elm.sim.model.impl.SimpleSchedulerImpl;
 
 @SuppressWarnings("serial")
 public class SimServerApplicationUI extends JFrame {
@@ -109,8 +108,7 @@ public class SimServerApplicationUI extends JFrame {
 							if (e.getAttribute() == SimpleScheduler.Attribute.STATUS) {
 								pointUIs[row][col].getModel().setSchedulerStatus((SimStatus) e.getNewValue());
 							} else if (e.getAttribute() == SimpleScheduler.Attribute.WAITING_TIME_SECONDS) {
-								int waitTimePercent = (int) e.getNewValue() * 100 / SimpleSchedulerImpl.SIMULATED_WAITING_TIME_SECONDS;
-								pointUIs[row][col].getModel().setWaitingTimePercent(waitTimePercent);
+								pointUIs[row][col].getModel().setWaitingTimeMillis(((int) e.getNewValue()) * SimpleScheduler.MILLIS_PER_SECOND);
 							}
 						}
 					}

@@ -18,12 +18,14 @@ import elm.sim.model.SimStatus;
 @SuppressWarnings("serial")
 public abstract class AbstractTapPointUI extends JPanel {
 
+	private static final int MILLIS_PER_SECOND = 1000;
+
 	/** A blinker instance shared between all outlets. */
 	protected static final LabelIconBlinker BLINKER = new LabelIconBlinker(SimUtil.getIcon(SimStatus.ERROR), SimUtil.getIcon(SimStatus.OFF));
-	
+
 	protected final TapPoint model;
 	protected JLabel statusLabel;
-	protected JProgressBar waitingTimePercent;
+	protected JProgressBar waitingTimeBar;
 
 	protected JLabel id;
 
@@ -46,12 +48,12 @@ public abstract class AbstractTapPointUI extends JPanel {
 		gbc_title.gridx = 0;
 		gbc_title.gridy = 0;
 		add(title, gbc_title);
-		
+
 		addPanelContent();
 		addStatusPanel(0, 3);
 		updateFromModel();
 	}
-	
+
 	protected GridBagLayout createLayout() {
 		GridBagLayout gbl = new GridBagLayout();
 		gbl.columnWidths = new int[] { 0, 0 };
@@ -63,7 +65,7 @@ public abstract class AbstractTapPointUI extends JPanel {
 
 	protected void addPanelContent() {
 		id = new JLabel("ID: " + model.getId() + " (" + model.getDeviceModel().name() + ")");
-		add (id, createLabelConstraints(0, 1));
+		add(id, createLabelConstraints(0, 1));
 	}
 
 	protected void addStatusPanel(int gridx, int gridy) {
@@ -71,7 +73,7 @@ public abstract class AbstractTapPointUI extends JPanel {
 		JPanel statusPanel = new JPanel();
 		GridBagLayout gbl_status = new GridBagLayout();
 		gbl_status.columnWidths = new int[] { 0, 0 };
-		gbl_status.columnWeights = new double[] { 0.0, Double.MIN_VALUE };
+		gbl_status.columnWeights = new double[] { 0.0, 0.0, Double.MIN_VALUE };
 		statusPanel.setLayout(gbl_status);
 		statusPanel.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
 		GridBagConstraints gbc_status = new GridBagConstraints();
@@ -91,14 +93,14 @@ public abstract class AbstractTapPointUI extends JPanel {
 		gbc_statusL.gridy = 0;
 		statusPanel.add(statusLabel, gbc_statusL);
 
-		waitingTimePercent = new JProgressBar();
-		waitingTimePercent.setEnabled(false);
+		waitingTimeBar = new JProgressBar();
+		waitingTimeBar.setEnabled(false);
 		GridBagConstraints gbc_progressBar = new GridBagConstraints();
-		gbc_progressBar.insets = new Insets(0, 5, 0, 5);
+		gbc_progressBar.insets = new Insets(0, 5, 5, 5);
 		gbc_progressBar.fill = GridBagConstraints.HORIZONTAL;
 		gbc_progressBar.gridx = 1;
 		gbc_progressBar.gridy = 0;
-		statusPanel.add(waitingTimePercent, gbc_progressBar);
+		statusPanel.add(waitingTimeBar, gbc_progressBar);
 	}
 
 	protected GridBagConstraints createLabelConstraints(int x, int y) {
@@ -126,13 +128,37 @@ public abstract class AbstractTapPointUI extends JPanel {
 			BLINKER.stop(statusLabel);
 			statusLabel.setIcon(SimUtil.getIcon(status));
 		}
-		waitingTimePercent.setEnabled(status == SimStatus.OVERLOAD);
-		waitingTimePercent.setValue(0);
+		waitingTimeBar.setEnabled(status == SimStatus.OVERLOAD);
+		waitingTimeBar.setStringPainted(status == SimStatus.OVERLOAD);
+		waitingTimeBar.setValue(0);
 	}
 
-	protected void setWaitingTimePercent(int percent) {
-		assert percent >= 0 && percent <= 100;
-		waitingTimePercent.setValue(percent);
+	protected void setWaitingTimeMillis(int value) {
+		assert value >= 0;
+		int seconds = (value + 500) / MILLIS_PER_SECOND; // round up
+		int timeRounded;
+		String timeUnit;
+		int percent;
+		if (seconds > 300) { // > 5 minutes => 100 %
+			percent = 100;
+			timeRounded = ((seconds + 30) / 60);// round up
+			timeUnit = "Minute";
+		} else if (seconds > 60) { // 5 min .. 60 sec => top 50 .. 100 %
+			percent = 50 + 50 * (seconds - 60) / (300 - 60);
+			timeRounded = ((seconds + 30) / 60); // round up
+			timeUnit = "Minute";
+		} else if (seconds > 10) { // 60 .. 10 sec => 25 .. 50 %
+			percent = 25 + 25 * (seconds - 10) / (60 - 20);
+			timeRounded = (((seconds + 9) / 10) * 10); // round up
+			timeUnit = "Sekunde";
+		} else { // => 0 .. 25 %
+			percent = 25 * seconds / 10;
+			timeRounded = (((seconds + 9) / 10) * 10); // round up
+			timeUnit = "Sekunde";
+		}
+		System.out.println("Millis = " + value + ", seconds = " + seconds + ", rounded = " + timeRounded);
+		waitingTimeBar.setValue(percent);
+		waitingTimeBar.setString("Ca. " + timeRounded + " " + timeUnit + (timeRounded > 1 ? "n" : ""));
 	}
 
 }

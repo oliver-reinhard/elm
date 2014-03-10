@@ -33,8 +33,8 @@ public class RealTapPointUI extends AbstractTapPointUI {
 					case STATUS:
 						setStatus((SimStatus) event.getNewValue());
 						break;
-					case WAITING_TIME_PERCENT:
-						setWaitingTimePercent((int) event.getNewValue());
+					case WAITING_TIME_MILLIS:
+						setWaitingTimeMillis((int) event.getNewValue());
 						break;
 					default:
 						// ignore

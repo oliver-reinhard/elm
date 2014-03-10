@@ -53,7 +53,7 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 	private SimStatus status = OFF;
 
 	/** The waiting time indication if status == {@link SimStatus#OVERLOAD}. */
-	private int waitingTimePercent = NO_WAITING_PERCENT;
+	private int waitingTimePercent = 0;
 
 	private IntakeWaterTemperature waterIntakeTemperature;
 
@@ -300,20 +300,20 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 	}
 
 	@Override
-	public void setWaitingTimePercent(int newValue) {
-		assert newValue >= NO_WAITING_PERCENT && newValue <= MAX_WAITING_PERCENT;
+	public void setWaitingTimeMillis(int newValue) {
+		assert newValue >= 0;
 		// ignore values when not in OVERLOAD
 		if (status == SimStatus.OVERLOAD) {
 			int oldValue = waitingTimePercent;
 			if (oldValue != newValue) {
 				waitingTimePercent = newValue;
-				fireModelChanged(Attribute.WAITING_TIME_PERCENT, oldValue, newValue);
+				fireModelChanged(Attribute.WAITING_TIME_MILLIS, oldValue, newValue);
 			}
 		}
 	}
 
 	@Override
-	public int getWaitingTimePercent() {
+	public int getWaitingTimeMillis() {
 		return waitingTimePercent;
 	}
 

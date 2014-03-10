@@ -14,8 +14,6 @@ public class WaitingTimeCountdown implements Runnable {
 
 	public static final int NOTIFICATION_INTERVAL_MILLIS = 1000;
 
-	private static final int MILLIS_PER_SECOND = 1000;
-
 	private final SimpleSchedulerImpl model;
 	private Thread running;
 	private boolean shouldStop;
@@ -52,17 +50,17 @@ public class WaitingTimeCountdown implements Runnable {
 
 	@Override
 	public synchronized void run() {
-		int remainingTimeMillis = waitingTimeSeconds * MILLIS_PER_SECOND;
-		for (; !shouldStop && remainingTimeMillis > 0; remainingTimeMillis -= MILLIS_PER_SECOND) {
+		for (; !shouldStop && waitingTimeSeconds > 0;) {
 			try {
-				((SimpleSchedulerImpl) model).setWaitingTimeSeconds(remainingTimeMillis / MILLIS_PER_SECOND);
-				wait(MILLIS_PER_SECOND);
+				model.updateWaitingTimeSeconds(waitingTimeSeconds);
+				wait(NOTIFICATION_INTERVAL_MILLIS);
 			} catch (InterruptedException e) {
 				break; // ends the loop
 			}
+			waitingTimeSeconds--;
 		}
-		((SimpleSchedulerImpl) model).setWaitingTimeSeconds(SimpleScheduler.NO_WAITING_TIME);
-		if (remainingTimeMillis <= 0) { // timer was NOT interrupted / stopped
+		model.updateWaitingTimeSeconds(SimpleScheduler.NO_WAITING_TIME);
+		if (waitingTimeSeconds <= 0) { // timer was NOT interrupted / stopped
 			model.setStatus(FOLLOW_UP_STATUS);
 		}
 		running = null;
