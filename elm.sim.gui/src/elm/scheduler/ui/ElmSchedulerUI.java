@@ -36,7 +36,7 @@ public class ElmSchedulerUI extends JFrame {
 		assert scheduler != null;
 
 		// Set defaults; can be changed later before making the frame visible
-		setTitle("ELM Scheduler");
+		setTitle("ELM-Scheduler");
 		setSize(250, 200);
 		setLocationRelativeTo(null);
 		setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
@@ -52,19 +52,19 @@ public class ElmSchedulerUI extends JFrame {
 		panel.add(status, createLabelConstraints(1, 0));
 		statusBackground = status.getBackground();
 
-		JLabel totalPowerLabel = new JLabel("Total requested power:");
+		JLabel totalPowerLabel = new JLabel("Total benötigte Leistung:");
 		panel.add(totalPowerLabel, createLabelConstraints(0, 1));
 
 		totalPower = new JLabel("");
 		panel.add(totalPower, createLabelConstraints(1, 1));
 
-		JLabel saturationLimitLabel = new JLabel("Saturation limit:");
+		JLabel saturationLimitLabel = new JLabel("Sättigungsgrenze:");
 		panel.add(saturationLimitLabel, createLabelConstraints(0, 2));
 
 		saturationLimit = new JLabel(formatPower(scheduler.getSaturationPowerLimitWatt()));
 		panel.add(saturationLimit, createLabelConstraints(1, 2));
 
-		JLabel overloadLimitLabel = new JLabel("Overload limit:");
+		JLabel overloadLimitLabel = new JLabel("Überlastgrenze:");
 		panel.add(overloadLimitLabel, createLabelConstraints(0, 3));
 
 		overloadLimit = new JLabel(formatPower(scheduler.getOverloadPowerLimitWatt()));
@@ -91,7 +91,7 @@ public class ElmSchedulerUI extends JFrame {
 				SwingUtilities.invokeLater(new Runnable() {
 					@Override
 					public void run() {
-						status.setText(newStatus.name());
+						status.setText(newStatus.getLabel());
 						if (newStatus == ElmStatus.ON) {
 							status.setBackground(Color.GREEN);
 						} else if (newStatus == ElmStatus.SATURATION) {

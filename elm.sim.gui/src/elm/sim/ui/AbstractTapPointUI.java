@@ -136,28 +136,33 @@ public abstract class AbstractTapPointUI extends JPanel {
 	protected void setWaitingTimeMillis(int value) {
 		assert value >= 0;
 		int seconds = (value + 500) / MILLIS_PER_SECOND; // round up
-		int timeRounded;
-		String timeUnit;
-		int percent;
-		if (seconds > 300) { // > 5 minutes => 100 %
-			percent = 100;
-			timeRounded = ((seconds + 30) / 60);// round up
-			timeUnit = "Minute";
-		} else if (seconds > 60) { // 5 min .. 60 sec => top 50 .. 100 %
-			percent = 50 + 50 * (seconds - 60) / (300 - 60);
-			timeRounded = ((seconds + 30) / 60); // round up
-			timeUnit = "Minute";
-		} else if (seconds > 10) { // 60 .. 10 sec => 25 .. 50 %
-			percent = 25 + 25 * (seconds - 10) / (60 - 20);
-			timeRounded = (((seconds + 9) / 10) * 10); // round up
-			timeUnit = "Sekunde";
-		} else { // => 0 .. 25 %
-			percent = 25 * seconds / 10;
-			timeRounded = (((seconds + 9) / 10) * 10); // round up
-			timeUnit = "Sekunde";
+		if (seconds > 0) {
+			int timeRounded = 0;
+			String timeUnit = "";
+			int percent = 0;
+			if (seconds > 300) { // > 5 minutes => 100 %
+				percent = 100;
+				timeRounded = ((seconds + 30) / 60);// round up
+				timeUnit = "Minute";
+			} else if (seconds > 60) { // 5 min .. 60 sec => top 50 .. 100 %
+				percent = 50 + 50 * (seconds - 60) / (300 - 60);
+				timeRounded = ((seconds + 30) / 60); // round up
+				timeUnit = "Minute";
+			} else if (seconds > 10) { // 60 .. 10 sec => 25 .. 50 %
+				percent = 25 + 25 * (seconds - 10) / (60 - 20);
+				timeRounded = (((seconds + 9) / 10) * 10); // round up
+				timeUnit = "Sekunde";
+			} else if (seconds > 0) { // => 0 .. 25 %
+				percent = 25 * seconds / 10;
+				timeRounded = (((seconds + 9) / 10) * 10); // round up
+				timeUnit = "Sekunde";
+			}
+			waitingTimeBar.setValue(percent);
+			waitingTimeBar.setString("Ca. " + timeRounded + " " + timeUnit + (timeRounded > 1 ? "n" : ""));
+		} else {
+			waitingTimeBar.setValue(2);
+			waitingTimeBar.setString("Zapfungsende abwarten");
 		}
-		waitingTimeBar.setValue(percent);
-		waitingTimeBar.setString("Ca. " + timeRounded + " " + timeUnit + (timeRounded > 1 ? "n" : ""));
 	}
 
 }

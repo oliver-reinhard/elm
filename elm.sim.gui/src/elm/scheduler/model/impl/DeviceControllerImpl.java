@@ -313,7 +313,7 @@ public class DeviceControllerImpl implements DeviceController {
 				} else {
 					setStatus(CONSUMPTION_LIMITED);
 				}
-			} else if (status == READY && newApprovedPowerWatt == NO_POWER) {
+			} else if (status.in(READY, CONSUMPTION_ENDED) && newApprovedPowerWatt == NO_POWER) {
 				setStatus(DENIED);
 				// use recorded reference temperature as reported by device
 				setUserDemandTemperatureUnits(deviceReferenceTemperatureUnits);
