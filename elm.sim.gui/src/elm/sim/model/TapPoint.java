@@ -11,6 +11,8 @@ import elm.sim.ui.SimpleSchedulerUI;
 
 public interface TapPoint extends SimChangeNotifier {
 
+	static final long NO_CONSUMPTION = -1;
+
 	/** A simple metamodel of the {@link TapPoint}. */
 	public enum Attribute implements SimAttribute {
 
@@ -18,6 +20,7 @@ public interface TapPoint extends SimChangeNotifier {
 		ID("ID"),
 		REFERENCE_FLOW("Soll-Menge"),
 		ACTUAL_FLOW("Ist-Menge"),
+		CONSUMPTION_START_TIME("Beginn"),
 		REFERENCE_TEMPERATURE("Soll-Temperatur"),
 		ACTUAL_TEMPERATURE("Ist-Temperatur"),
 		SCALD_PROTECTION_TEMPERATURE("Verbrühschutztemperatur"),
@@ -61,6 +64,13 @@ public interface TapPoint extends SimChangeNotifier {
 	Flow getReferenceFlow();
 
 	Flow getActualFlow();
+
+	/**
+	 * Returns the time the {@link #getActualFlow() actual flow} went from {@code 0} to a value greatr than {@code 0}.
+	 * 
+	 * @return {@link #NO_CONSUMPTION} if the {@link #getActualFlow() actual flow} is currently {@code 0}.
+	 */
+	long getConsumptionStartTimeMillis();
 
 	void setReferenceTemperature(HotWaterTemperature newValue);
 
@@ -114,7 +124,7 @@ public interface TapPoint extends SimChangeNotifier {
 	 * @return the currently consumed power in device units in relation to {@link DeviceModel#getPowerMaxUnits()} configuration.
 	 */
 	short getPowerUnits();
-	
+
 	/**
 	 * @return the {@link Status#flags} for this device
 	 */

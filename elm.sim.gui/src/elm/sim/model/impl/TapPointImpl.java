@@ -60,6 +60,9 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 	/** Mirror of the scheduler's status. */
 	private SimStatus schedulerStatus = null;
 
+	/** Time the flow went from 0 to a value greater than 0. */
+	private long consumptionStartTimeMillis = NO_CONSUMPTION;
+
 	/**
 	 * 
 	 * @param name
@@ -140,12 +143,30 @@ public class TapPointImpl extends AbstractSimObject implements TapPoint {
 		if (oldValue != newValue) {
 			actualFlow = newValue;
 			fireModelChanged(Attribute.ACTUAL_FLOW, oldValue, newValue);
+			if (oldValue == Flow.NONE && newValue.greaterThan(Flow.NONE)) {
+				setConsumptionStartTimeMillis(System.currentTimeMillis());
+			} else if (newValue == Flow.NONE) {
+				setConsumptionStartTimeMillis(NO_CONSUMPTION);
+			}
 		}
 	}
 
 	@Override
 	public synchronized Flow getActualFlow() {
 		return actualFlow;
+	}
+
+	private void setConsumptionStartTimeMillis(long newValue) {
+		long oldValue = consumptionStartTimeMillis;
+		if (oldValue != newValue) {
+			consumptionStartTimeMillis = newValue;
+			fireModelChanged(Attribute.CONSUMPTION_START_TIME, oldValue, newValue);
+		}
+	}
+
+	@Override
+	public long getConsumptionStartTimeMillis() {
+		return consumptionStartTimeMillis;
 	}
 
 	@Override

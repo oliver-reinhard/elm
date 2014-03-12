@@ -17,6 +17,7 @@ public class SimSimpleDemoApplicationUI {
 			configuration.init(true, SERVER_PORT);
 			SimServerApplicationUI ui = new SimServerApplicationUI(configuration);
 			ui.setVisible(true);
+			ui.start();
 			
 		} catch (Exception e) {
 			e.printStackTrace();

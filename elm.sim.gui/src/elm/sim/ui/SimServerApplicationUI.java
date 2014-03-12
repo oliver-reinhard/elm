@@ -31,9 +31,54 @@ public class SimServerApplicationUI extends JFrame {
 		}
 	}
 
+	class ConsumptionTimeUpdater implements Runnable {
+		private Thread running;
+		private boolean shouldStop;
+
+		public synchronized void start() {
+			if (running == null) {
+				running = new Thread(this, "Time Updater");
+				running.setDaemon(true); // will not prevent process from exiting
+				shouldStop = false;
+				running.start();
+			}
+		}
+
+		public synchronized void stop() {
+			if (running != null) {
+				shouldStop = true;
+				this.notify();
+				running = null;
+			}
+		}
+
+		@Override
+		public synchronized void run() {
+			try {
+				while (!shouldStop) {
+					long time = System.currentTimeMillis();
+					for (int row = 0; row < pointUIs.length; row++) {
+						for (int col = 0; col < pointUIs[row].length; col++) {
+							pointUIs[row][col].updateConsumptionDuration(time);
+						}
+					}
+					this.wait(1000);
+					if (shouldStop) {
+						break;
+					}
+					this.wait(500);
+				}
+			} catch (InterruptedException e) {
+				// exited the loop, goal reached
+			}
+			running = null;
+		}
+	}
+
 	private final AbstractSimServerApplicationConfiguration configuration;
 	private final SimpleSchedulerUI simpleSchedulerUI;
 	private final AbstractTapPointUI[][] pointUIs;
+	private final ConsumptionTimeUpdater timeUpdater = new ConsumptionTimeUpdater();
 
 	/**
 	 * @param configuration
@@ -47,10 +92,10 @@ public class SimServerApplicationUI extends JFrame {
 
 		// Set defaults; can be changed later before making the frame visible
 		setTitle("Durchlauferhitzer-Simulation");
-		setSize(700, 600);
+		setSize(750, 600);
 		setLocationRelativeTo(null);
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
-		
+
 		JPanel panel = new JPanel();
 		GridBagLayout gbl = new GridBagLayout();
 		panel.setLayout(gbl);
@@ -91,7 +136,7 @@ public class SimServerApplicationUI extends JFrame {
 			for (int col = 0; col < points[row].length; col++) {
 				TapPoint point = points[row][col];
 				pointUIs[row][col] = point.isSimDevice() ? new SimTapPointUI(point) : new RealTapPointUI(point);
-				panel.add(pointUIs[row][col], createOutletConstraints(col+1, row));
+				panel.add(pointUIs[row][col], createOutletConstraints(col + 1, row));
 			}
 		}
 
@@ -128,6 +173,14 @@ public class SimServerApplicationUI extends JFrame {
 
 	public SimHomeServer getServer() {
 		return configuration.getServer();
+	}
+	
+	public void start() {
+		timeUpdater.start();
+	}
+	
+	public void stop() {
+		timeUpdater.stop();
 	}
 
 }

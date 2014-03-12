@@ -56,8 +56,8 @@ public abstract class AbstractTapPointUI extends JPanel {
 
 	protected GridBagLayout createLayout() {
 		GridBagLayout gbl = new GridBagLayout();
-		gbl.columnWidths = new int[] { 0, 0 };
-		gbl.columnWeights = new double[] { 0.0, Double.MIN_VALUE };
+		gbl.columnWidths = new int[] { 0, 0, 0 };
+		gbl.columnWeights = new double[] { 0.0, 0.0, Double.MIN_VALUE };
 		gbl.rowHeights = new int[] { 0, 0, 0, 0 };
 		gbl.rowWeights = new double[] { 0.0, 0.0, 0.0, Double.MIN_VALUE };
 		return gbl;
@@ -164,5 +164,8 @@ public abstract class AbstractTapPointUI extends JPanel {
 			waitingTimeBar.setString("Zapfungsende abwarten");
 		}
 	}
-
+	
+	public void updateConsumptionDuration(long currentTimeMillis) {
+		// leave implementation to subclasses
+	}
 }

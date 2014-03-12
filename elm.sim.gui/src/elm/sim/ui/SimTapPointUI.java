@@ -40,7 +40,8 @@ public class SimTapPointUI extends AbstractTapPointUI {
 	class TemperaturePanel extends EnumSelectorPanel<HotWaterTemperature> {
 
 		TemperaturePanel() {
-			super("Temperatur", true, HotWaterTemperature.TEMP_MIN_19, HotWaterTemperature.TEMP_30, HotWaterTemperature.TEMP_38, HotWaterTemperature.TEMP_42, HotWaterTemperature.TEMP_48);
+			super("Temperatur", true, HotWaterTemperature.TEMP_MIN_19, HotWaterTemperature.TEMP_30, HotWaterTemperature.TEMP_38, HotWaterTemperature.TEMP_42,
+					HotWaterTemperature.TEMP_48);
 		}
 
 		@Override
@@ -51,6 +52,7 @@ public class SimTapPointUI extends AbstractTapPointUI {
 	}
 
 	private JLabel power;
+	private JLabel duration;
 	private TemperaturePanel temperature;
 	private FlowPanel flow;
 	private DecimalFormat kWFormat;
@@ -75,6 +77,11 @@ public class SimTapPointUI extends AbstractTapPointUI {
 						break;
 					case ACTUAL_FLOW:
 						updateFromModel(); // power
+						if (((Flow) event.getNewValue()) == Flow.NONE) {
+							duration.setText("");
+						} else if (((Flow) event.getOldValue()) == Flow.NONE) {
+							duration.setText("0:00");
+						}
 						break;
 					case REFERENCE_TEMPERATURE:
 						temperature.setReference((HotWaterTemperature) event.getNewValue());
@@ -96,9 +103,11 @@ public class SimTapPointUI extends AbstractTapPointUI {
 					case INTAKE_WATER_TEMPERATURE:
 						updateFromModel(); // power
 						break;
-					case NAME:
-					case ID:
-						// cannot change
+					case CONSUMPTION_START_TIME:
+						// ignore, there is a separate mechanism for this
+						break;
+					case NAME: // cannot change
+					case ID: // cannot change
 					default:
 						throw new IllegalArgumentException(event.getAttribute().id());
 					}
@@ -121,9 +130,16 @@ public class SimTapPointUI extends AbstractTapPointUI {
 	@Override
 	protected void addPanelContent() {
 		super.addPanelContent();
-		
+
 		power = new JLabel("Leistung");
-		add (power, createLabelConstraints(1, 1));
+		add(power, createLabelConstraints(1, 1));
+
+		duration = new JLabel("");
+		duration.setForeground(Color.red);
+		GridBagConstraints gbc_duration = createLabelConstraints(2, 1);
+		gbc_duration.anchor = GridBagConstraints.NORTHEAST;
+		add(duration, gbc_duration);
+
 		// Reference Temperature and Actual Temperature
 		temperature = new TemperaturePanel();
 		temperature.setEnabled(false);
@@ -131,7 +147,10 @@ public class SimTapPointUI extends AbstractTapPointUI {
 
 		// Reference Flow and Actual Flow
 		flow = new FlowPanel();
-		add(flow, createEnumConstraints(1, 2));
+		GridBagConstraints gbc_flow = createEnumConstraints(1, 2);
+		gbc_flow.fill = GridBagConstraints.BOTH;
+		gbc_flow.gridwidth = 2;
+		add(flow, gbc_flow);
 	}
 
 	private GridBagConstraints createEnumConstraints(int x, int y) {
@@ -177,6 +196,15 @@ public class SimTapPointUI extends AbstractTapPointUI {
 			}
 		}
 		temperature.setEnabled(true, toEnable.toArray(new HotWaterTemperature[] {})); // enable all
+	}
+
+	@Override
+	public void updateConsumptionDuration(long currentTimeMillis) {
+		if (model.getActualFlow() != Flow.NONE) {
+			long seconds = (currentTimeMillis - model.getConsumptionStartTimeMillis() + 500) / 1000; // round up
+			int s = (int) seconds % 60;
+			duration.setText((seconds / 60) + ":" + (s < 10 ? "0" + s : s));
+		}
 	}
 
 	private void info(String msg) {

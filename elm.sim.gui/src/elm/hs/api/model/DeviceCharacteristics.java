@@ -115,7 +115,7 @@ public class DeviceCharacteristics {
 
 			DeviceType type = DeviceType.fromId(deviceClassId);
 			switch (type) {
-			/* No remote controllable => not suitable for ELM. */
+			/* Not remote controllable => not suitable for ELM. */
 			case TYPE_0:
 				return DeviceModel.DBX;
 			case TYPE_2:
@@ -127,9 +127,9 @@ public class DeviceCharacteristics {
 			case TYPE_1:
 				return DeviceModel.DSX;
 			case TYPE_3:
-				return DeviceModel.MCX6;
+				return DeviceModel.CEX;
 			case TYPE_5:
-				return DeviceModel.DSX;
+				return DeviceModel.MCX3;
 			case TYPE_7_SIM:
 				return DeviceModel.SIM;
 			default:

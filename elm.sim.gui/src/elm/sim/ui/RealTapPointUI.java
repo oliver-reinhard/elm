@@ -66,7 +66,7 @@ public class RealTapPointUI extends AbstractTapPointUI {
 		GridBagConstraints gbc = new GridBagConstraints();
 		gbc.anchor = GridBagConstraints.NORTH;
 		gbc.insets = new Insets(5, 5, 5, 5);
-		gbc.gridwidth = 2;
+		gbc.gridwidth = 3;
 		gbc.gridx = 0;
 		gbc.gridy = 2;
 		add(label, gbc);

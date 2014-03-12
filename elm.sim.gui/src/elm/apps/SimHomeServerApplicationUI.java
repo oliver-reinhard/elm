@@ -33,13 +33,14 @@ public class SimHomeServerApplicationUI {
 			
 			configuration.init(false, REGISTERED_SERVER_PORT); // don't show SimpleSchedulerUI
 			
-			SimServerApplicationUI ui = new SimServerApplicationUI(configuration);
+			final SimServerApplicationUI ui = new SimServerApplicationUI(configuration);
 			ui.setTitle(title);
 			ui.setSize(width, height);
 			ui.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 			ui.addWindowListener(new WindowAdapter() {
 				@Override
 				public void windowClosing(WindowEvent e) {
+					ui.stop();
 					info("unregistering...");
 					jmDNS.unregisterService(serviceInfo);
 					info("unregistered");
@@ -47,6 +48,7 @@ public class SimHomeServerApplicationUI {
 				}
 			});
 			ui.setVisible(true);
+			ui.start();
 
 			SimHomeServerServer httpServer = new SimHomeServerServer(configuration.getServer());
 			httpServer.start();
