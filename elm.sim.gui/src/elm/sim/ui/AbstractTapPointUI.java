@@ -158,7 +158,7 @@ public abstract class AbstractTapPointUI extends JPanel {
 				timeUnit = "Sekunde";
 			}
 			waitingTimeBar.setValue(percent);
-			waitingTimeBar.setString("Ca. " + timeRounded + " " + timeUnit + (timeRounded > 1 ? "n" : ""));
+			waitingTimeBar.setString("Etwa " + timeRounded + " " + timeUnit + (timeRounded > 1 ? "n" : ""));
 		} else {
 			waitingTimeBar.setValue(2);
 			waitingTimeBar.setString("Zapfungsende abwarten");

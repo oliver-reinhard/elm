@@ -16,7 +16,7 @@ import javax.swing.SwingUtilities;
 
 import elm.hs.api.model.ElmStatus;
 import elm.scheduler.ElmScheduler;
-import elm.scheduler.SchedulerChangeListener;
+import elm.scheduler.ElmSchedulerChangeListener;
 
 @SuppressWarnings("serial")
 public class ElmSchedulerUI extends JFrame {
@@ -70,7 +70,7 @@ public class ElmSchedulerUI extends JFrame {
 		overloadLimit = new JLabel(formatPower(scheduler.getOverloadPowerLimitWatt()));
 		panel.add(overloadLimit, createLabelConstraints(1, 3));
 
-		scheduler.addChangeListener(new SchedulerChangeListener() {
+		scheduler.addChangeListener(new ElmSchedulerChangeListener() {
 			ElmStatus newStatus;
 			int newPowerWatt;
 

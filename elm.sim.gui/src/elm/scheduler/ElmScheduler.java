@@ -143,7 +143,7 @@ public class ElmScheduler extends AbstractElmScheduler {
 			log.info("Total requested power: " + formatPower(totalDemandPowerWatt));
 			int oldDemandPowerWatt = this.totalDemandPowerWatt;
 			this.totalDemandPowerWatt = totalDemandPowerWatt;
-			for (SchedulerChangeListener listener : listeners) {
+			for (ElmSchedulerChangeListener listener : listeners) {
 				listener.totalDemandPowerChanged(oldDemandPowerWatt, totalDemandPowerWatt);
 			}
 		}

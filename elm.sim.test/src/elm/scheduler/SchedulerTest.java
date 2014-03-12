@@ -30,7 +30,7 @@ public class SchedulerTest {
 	ElmUserFeedbackClient feedbackClient;
 	HomeServer hs1;
 	ElmScheduler scheduler;
-	SchedulerChangeListener statusL;
+	ElmSchedulerChangeListener statusL;
 
 	@Before
 	public void setup() {
@@ -40,7 +40,7 @@ public class SchedulerTest {
 		hs1 = createHomeServer(1, NUM_DEVICES, feedbackManager, feedbackClient);  // also initializes the devices with device.status
 
 		scheduler = new ElmScheduler(50_000, 30_000);
-		statusL = mock(SchedulerChangeListener.class);
+		statusL = mock(ElmSchedulerChangeListener.class);
 		scheduler.addChangeListener(statusL);
 	}
 

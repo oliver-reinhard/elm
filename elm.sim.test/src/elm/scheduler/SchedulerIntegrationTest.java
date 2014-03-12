@@ -60,7 +60,7 @@ public class SchedulerIntegrationTest {
 	HomeServerChangeListener hsL2;
 	HomeServerChangeListener hsL3;
 	ElmScheduler scheduler;
-	SchedulerChangeListener statusL;
+	ElmSchedulerChangeListener statusL;
 
 	@Before
 	public void setup() {
@@ -82,7 +82,7 @@ public class SchedulerIntegrationTest {
 
 		scheduler = new ElmScheduler(50_000, 30_000);
 		scheduler.setTimeService(timeService);
-		statusL = mock(SchedulerChangeListener.class);
+		statusL = mock(ElmSchedulerChangeListener.class);
 		scheduler.addChangeListener(statusL);
 	}
 

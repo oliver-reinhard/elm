@@ -29,7 +29,7 @@ public class AbstractSchedulerTest {
 	HomeServer hs1;
 	HomeServer hs2;
 	AbstractElmScheduler scheduler;
-	SchedulerChangeListener statusL;
+	ElmSchedulerChangeListener statusL;
 
 	@Before
 	public void setup() {
@@ -50,7 +50,7 @@ public class AbstractSchedulerTest {
 				}
 			}
 		};
-		statusL = mock(SchedulerChangeListener.class);
+		statusL = mock(ElmSchedulerChangeListener.class);
 		scheduler.addChangeListener(statusL);
 	}
 

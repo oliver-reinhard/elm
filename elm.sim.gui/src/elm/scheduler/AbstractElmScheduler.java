@@ -32,7 +32,7 @@ public abstract class AbstractElmScheduler implements HomeServerChangeListener {
 	/** The Home Server servers (and their connected devices) managed by this scheduler. */
 
 	protected final List<HomeServer> homeServers = new ArrayList<HomeServer>();
-	protected List<SchedulerChangeListener> listeners = new ArrayList<SchedulerChangeListener>();
+	protected List<ElmSchedulerChangeListener> listeners = new ArrayList<ElmSchedulerChangeListener>();
 
 	// Threading and thread communication:
 	private Thread eventProcessor;
@@ -124,7 +124,7 @@ public abstract class AbstractElmScheduler implements HomeServerChangeListener {
 	}
 
 	protected void statusChanged(ElmStatus oldStatus, ElmStatus newStatus, String logMsg) {
-		for (SchedulerChangeListener listener : listeners) {
+		for (ElmSchedulerChangeListener listener : listeners) {
 			listener.statusChanged(oldStatus, newStatus);
 		}
 		if (log.isLoggable(Level.INFO)) {
@@ -197,14 +197,14 @@ public abstract class AbstractElmScheduler implements HomeServerChangeListener {
 		// ignore these notifications
 	}
 
-	public void addChangeListener(SchedulerChangeListener listener) {
+	public void addChangeListener(ElmSchedulerChangeListener listener) {
 		assert listener != null;
 		if (!listeners.contains(listener)) {
 			listeners.add(listener);
 		}
 	}
 
-	public void removeChangeListener(SchedulerChangeListener listener) {
+	public void removeChangeListener(ElmSchedulerChangeListener listener) {
 		listeners.remove(listener);
 	}
 

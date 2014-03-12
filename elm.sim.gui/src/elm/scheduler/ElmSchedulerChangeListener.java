@@ -8,7 +8,7 @@ import elm.hs.api.model.ElmStatus;
  * interface <em>must not</em> do time-consuming or non-deterministic processing.
  * </p>
  */
-public interface SchedulerChangeListener {
+public interface ElmSchedulerChangeListener {
 
 	/**
 	 * The status of the scheduler has changed.
