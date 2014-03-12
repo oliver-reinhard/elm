@@ -129,7 +129,7 @@ public class DeviceCharacteristics {
 			case TYPE_3:
 				return DeviceModel.CEX;
 			case TYPE_5:
-				return DeviceModel.MCX3;
+				return DeviceModel.MCX6;
 			case TYPE_7_SIM:
 				return DeviceModel.SIM;
 			default:

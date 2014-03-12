@@ -212,7 +212,7 @@ public class SimHomeServerServer {
 
 	public void start() throws Exception {
 		server.start();
-		log.log(Level.INFO, "HomeServer started: " + server.getURI());
+		log.log(Level.INFO, "HomeServer " + database.getServerId() + " started: " + server.getURI());
 	}
 
 	public void processCalls() throws Exception {

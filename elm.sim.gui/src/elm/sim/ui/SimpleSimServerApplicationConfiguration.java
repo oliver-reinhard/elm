@@ -13,8 +13,8 @@ import elm.sim.model.impl.TapPointImpl;
 public class SimpleSimServerApplicationConfiguration extends AbstractSimServerApplicationConfiguration {
 
 	private static final String POINT_1_ID = "2016FF0001";
-	private static final String POINT_2_ID = "A001FF0002";
-	private static final String POINT_3_ID = "6003FF0003";
+	private static final String POINT_2_ID = "2016FF0002";
+	private static final String POINT_3_ID = "A001FF0003";
 	private static final String POINT_4_ID = "2016FF0004";
 
 	@Override

@@ -67,7 +67,7 @@ public class SimHomeServerApplicationUI {
 	}
 
 	public static void main(String[] args) {
-		run(new SimpleSimServerApplicationConfiguration(), HomeServerService.DNS_SD_HS_SIM_SERVICE_NAME, 700, 600);
+		run(new SimpleSimServerApplicationConfiguration(), HomeServerService.DNS_SD_HS_SIM_SERVICE_NAME, 750, 600);
 	}
 
 	static void info(String action) {

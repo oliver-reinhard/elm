@@ -31,10 +31,10 @@ import elm.scheduler.model.UnsupportedDeviceModelException;
 
 public class HomeServerImpl implements HomeServer {
 
-	private final String name;
 	private final URI uri;
 	private final String password;
 	private final ElmUserFeedbackManager userFeedbackManager;
+	private String name;
 
 	/** Enable deterministic testing via a replacement of this time service. */
 	private ElmTimeService timeService = ElmTimeService.INSTANCE;
@@ -48,19 +48,20 @@ public class HomeServerImpl implements HomeServer {
 	private List<HomeServerChangeListener> listeners = new ArrayList<HomeServerChangeListener>();
 
 	public HomeServerImpl(URI uri, String password, ElmUserFeedbackManager userFeedbackManager) {
-		this(uri, password, null, userFeedbackManager);
-	}
-
-	public HomeServerImpl(URI uri, String password, String name, ElmUserFeedbackManager userFeedbackManager) {
 		assert uri != null;
 		assert password != null && !password.isEmpty();
 		assert userFeedbackManager != null;
 		this.uri = uri;
 		this.password = password;
-		this.name = name;
 		this.userFeedbackManager = userFeedbackManager;
 	}
 
+	@Override
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	@Override
 	public String getName() {
 		return name;
 	}
@@ -241,7 +242,7 @@ public class HomeServerImpl implements HomeServer {
 
 	@Override
 	public String toString() {
-		StringBuffer b = new StringBuffer(getName());
+		StringBuffer b = new StringBuffer(getName() == null ? getUri().toString() : getName());
 		b.append("[");
 		int n = getDeviceControllers().size();
 		int i = 1;

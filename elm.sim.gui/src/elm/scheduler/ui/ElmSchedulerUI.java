@@ -12,6 +12,7 @@ import java.awt.event.WindowEvent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
 import elm.hs.api.ElmStatus;
@@ -21,12 +22,12 @@ import elm.scheduler.ElmSchedulerChangeListener;
 @SuppressWarnings("serial")
 public class ElmSchedulerUI extends JFrame {
 
-	private final JLabel status;
-	private final JLabel totalPower;
+	private static final Color GREEN = new Color(0, 128, 0);
+	
+	private final JTextField status;
+	private final JTextField totalPower;
 	private final JLabel saturationLimit;
 	private final JLabel overloadLimit;
-	
-	private Color statusBackground;
 
 	/**
 	 * @param scheduler
@@ -37,26 +38,33 @@ public class ElmSchedulerUI extends JFrame {
 
 		// Set defaults; can be changed later before making the frame visible
 		setTitle("ELM-Scheduler");
-		setSize(250, 200);
+		setSize(300, 200);
 		setLocationRelativeTo(null);
 		setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
 
 		JPanel panel = new JPanel();
 		GridBagLayout gbl = new GridBagLayout();
+		gbl.columnWidths = new int[] { 0, 0, };
+		gbl.columnWeights = new double[] { 0.0, Double.MIN_VALUE };
 		panel.setLayout(gbl);
 
 		JLabel statusLabel = new JLabel("Status:");
 		panel.add(statusLabel, createLabelConstraints(0, 0));
 
-		status = new JLabel("");
-		panel.add(status, createLabelConstraints(1, 0));
-		statusBackground = status.getBackground();
+		status = new JTextField("");
+		status.setEditable(false);
+		GridBagConstraints gbc_status = createLabelConstraints(1, 0);
+		gbc_status.fill = GridBagConstraints.HORIZONTAL;
+		panel.add(status, gbc_status);
 
 		JLabel totalPowerLabel = new JLabel("Total benötigte Leistung:");
 		panel.add(totalPowerLabel, createLabelConstraints(0, 1));
 
-		totalPower = new JLabel("");
-		panel.add(totalPower, createLabelConstraints(1, 1));
+		totalPower = new JTextField("");
+		totalPower.setEditable(false);
+		GridBagConstraints gbc_power = createLabelConstraints(1, 1);
+		gbc_power.fill = GridBagConstraints.HORIZONTAL;
+		panel.add(totalPower, gbc_power);
 
 		JLabel saturationLimitLabel = new JLabel("Sättigungsgrenze:");
 		panel.add(saturationLimitLabel, createLabelConstraints(0, 2));
@@ -93,20 +101,22 @@ public class ElmSchedulerUI extends JFrame {
 					public void run() {
 						status.setText(newStatus.getLabel());
 						if (newStatus == ElmStatus.ON) {
-							status.setBackground(Color.GREEN);
+							status.setForeground(GREEN);
 						} else if (newStatus == ElmStatus.SATURATION) {
-							status.setBackground(Color.YELLOW);
+							status.setForeground(Color.ORANGE);
 						} else if (newStatus.in(ElmStatus.OVERLOAD, ElmStatus.ERROR)) {
-							status.setBackground(Color.RED);
+							status.setForeground(Color.RED);
 						} else {
-							status.setBackground(statusBackground);
+							status.setForeground(Color.BLACK);
 						}
 						
 						totalPower.setText(formatPower(newPowerWatt));
-						if (newPowerWatt > 0) {
+						if (newPowerWatt > scheduler.getOverloadPowerLimitWatt()) {
 							totalPower.setForeground(Color.RED);
+						} else if (newPowerWatt > scheduler.getSaturationPowerLimitWatt()) {
+							totalPower.setForeground(Color.ORANGE);
 						} else {
-							totalPower.setForeground(Color.BLACK);
+							totalPower.setForeground(GREEN);
 						}
 					}
 				});

@@ -35,6 +35,9 @@ import elm.sim.model.TapPoint;
  * The actual emulation of a CLAGE Home Server that interacts with simulated {@link TapPoint}s.
  */
 public class SimHomeServerServiceImpl extends AbstractSimObject implements SimHomeServerService {
+	
+	/** Keeps track of server Ids. */
+	private static int runningServerId;
 
 	/**
 	 * Services implemented by this server.
@@ -57,10 +60,14 @@ public class SimHomeServerServiceImpl extends AbstractSimObject implements SimHo
 	private IntakeWaterTemperature waterIntakeTemperature = IntakeWaterTemperature.TEMP_10;
 
 	private final URI uri;
+	
+	private final String serverId;
 
 	public SimHomeServerServiceImpl(String uri) {
 		assert uri != null && !uri.isEmpty();
 		this.uri = URI.create(uri); // checks the syntax
+		int i = runningServerId++;
+		serverId = "D4CA6DB451" + (i<10 ? "0" : "") + i;
 
 		// Services
 		Service s = new Service();
@@ -106,6 +113,11 @@ public class SimHomeServerServiceImpl extends AbstractSimObject implements SimHo
 	@Override
 	public URI getUri() {
 		return uri;
+	}
+
+	@Override
+	public String getServerId() {
+		return serverId;
 	}
 
 	@Override
@@ -313,7 +325,7 @@ public class SimHomeServerServiceImpl extends AbstractSimObject implements SimHo
 
 		if (putServer) {
 			result.server = new Server();
-			result.server.id = "D4CA6DB451EE";
+			result.server.id = serverId;
 			result.server.channel = 106;
 			result.server.address = 178;
 		}

@@ -18,8 +18,8 @@ public class DemoHomeServerApplicationUI extends SimHomeServerApplicationUI {
 		private static final String REAL_POINT_B_1 = "2016406C3E";
 		private static final String REAL_POINT_B_2 = "2016406C31";
 		
-		private static final String SIM_POINT_C_1 = "A001FF0001";
-		private static final String SIM_POINT_C_2 = "6003FF0002";
+		private static final String SIM_POINT_C_1 = "2016FF0001";
+		private static final String SIM_POINT_C_2 = "A001FF0002";
 		private static final String SIM_POINT_C_3 = "2016FF0003";
 
 		@Override
@@ -50,7 +50,7 @@ public class DemoHomeServerApplicationUI extends SimHomeServerApplicationUI {
 	}
 
 	public static void main(String[] args) {
-		run(new DemoApplicationConfiguration(), "Home Server C", 1000, 600);
+		run(new DemoApplicationConfiguration(), "Home Server C", 1100, 600);
 	}
 
 }

@@ -42,6 +42,8 @@ public interface SimHomeServerService {
 
 	URI getUri();
 
+	String getServerId();
+
 	Collection<Device> getDevices();
 
 	void setIntakeWaterTemperature(IntakeWaterTemperature newValue);
@@ -116,4 +118,5 @@ public interface SimHomeServerService {
 	 *            cannot be {@code null}
 	 */
 	void processUserFeedback(List<ElmUserFeedback> feedback);
+
 }

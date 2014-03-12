@@ -253,6 +253,15 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 		try {
 			homeServer.updateLastHomeServerPollTime();
 
+			if (homeServer.getName() == null) {
+				final HomeServerResponse response = publicClient.getServerStatus();
+				if (response == null) {
+					throw new ClientException(ClientException.Error.APPLICATION_DATA_ERROR);
+				}
+				log(Level.INFO, "Server id = " + response.server.id, null);
+				homeServer.setName(response.server.id);
+			}
+			
 			final HomeServerResponse response = publicClient.getRegisteredDevices();
 			if (response == null) {
 				throw new ClientException(ClientException.Error.APPLICATION_DATA_ERROR);
@@ -375,7 +384,7 @@ public class HomeServerController implements Runnable, HomeServerChangeListener 
 	}
 
 	private void log(Level level, String message, Throwable ex) {
-		log.log(level, homeServer.getUri().toString() + ": " + message, ex);
+		log.log(level, (homeServer.getName() == null ? homeServer.getUri() : homeServer.getName()) + ": " + message, ex);
 	}
 
 }

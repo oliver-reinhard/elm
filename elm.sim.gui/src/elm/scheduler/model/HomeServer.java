@@ -25,6 +25,8 @@ public interface HomeServer {
 	 */
 	String getName();
 
+	void setName(String name);
+
 	URI getUri();
 
 	String getPassword();
