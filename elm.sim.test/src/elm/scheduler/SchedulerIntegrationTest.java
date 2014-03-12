@@ -514,12 +514,12 @@ public class SchedulerIntegrationTest {
 			checkDeviceUpdate(hs3, d3_1, DeviceController.NO_POWER);
 			checkDeviceUpdate(hs3, d3_2, DeviceController.NO_POWER);
 
-			checkUserFeedback(hs1, d1_1, OVERLOAD, 9981);
+			checkUserFeedback(hs1, d1_1, OVERLOAD, 39981);
 			checkNoUserFeedback(hs1, d1_2); // tap ON, feedback has not changed from previous update "ON, 0 ms"
-			checkUserFeedback(hs2, d2_1, OVERLOAD, 9981);
+			checkUserFeedback(hs2, d2_1, OVERLOAD, 39981);
 			checkNoUserFeedback(hs2, d2_2); // tap ON, feedback has not changed from previous update "ON, 0 ms"
-			checkUserFeedback(hs3, d3_1, OVERLOAD, 9981);
-			checkUserFeedback(hs3, d3_2, OVERLOAD, 9977); // has a shorter wait time since it is TRYING TO CONSUME
+			checkUserFeedback(hs3, d3_1, OVERLOAD, 39981);
+			checkUserFeedback(hs3, d3_2, OVERLOAD, 39977); // has a shorter wait time since it is TRYING TO CONSUME
 
 			hs1.executeRemoteDeviceUpdates(client, log); // clear
 			hs2.executeRemoteDeviceUpdates(client, log); // clear
@@ -541,12 +541,12 @@ public class SchedulerIntegrationTest {
 			checkNoDeviceUpdates(hs2);
 			checkNoDeviceUpdates(hs3);
 
-			checkUserFeedback(hs1, d1_1, OVERLOAD, 9977);
+			checkUserFeedback(hs1, d1_1, OVERLOAD, 39977);
 			checkNoUserFeedback(hs1, d1_2); // tap ON, feedback has not changed from previous update "ON, 0 ms"
-			checkUserFeedback(hs2, d2_1, OVERLOAD, 9977);
+			checkUserFeedback(hs2, d2_1, OVERLOAD, 39977);
 			checkNoUserFeedback(hs2, d2_2); // tap ON, feedback has not changed from previous update "ON, 0 ms"
-			checkUserFeedback(hs3, d3_1, OVERLOAD, 9977);
-			checkUserFeedback(hs3, d3_2, OVERLOAD, 9973); // has a shorter wait time since it is TRYING TO CONSUME
+			checkUserFeedback(hs3, d3_1, OVERLOAD, 39977);
+			checkUserFeedback(hs3, d3_2, OVERLOAD, 39973); // has a shorter wait time since it is TRYING TO CONSUME
 
 			feedbackManager.sendFeedack(feedbackClient); // clear
 

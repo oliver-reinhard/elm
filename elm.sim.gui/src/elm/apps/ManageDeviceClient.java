@@ -27,7 +27,7 @@ public class ManageDeviceClient extends AbstractCommandLineClient {
 	private int temperatureCelcius;
 
 	enum Command {
-		LIST("ls"), POLL("poll"), ADD("add"), REMOVE("rm"), SET("set"), REDUCE("reduce"), UNREDUCE("unreduce");
+		STATUS("status"), LIST("ls"), POLL("poll"), ADD("add"), REMOVE("rm"), SET("set"), REDUCE("reduce"), UNREDUCE("unreduce");
 
 		private final String cmd;
 
@@ -103,7 +103,10 @@ public class ManageDeviceClient extends AbstractCommandLineClient {
 				internalClient.start();
 			}
 
-			if (deviceID != null) {
+			if (cmd == Command.STATUS) {
+				cmdStatus();
+				
+			} else if(deviceID != null) {
 
 				switch (cmd) {
 				case LIST:
@@ -149,6 +152,11 @@ public class ManageDeviceClient extends AbstractCommandLineClient {
 				e.printStackTrace();
 			}
 		}
+	}
+
+	private void cmdStatus() throws ClientException {
+		HomeServerResponse response = publicClient.getServerStatus();
+		print("Server Status", publicClient, response);
 	}
 
 	private void cmdList() throws ClientException {

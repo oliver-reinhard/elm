@@ -46,7 +46,8 @@ public class ModelTestUtil {
 	public static HomeServer createHomeServer(int id, int devices, ElmUserFeedbackManager feedbackManager, ElmUserFeedbackService feedbackClient,
 			ElmTimeService timeService) {
 		try {
-			HomeServerImpl hs = new HomeServerImpl(URI.create("http://hs" + id), "pw", "hs" + id, feedbackManager);
+			HomeServerImpl hs = new HomeServerImpl(URI.create("http://hs" + id), "pw", feedbackManager);
+			hs.setName("hs" + id);
 			if (timeService != null) {
 				hs.setTimeService(timeService);
 			}

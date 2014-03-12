@@ -25,7 +25,8 @@ public class ElmSchedulerUI extends JFrame {
 	private static final Color GREEN = new Color(0, 128, 0);
 	
 	private final JTextField status;
-	private final JTextField totalPower;
+	private final JTextField totalDemandPower;
+	private final JTextField totalGrantedPower;
 	private final JLabel saturationLimit;
 	private final JLabel overloadLimit;
 
@@ -57,30 +58,40 @@ public class ElmSchedulerUI extends JFrame {
 		gbc_status.fill = GridBagConstraints.HORIZONTAL;
 		panel.add(status, gbc_status);
 
-		JLabel totalPowerLabel = new JLabel("Total benötigte Leistung:");
+		JLabel totalPowerLabel = new JLabel("Total nachgefragte Leistung:");
 		panel.add(totalPowerLabel, createLabelConstraints(0, 1));
 
-		totalPower = new JTextField("");
-		totalPower.setEditable(false);
-		GridBagConstraints gbc_power = createLabelConstraints(1, 1);
-		gbc_power.fill = GridBagConstraints.HORIZONTAL;
-		panel.add(totalPower, gbc_power);
+		totalDemandPower = new JTextField("");
+		totalDemandPower.setEditable(false);
+		GridBagConstraints gbc_d_power = createLabelConstraints(1, 1);
+		gbc_d_power.fill = GridBagConstraints.HORIZONTAL;
+		panel.add(totalDemandPower, gbc_d_power);
+
+		JLabel totalGrantedPowerLabel = new JLabel("Total bewilligte Leistung:");
+		panel.add(totalGrantedPowerLabel, createLabelConstraints(0, 2));
+
+		totalGrantedPower = new JTextField("");
+		totalGrantedPower.setEditable(false);
+		GridBagConstraints gbc_g_power = createLabelConstraints(1, 2);
+		gbc_g_power.fill = GridBagConstraints.HORIZONTAL;
+		panel.add(totalGrantedPower, gbc_g_power);
 
 		JLabel saturationLimitLabel = new JLabel("Sättigungsgrenze:");
-		panel.add(saturationLimitLabel, createLabelConstraints(0, 2));
+		panel.add(saturationLimitLabel, createLabelConstraints(0, 3));
 
 		saturationLimit = new JLabel(formatPower(scheduler.getSaturationPowerLimitWatt()));
-		panel.add(saturationLimit, createLabelConstraints(1, 2));
+		panel.add(saturationLimit, createLabelConstraints(1, 3));
 
 		JLabel overloadLimitLabel = new JLabel("Überlastgrenze:");
-		panel.add(overloadLimitLabel, createLabelConstraints(0, 3));
+		panel.add(overloadLimitLabel, createLabelConstraints(0, 4));
 
 		overloadLimit = new JLabel(formatPower(scheduler.getOverloadPowerLimitWatt()));
-		panel.add(overloadLimit, createLabelConstraints(1, 3));
+		panel.add(overloadLimit, createLabelConstraints(1, 4));
 
 		scheduler.addChangeListener(new ElmSchedulerChangeListener() {
 			ElmStatus newStatus;
-			int newPowerWatt;
+			int newDemandPowerWatt;
+			int newGrantedPowerWatt;
 
 			@Override
 			public void statusChanged(ElmStatus oldStatus, ElmStatus newStatus) {
@@ -90,7 +101,13 @@ public class ElmSchedulerUI extends JFrame {
 
 			@Override
 			public void totalDemandPowerChanged(int oldPowerWatt, int newPowerWatt) {
-				this.newPowerWatt = newPowerWatt;
+				newDemandPowerWatt = newPowerWatt;
+				updateUI();
+			}
+
+			@Override
+			public void totalGrantedPowerChanged(int oldPowerWatt, int newPowerWatt) {
+				newGrantedPowerWatt = newPowerWatt;
 				updateUI();
 			}
 
@@ -110,13 +127,20 @@ public class ElmSchedulerUI extends JFrame {
 							status.setForeground(Color.BLACK);
 						}
 						
-						totalPower.setText(formatPower(newPowerWatt));
-						if (newPowerWatt > scheduler.getOverloadPowerLimitWatt()) {
-							totalPower.setForeground(Color.RED);
-						} else if (newPowerWatt > scheduler.getSaturationPowerLimitWatt()) {
-							totalPower.setForeground(Color.ORANGE);
+						totalDemandPower.setText(formatPower(newDemandPowerWatt));
+						if (newDemandPowerWatt > scheduler.getOverloadPowerLimitWatt()) {
+							totalDemandPower.setForeground(Color.RED);
+						} else if (newDemandPowerWatt > scheduler.getSaturationPowerLimitWatt()) {
+							totalDemandPower.setForeground(Color.ORANGE);
 						} else {
-							totalPower.setForeground(GREEN);
+							totalDemandPower.setForeground(GREEN);
+						}
+						
+						totalGrantedPower.setText(formatPower(newGrantedPowerWatt));
+						if (newGrantedPowerWatt > scheduler.getOverloadPowerLimitWatt()) {
+							totalGrantedPower.setForeground(Color.RED);
+						} else {
+							totalGrantedPower.setForeground(GREEN);
 						}
 					}
 				});

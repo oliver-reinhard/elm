@@ -167,7 +167,7 @@ public class DeviceControllerImpl implements DeviceController {
 			// - or update() is called for the first time.
 			if (deviceHeaterOn || status.isConsuming() || status == INITIALIZING) {
 				if (status == INITIALIZING) {
-					final short initialDemandTemperatureUnits = device.info.setpoint >= deviceModel.getTemperatureOff() + TEMP_CHANGE_IGNORE_DELTA_UNITS ? device.info.setpoint
+					final short initialDemandTemperatureUnits = device.info.setpoint >= (deviceModel.getTemperatureOff() + TEMP_CHANGE_IGNORE_DELTA_UNITS) ? device.info.setpoint
 							: DEFAULT_SETPOINT_TEMPERATURE_UNITS;
 					setUserDemandTemperatureUnits(initialDemandTemperatureUnits);
 
@@ -176,8 +176,12 @@ public class DeviceControllerImpl implements DeviceController {
 					RemoteDeviceUpdate update = new RemoteDeviceUpdate(this.id);
 					update.clearScaldProtection(initialDemandTemperatureUnits);
 					homeServer.putDeviceUpdate(update);
+					homeServer.fireDeviceUpdatesPending();
 				}
 				return UpdateResult.DEVICE_STATUS_REQUIRED;
+				
+			} else if (status == READY && ! deviceHeaterOn && userDemandTemperatureUnits !=  device.info.setpoint) {
+				setUserDemandTemperatureUnits(device.info.setpoint);
 			}
 		}
 
@@ -213,7 +217,7 @@ public class DeviceControllerImpl implements DeviceController {
 
 			final short newDeviceFlowUnits = device.status.flow;
 			final short oldDeviceFlowUnits = deviceFlowUnits;
-			if (oldDeviceFlowUnits == 0 || Math.abs(oldDeviceFlowUnits - newDeviceFlowUnits) > FLOW_CHANGE_IGNORE_DELTA_UNITS) {
+			if (oldDeviceFlowUnits == 0 && newDeviceFlowUnits > 0 || Math.abs(oldDeviceFlowUnits - newDeviceFlowUnits) > FLOW_CHANGE_IGNORE_DELTA_UNITS) {
 				deviceFlowUnits = newDeviceFlowUnits;
 				potentialPowerChange = true;
 				info("flow change: " + newDeviceFlowUnits / 10 + " litres/min.");
@@ -375,8 +379,8 @@ public class DeviceControllerImpl implements DeviceController {
 			lastDeviceStatus = deviceFeedbackStatus;
 			lastWaitingTimeMillis = expectedWaitingTimeMillis;
 
-			if (LOG.isLoggable(Level.INFO)) {
-				info("feedback status " + deviceFeedbackStatus + ", waiting time " + expectedWaitingTimeMillis + " ms");
+			if (LOG.isLoggable(Level.FINE)) {
+				log(Level.FINE, "feedback status " + deviceFeedbackStatus + ", waiting time " + expectedWaitingTimeMillis + " ms", null);
 			}
 			getHomeServer().dispatchElmUserFeedback(id, deviceFeedbackStatus, expectedWaitingTimeMillis);
 		}
@@ -434,6 +438,7 @@ public class DeviceControllerImpl implements DeviceController {
 		if (newValue != userDemandTemperatureUnits) {
 			info("reference temperature change (user): " + formatTemperature(newValue));
 			userDemandTemperatureUnits = newValue;
+			deviceReferenceTemperatureUnits = newValue;
 		}
 	}
 

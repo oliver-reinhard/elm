@@ -43,6 +43,9 @@ public class ElmScheduler extends AbstractElmScheduler {
 	/** The total amount of power being requested. */
 	private int totalDemandPowerWatt;
 
+	/** The total amount of power being granted. */
+	private int totalGrantedPowerWatt;
+
 	/** Enable deterministic testing via a replacement of this time service. */
 	private ElmTimeService timeService = ElmTimeService.INSTANCE;
 
@@ -162,6 +165,7 @@ public class ElmScheduler extends AbstractElmScheduler {
 		if (nextStatus == OVERLOAD) {
 			overloadMode(consumingDevices, standbyDevices);
 		} else {
+			fireGrantedPower(totalDemandPowerWatt);
 			normalMode(consumingDevices, standbyDevices, nextStatus);
 		}
 	}
@@ -189,14 +193,14 @@ public class ElmScheduler extends AbstractElmScheduler {
 		// Devices with an approved consumption will not be preempted.
 		sortByConsumption(consumingDevices);
 
-		int totalDemandPowerWatt = 0;
+		int totalGrantedPowerWatt = 0;
 		int[] expectedWaitingTimeMillis = new int[] { 0 }; // no waiting time
 		int waitingTimesIndex = 0;
 
 		for (DeviceController device : consumingDevices) {
-			if (device.getStatus() == DeviceStatus.CONSUMPTION_APPROVED || totalDemandPowerWatt + device.getDemandPowerWatt() <= overloadPowerLimitWatt) {
+			if (device.getStatus() == DeviceStatus.CONSUMPTION_APPROVED || totalGrantedPowerWatt + device.getDemandPowerWatt() <= overloadPowerLimitWatt) {
 				// consumption approved
-				totalDemandPowerWatt += device.getDemandPowerWatt();
+				totalGrantedPowerWatt += device.getDemandPowerWatt();
 				device.updateMaximumPowerConsumption(OVERLOAD, DeviceController.UNLIMITED_POWER);
 				device.updateUserFeedback(OVERLOAD, 0);
 			} else {
@@ -209,8 +213,10 @@ public class ElmScheduler extends AbstractElmScheduler {
 				waitingTimesIndex++;
 			}
 		}
-		if (totalDemandPowerWatt > overloadPowerLimitWatt) {
-			log.severe("Overload power limit (" + formatPower(overloadPowerLimitWatt) + ") overrun: " + formatPower(totalDemandPowerWatt));
+		
+		fireGrantedPower(totalGrantedPowerWatt);
+		if (totalGrantedPowerWatt > overloadPowerLimitWatt) {
+			log.severe("Overload power limit (" + formatPower(overloadPowerLimitWatt) + ") overrun: " + formatPower(totalGrantedPowerWatt));
 			// TODO should reduce the water flow of all consuming devices
 		}
 
@@ -328,5 +334,16 @@ public class ElmScheduler extends AbstractElmScheduler {
 		// sort in ascending order: the device that finishes first provides a slot for the next one to start
 		Arrays.sort(result);
 		return result;
+	}
+	
+	private void fireGrantedPower(int totalGrantedPowerWatt) {
+		if (totalGrantedPowerWatt != this.totalGrantedPowerWatt) {
+			log.info("Total granted power:   " + formatPower(totalGrantedPowerWatt));
+			int oldDemandPowerWatt = this.totalDemandPowerWatt;
+			this.totalGrantedPowerWatt = totalGrantedPowerWatt;
+			for (ElmSchedulerChangeListener listener : listeners) {
+				listener.totalGrantedPowerChanged(oldDemandPowerWatt, totalGrantedPowerWatt);
+			}
+		}
 	}
 }

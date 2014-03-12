@@ -34,4 +34,15 @@ public interface ElmSchedulerChangeListener {
 	 */
 	void totalDemandPowerChanged(int oldPowerWatt, int newPowerWatt);
 
+	/**
+	 * The total power granted to the devices has changed.
+	 * <p>
+	 * <em>Note: </em>This method must not be long-running or blocking; this could delay the scheduler.
+	 * </p>
+	 * 
+	 * @param oldPowerWatt
+	 * @param newPowerWatt
+	 */
+	void totalGrantedPowerChanged(int oldPowerWatt, int newPowerWatt);
+
 }
