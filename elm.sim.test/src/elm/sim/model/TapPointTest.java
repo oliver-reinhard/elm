@@ -20,7 +20,7 @@ import static org.junit.Assert.fail;
 import org.junit.Before;
 import org.junit.Test;
 
-import elm.hs.api.model.Device;
+import elm.hs.api.Device;
 import elm.scheduler.model.UnsupportedDeviceModelException;
 import elm.scheduler.model.impl.ModelTestUtil;
 import elm.sim.model.impl.TapPointImpl;

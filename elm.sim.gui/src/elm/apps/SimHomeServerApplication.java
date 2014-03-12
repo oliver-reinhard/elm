@@ -2,8 +2,8 @@ package elm.apps;
 
 import java.io.IOException;
 
-import elm.hs.api.sim.server.SimHomeServer;
-import elm.hs.api.sim.server.SimHomeServerImpl;
+import elm.hs.api.sim.server.SimHomeServerService;
+import elm.hs.api.sim.server.SimHomeServerServiceImpl;
 import elm.hs.api.sim.server.SimHomeServerServer;
 import elm.util.ElmLogFormatter;
 
@@ -17,7 +17,7 @@ public class SimHomeServerApplication {
 			System.exit(1);
 		}
 		
-		SimHomeServer database = SimHomeServerImpl.createDemoDB("http://chs.local:9090");
+		SimHomeServerService database = SimHomeServerServiceImpl.createDemoDB("http://chs.local:9090");
 		SimHomeServerServer server = new SimHomeServerServer(database);
 		server.start();
 		System.out.println(SimHomeServerApplication.class.getSimpleName() + " started.");

@@ -5,11 +5,11 @@ import java.util.logging.Level;
 
 import org.apache.commons.cli.Options;
 
+import elm.hs.api.Device;
+import elm.hs.api.HomeServerResponse;
 import elm.hs.api.client.AbstractCommandLineClient;
 import elm.hs.api.client.HomeServerInternalApiClient;
 import elm.hs.api.client.HomeServerPublicApiClient;
-import elm.hs.api.model.Device;
-import elm.hs.api.model.HomeServerResponse;
 import elm.util.ClientUtil;
 import elm.util.ElmLogFormatter;
 

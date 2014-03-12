@@ -9,6 +9,7 @@ import javax.jmdns.JmDNS;
 import javax.jmdns.ServiceInfo;
 import javax.swing.JFrame;
 
+import elm.hs.api.HomeServerInternalService;
 import elm.hs.api.HomeServerService;
 import elm.hs.api.sim.server.SimHomeServerServer;
 import elm.sim.ui.AbstractSimServerApplicationConfiguration;
@@ -18,7 +19,7 @@ import elm.util.ElmLogFormatter;
 
 public class SimHomeServerApplicationUI {
 
-	public static final int REGISTERED_SERVER_PORT = HomeServerService.INTERNAL_API_PORT;
+	public static final int REGISTERED_SERVER_PORT = HomeServerInternalService.INTERNAL_API_PORT;
 
 	private static Logger LOG;
 

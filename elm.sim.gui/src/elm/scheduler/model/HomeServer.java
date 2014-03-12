@@ -5,10 +5,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.logging.Logger;
 
-import elm.hs.api.model.Device;
-import elm.hs.api.model.ElmStatus;
-import elm.hs.api.model.Info;
-import elm.hs.api.model.Status;
+import elm.hs.api.Device;
+import elm.hs.api.ElmStatus;
+import elm.hs.api.HomeServerInternalService;
+import elm.hs.api.Info;
+import elm.hs.api.Status;
 import elm.scheduler.ElmUserFeedbackManager;
 import elm.scheduler.HomeServerController;
 
@@ -105,7 +106,7 @@ public interface HomeServer {
 	 * @param log
 	 *            never {@code null}
 	 */
-	void executeRemoteDeviceUpdates(RemoteDeviceUpdateClient client, Logger log);
+	void executeRemoteDeviceUpdates(HomeServerInternalService client, Logger log);
 
 	/**
 	 * Adds a listener.

@@ -4,15 +4,23 @@ import java.net.URI;
 import java.util.Collection;
 import java.util.List;
 
-import elm.hs.api.model.Device;
-import elm.hs.api.model.ElmUserFeedback;
-import elm.hs.api.model.HomeServerResponse;
+import elm.hs.api.Device;
+import elm.hs.api.ElmUserFeedback;
+import elm.hs.api.ElmUserFeedbackService;
+import elm.hs.api.HomeServerResponse;
+import elm.hs.api.HomeServerService;
 import elm.sim.metamodel.SimAttribute;
 import elm.sim.model.IntakeWaterTemperature;
 
-public interface SimHomeServer {
-	
-	/** A simple metamodel of the {@link SimHomeServer}. */
+/**
+ * Defines the interface of the simulated CLAGE Home Server including additional methods for {@link ElmUserFeedback}.
+ * 
+ * @see HomeServerService
+ * @see ElmUserFeedbackService
+ */
+public interface SimHomeServerService {
+
+	/** A simple metamodel of the {@link SimHomeServerService}. */
 	public enum Attribute implements SimAttribute {
 		INTAKE_WATER_TEMPERATURE("Kaltwassertemperatur");
 
@@ -32,7 +40,6 @@ public interface SimHomeServer {
 		}
 	}
 
-
 	URI getUri();
 
 	Collection<Device> getDevices();
@@ -41,23 +48,22 @@ public interface SimHomeServer {
 
 	IntakeWaterTemperature getIntakeWaterTemperature();
 
-
 	/**
-	 * Gerneral  GET Http {@code ""} request.
+	 * Responds to a general GET Http {@code ""} request.
 	 * 
 	 * @return never {@code null}
 	 */
 	HomeServerResponse processStatusQuery();
 
 	/**
-	 * Http GET {@code /devices} request.
+	 * Responds to a Http GET {@code /devices} request.
 	 * 
 	 * @return never {@code null}
 	 */
 	HomeServerResponse processDevicesQuery();
 
 	/**
-	 * Http GET {@code /devices/status/<id>} request.
+	 * Responds to a Http GET {@code /devices/status/<id>} request.
 	 * 
 	 * @param id
 	 *            cannot be {@code null} or empty
@@ -66,8 +72,8 @@ public interface SimHomeServer {
 	HomeServerResponse processDeviceStatusQuery(String id);
 
 	/**
-	 * Http POST {@code /devices/setpoint/<id>} with a body of {@code data=<temperature>} request. Changes the setpoint of the given device in the database and
-	 * returns the proper response.
+	 * Responds to a Http POST {@code /devices/setpoint/<id>} with a body of {@code data=<temperature>} request. Changes the setpoint of the given device in the
+	 * database and returns the proper response.
 	 * 
 	 * @param id
 	 *            cannot be {@code null} or empty
@@ -78,7 +84,7 @@ public interface SimHomeServer {
 	HomeServerResponse processDeviceSetpoint(String id, short setpoint);
 
 	/**
-	 * Http POST {@code /cmd/VF/} with a body of {@code data=<temperature>} request. Changes the scald-protection temperature.
+	 * Responds to a Http POST {@code /cmd/VF/} with a body of {@code data=<temperature>} request. Changes the scald-protection temperature.
 	 * 
 	 * @param id
 	 *            cannot be {@code null} or empty
@@ -87,7 +93,7 @@ public interface SimHomeServer {
 	HomeServerResponse processSetScaldProtectionFlag(String id, boolean on);
 
 	/**
-	 * Http POST {@code /cmd/Vv/} with a body of {@code data=<temperature>} request. Changes the scald-protection temperature.
+	 * Responds to a Http POST {@code /cmd/Vv/} with a body of {@code data=<temperature>} request. Changes the scald-protection temperature.
 	 * 
 	 * @param id
 	 *            cannot be {@code null} or empty
@@ -98,12 +104,13 @@ public interface SimHomeServer {
 	HomeServerResponse processSetScaldProtectionTemperature(String id, short temperature);
 
 	/**
-	 * Http GET {@code /devices/feedback} without parameter or request body. This returns a list of device IDs whose feedback is handled by this server.
+	 * Responds to a Http GET {@code /devices/feedback} without parameter or request body. This returns a list of device IDs whose feedback is handled by this
+	 * server.
 	 */
 	HomeServerResponse processDevicesFeedbackQuery();
 
 	/**
-	 * Http POST {@code /devices/feedback} with a body of List of {@link ElmUserFeedback} request.
+	 * Responds to a Http POST {@code /devices/feedback} with a body of List of {@link ElmUserFeedback} request.
 	 * 
 	 * @param feedback
 	 *            cannot be {@code null}

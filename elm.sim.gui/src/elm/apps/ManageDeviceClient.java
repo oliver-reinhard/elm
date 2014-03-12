@@ -7,11 +7,11 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
+import elm.hs.api.Device;
+import elm.hs.api.HomeServerResponse;
 import elm.hs.api.client.AbstractCommandLineClient;
 import elm.hs.api.client.HomeServerInternalApiClient;
 import elm.hs.api.client.HomeServerPublicApiClient;
-import elm.hs.api.model.Device;
-import elm.hs.api.model.HomeServerResponse;
 import elm.util.ClientException;
 import elm.util.ClientUtil;
 import elm.util.ElmLogFormatter;

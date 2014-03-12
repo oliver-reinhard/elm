@@ -1,4 +1,4 @@
-package elm.hs.api.model;
+package elm.hs.api;
 
 import java.util.List;
 

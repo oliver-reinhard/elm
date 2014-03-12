@@ -1,10 +1,10 @@
 package elm.scheduler.model;
 
-import elm.hs.api.model.Device;
-import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
-import elm.hs.api.model.ElmStatus;
-import elm.hs.api.model.Info;
-import elm.hs.api.model.Status;
+import elm.hs.api.Device;
+import elm.hs.api.ElmStatus;
+import elm.hs.api.Info;
+import elm.hs.api.Status;
+import elm.hs.api.DeviceCharacteristics.DeviceModel;
 import elm.scheduler.HomeServerController;
 import elm.scheduler.ElmScheduler;
 

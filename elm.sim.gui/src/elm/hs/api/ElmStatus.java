@@ -1,4 +1,4 @@
-package elm.hs.api.model;
+package elm.hs.api;
 
 public enum ElmStatus {
 	OFF("Aus"), ON("Ein"), SATURATION("Sättigung"), OVERLOAD("Überlast"), ERROR("Störung");

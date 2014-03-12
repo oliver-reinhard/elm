@@ -5,13 +5,13 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import elm.hs.api.Device;
+import elm.hs.api.HomeServerResponse;
 import elm.hs.api.HomeServerService;
+import elm.hs.api.Info;
+import elm.hs.api.Status;
 import elm.hs.api.client.HomeServerInternalApiClient;
 import elm.hs.api.client.HomeServerPublicApiClient;
-import elm.hs.api.model.Device;
-import elm.hs.api.model.HomeServerResponse;
-import elm.hs.api.model.Info;
-import elm.hs.api.model.Status;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.HomeServerChangeListener;
 import elm.scheduler.model.UnsupportedDeviceModelException;

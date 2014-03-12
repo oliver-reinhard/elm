@@ -1,6 +1,6 @@
 package elm.sim.model;
 
-import elm.hs.api.model.ElmStatus;
+import elm.hs.api.ElmStatus;
 import elm.sim.metamodel.SimEnum;
 
 public enum SimStatus implements SimEnum {

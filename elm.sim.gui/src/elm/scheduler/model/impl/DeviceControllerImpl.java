@@ -18,9 +18,9 @@ import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import elm.hs.api.model.Device;
-import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
-import elm.hs.api.model.ElmStatus;
+import elm.hs.api.Device;
+import elm.hs.api.ElmStatus;
+import elm.hs.api.DeviceCharacteristics.DeviceModel;
 import elm.scheduler.ElmScheduler;
 import elm.scheduler.ElmTimeService;
 import elm.scheduler.model.DeviceController;

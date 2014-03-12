@@ -1,9 +1,9 @@
 package elm.scheduler;
 
-import static elm.hs.api.model.ElmStatus.OFF;
-import static elm.hs.api.model.ElmStatus.ON;
-import static elm.hs.api.model.ElmStatus.OVERLOAD;
-import static elm.hs.api.model.ElmStatus.SATURATION;
+import static elm.hs.api.ElmStatus.OFF;
+import static elm.hs.api.ElmStatus.ON;
+import static elm.hs.api.ElmStatus.OVERLOAD;
+import static elm.hs.api.ElmStatus.SATURATION;
 import static elm.scheduler.model.DeviceController.DeviceStatus.CONSUMPTION_APPROVED;
 import static elm.scheduler.model.DeviceController.DeviceStatus.CONSUMPTION_DENIED;
 import static elm.scheduler.model.DeviceController.DeviceStatus.CONSUMPTION_STARTED;
@@ -34,11 +34,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import elm.hs.api.model.Device;
+import elm.hs.api.Device;
+import elm.hs.api.ElmUserFeedbackService;
+import elm.hs.api.HomeServerInternalService;
 import elm.scheduler.model.DeviceController;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.HomeServerChangeListener;
-import elm.scheduler.model.RemoteDeviceUpdateClient;
 import elm.scheduler.model.UnsupportedDeviceModelException;
 import elm.util.ClientException;
 
@@ -51,7 +52,7 @@ public class SchedulerIntegrationTest {
 	final Logger log = Logger.getLogger(getClass().getName());
 
 	ElmUserFeedbackManager feedbackManager;
-	ElmUserFeedbackClient feedbackClient;
+	ElmUserFeedbackService feedbackClient;
 	ElmTestTimeService timeService;
 	HomeServer hs1;
 	HomeServer hs2;
@@ -65,7 +66,7 @@ public class SchedulerIntegrationTest {
 	@Before
 	public void setup() {
 		feedbackManager = new ElmUserFeedbackManager();
-		feedbackClient = mock(ElmUserFeedbackClient.class);
+		feedbackClient = mock(ElmUserFeedbackService.class);
 		timeService = new ElmTestTimeService();
 
 		hs1 = createHomeServer(1, NUM_DEVICES, feedbackManager, feedbackClient, timeService); // also initializes the devices with device.status
@@ -321,7 +322,7 @@ public class SchedulerIntegrationTest {
 			feedbackManager.sendFeedack(feedbackClient);
 
 			// home server 1..3: process device updates => "execute" (and clear) the device updates
-			RemoteDeviceUpdateClient client = mock(RemoteDeviceUpdateClient.class);
+			HomeServerInternalService client = mock(HomeServerInternalService.class);
 			hs1.executeRemoteDeviceUpdates(client, log); // clear
 			hs2.executeRemoteDeviceUpdates(client, log); // clear
 			hs3.executeRemoteDeviceUpdates(client, log); // clear

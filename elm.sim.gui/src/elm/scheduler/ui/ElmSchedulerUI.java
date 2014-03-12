@@ -14,7 +14,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
-import elm.hs.api.model.ElmStatus;
+import elm.hs.api.ElmStatus;
 import elm.scheduler.ElmScheduler;
 import elm.scheduler.ElmSchedulerChangeListener;
 

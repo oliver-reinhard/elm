@@ -5,8 +5,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import elm.hs.api.model.Device;
-import elm.hs.api.model.ElmStatus;
+import elm.hs.api.Device;
+import elm.hs.api.ElmStatus;
 import elm.scheduler.model.DeviceController;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.HomeServerChangeListener;

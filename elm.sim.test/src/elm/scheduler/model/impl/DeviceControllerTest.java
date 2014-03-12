@@ -25,9 +25,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import elm.hs.api.model.Device;
-import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
-import elm.hs.api.model.ElmStatus;
+import elm.hs.api.Device;
+import elm.hs.api.ElmStatus;
+import elm.hs.api.DeviceCharacteristics.DeviceModel;
 import elm.scheduler.model.DeviceController.UpdateResult;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.RemoteDeviceUpdate;

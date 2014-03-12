@@ -11,8 +11,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import elm.hs.api.model.Device;
-import elm.hs.api.model.ElmStatus;
+import elm.hs.api.Device;
+import elm.hs.api.ElmStatus;
 import elm.scheduler.model.UnsupportedDeviceModelException;
 import elm.scheduler.model.impl.ModelTestUtil;
 import elm.sim.model.Flow;

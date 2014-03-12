@@ -16,9 +16,10 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import elm.hs.api.model.Device;
-import elm.hs.api.model.ElmStatus;
-import elm.hs.api.model.ElmUserFeedback;
+import elm.hs.api.Device;
+import elm.hs.api.ElmStatus;
+import elm.hs.api.ElmUserFeedback;
+import elm.hs.api.HomeServerInternalService;
 import elm.scheduler.ElmTimeService;
 import elm.scheduler.ElmUserFeedbackManager;
 import elm.scheduler.model.RemoteDeviceUpdate;
@@ -26,7 +27,6 @@ import elm.scheduler.model.DeviceController;
 import elm.scheduler.model.DeviceController.UpdateResult;
 import elm.scheduler.model.HomeServer;
 import elm.scheduler.model.HomeServerChangeListener;
-import elm.scheduler.model.RemoteDeviceUpdateClient;
 import elm.scheduler.model.UnsupportedDeviceModelException;
 
 public class HomeServerImpl implements HomeServer {
@@ -174,7 +174,7 @@ public class HomeServerImpl implements HomeServer {
 	}
 
 	@Override
-	public void executeRemoteDeviceUpdates(RemoteDeviceUpdateClient client, Logger log) {
+	public void executeRemoteDeviceUpdates(HomeServerInternalService client, Logger log) {
 		assert client != null;
 		assert log != null;
 		List<RemoteDeviceUpdate> updates;

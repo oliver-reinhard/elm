@@ -4,7 +4,8 @@ import static elm.util.ElmLogFormatter.formatTemperature;
 
 import java.util.logging.Logger;
 
-import elm.hs.api.model.Device;
+import elm.hs.api.Device;
+import elm.hs.api.HomeServerInternalService;
 import elm.util.ClientException;
 
 public class RemoteDeviceUpdate {
@@ -69,7 +70,7 @@ public class RemoteDeviceUpdate {
 	 * @param log
 	 *            cannot be {@code null}
 	 */
-	public void execute(RemoteDeviceUpdateClient client, Logger log) throws ClientException {
+	public void execute(HomeServerInternalService client, Logger log) throws ClientException {
 		if (scaldProtectionTemperatureUnits != null) {
 			log.info("Device " + id + ": setting scald-protection temperature to " + formatTemperature(scaldProtectionTemperatureUnits));
 			short actualValueUnits = (short) client.setScaldProtectionTemperature(id, scaldProtectionTemperatureUnits);

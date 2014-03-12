@@ -7,7 +7,7 @@ import java.awt.Insets;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
-import elm.hs.api.sim.server.SimHomeServer;
+import elm.hs.api.sim.server.SimHomeServerService;
 import elm.sim.metamodel.SimModelEvent;
 import elm.sim.metamodel.SimModelListener;
 import elm.sim.model.IntakeWaterTemperature;
@@ -171,7 +171,7 @@ public class SimServerApplicationUI extends JFrame {
 		return gbc_outlet_1;
 	}
 
-	public SimHomeServer getServer() {
+	public SimHomeServerService getServer() {
 		return configuration.getServer();
 	}
 	

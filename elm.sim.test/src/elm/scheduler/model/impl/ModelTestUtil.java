@@ -11,15 +11,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import elm.hs.api.model.Device;
-import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
-import elm.hs.api.model.ElmStatus;
-import elm.hs.api.model.ElmUserFeedback;
-import elm.hs.api.model.Error;
-import elm.hs.api.model.Info;
-import elm.hs.api.model.Status;
+import elm.hs.api.Device;
+import elm.hs.api.ElmStatus;
+import elm.hs.api.ElmUserFeedback;
+import elm.hs.api.ElmUserFeedbackService;
+import elm.hs.api.Error;
+import elm.hs.api.Info;
+import elm.hs.api.Status;
+import elm.hs.api.DeviceCharacteristics.DeviceModel;
 import elm.scheduler.ElmTimeService;
-import elm.scheduler.ElmUserFeedbackClient;
 import elm.scheduler.ElmUserFeedbackManager;
 import elm.scheduler.model.DeviceController;
 import elm.scheduler.model.HomeServer;
@@ -39,11 +39,11 @@ public class ModelTestUtil {
 	private static final short SIM_POWER_MAX_UNITS = 180; // Model SIM
 	private static final int SIM_POWER_MAX_WATT = DeviceModel.SIM.getPowerMaxWatt(); // Model SIM
 
-	public static HomeServer createHomeServer(int id, int devices, ElmUserFeedbackManager feedbackManager, ElmUserFeedbackClient feedbackClient) {
+	public static HomeServer createHomeServer(int id, int devices, ElmUserFeedbackManager feedbackManager, ElmUserFeedbackService feedbackClient) {
 		return createHomeServer(id, devices, feedbackManager, feedbackClient, null);
 	}
 
-	public static HomeServer createHomeServer(int id, int devices, ElmUserFeedbackManager feedbackManager, ElmUserFeedbackClient feedbackClient,
+	public static HomeServer createHomeServer(int id, int devices, ElmUserFeedbackManager feedbackManager, ElmUserFeedbackService feedbackClient,
 			ElmTimeService timeService) {
 		try {
 			HomeServerImpl hs = new HomeServerImpl(URI.create("http://hs" + id), "pw", "hs" + id, feedbackManager);

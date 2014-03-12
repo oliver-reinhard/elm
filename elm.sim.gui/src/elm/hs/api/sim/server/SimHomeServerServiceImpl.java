@@ -12,18 +12,18 @@ import java.util.Map;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import elm.hs.api.model.Device;
-import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
-import elm.hs.api.model.ElmUserFeedback;
-import elm.hs.api.model.Feedback;
-import elm.hs.api.model.HomeServerFieldNamingStrategy;
-import elm.hs.api.model.HomeServerResponse;
-import elm.hs.api.model.Info;
-import elm.hs.api.model.Log;
-import elm.hs.api.model.Response;
-import elm.hs.api.model.Server;
-import elm.hs.api.model.Service;
-import elm.hs.api.model.Status;
+import elm.hs.api.Device;
+import elm.hs.api.ElmUserFeedback;
+import elm.hs.api.Feedback;
+import elm.hs.api.HomeServerFieldNamingStrategy;
+import elm.hs.api.HomeServerResponse;
+import elm.hs.api.Info;
+import elm.hs.api.Log;
+import elm.hs.api.Response;
+import elm.hs.api.Server;
+import elm.hs.api.Service;
+import elm.hs.api.Status;
+import elm.hs.api.DeviceCharacteristics.DeviceModel;
 import elm.scheduler.model.UnsupportedDeviceModelException;
 import elm.sim.metamodel.AbstractSimObject;
 import elm.sim.metamodel.SimAttribute;
@@ -31,7 +31,10 @@ import elm.sim.model.HotWaterTemperature;
 import elm.sim.model.IntakeWaterTemperature;
 import elm.sim.model.TapPoint;
 
-public class SimHomeServerImpl extends AbstractSimObject implements SimHomeServer {
+/**
+ * The actual emulation of a CLAGE Home Server that interacts with simulated {@link TapPoint}s.
+ */
+public class SimHomeServerServiceImpl extends AbstractSimObject implements SimHomeServerService {
 
 	/**
 	 * Services implemented by this server.
@@ -55,7 +58,7 @@ public class SimHomeServerImpl extends AbstractSimObject implements SimHomeServe
 
 	private final URI uri;
 
-	public SimHomeServerImpl(String uri) {
+	public SimHomeServerServiceImpl(String uri) {
 		assert uri != null && !uri.isEmpty();
 		this.uri = URI.create(uri); // checks the syntax
 
@@ -124,8 +127,8 @@ public class SimHomeServerImpl extends AbstractSimObject implements SimHomeServe
 		return waterIntakeTemperature;
 	}
 
-	public static SimHomeServer createDemoDB(String uri) {
-		SimHomeServerImpl db = new SimHomeServerImpl(uri);
+	public static SimHomeServerService createDemoDB(String uri) {
+		SimHomeServerServiceImpl db = new SimHomeServerServiceImpl(uri);
 		db.addDevice("2016FFFF55", (short) 200, true);
 		db.addDevice("A001FFFF33", (short) 380, true);
 		db.addDevice("6003FFFF1A", (short) 420, true);

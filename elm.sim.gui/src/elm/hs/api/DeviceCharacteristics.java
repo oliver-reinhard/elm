@@ -1,4 +1,4 @@
-package elm.hs.api.model;
+package elm.hs.api;
 
 public class DeviceCharacteristics {
 

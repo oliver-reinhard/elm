@@ -1,8 +1,8 @@
 package elm.scheduler;
 
-import static elm.hs.api.model.ElmStatus.ERROR;
-import static elm.hs.api.model.ElmStatus.OFF;
-import static elm.hs.api.model.ElmStatus.ON;
+import static elm.hs.api.ElmStatus.ERROR;
+import static elm.hs.api.ElmStatus.OFF;
+import static elm.hs.api.ElmStatus.ON;
 import static elm.scheduler.model.impl.ModelTestUtil.createHomeServer;
 import static elm.scheduler.model.impl.ModelTestUtil.sleep;
 import static org.junit.Assert.assertEquals;
@@ -17,6 +17,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import elm.hs.api.ElmUserFeedbackService;
 import elm.scheduler.model.HomeServer;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -27,7 +28,7 @@ public class SchedulerTest {
 	final Logger log = Logger.getLogger(getClass().getName());
 
 	ElmUserFeedbackManager feedbackManager;
-	ElmUserFeedbackClient feedbackClient;
+	ElmUserFeedbackService feedbackClient;
 	HomeServer hs1;
 	ElmScheduler scheduler;
 	ElmSchedulerChangeListener statusL;
@@ -35,7 +36,7 @@ public class SchedulerTest {
 	@Before
 	public void setup() {
 		feedbackManager = new ElmUserFeedbackManager();
-		feedbackClient = mock(ElmUserFeedbackClient.class);
+		feedbackClient = mock(ElmUserFeedbackService.class);
 		
 		hs1 = createHomeServer(1, NUM_DEVICES, feedbackManager, feedbackClient);  // also initializes the devices with device.status
 

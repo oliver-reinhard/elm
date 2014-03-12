@@ -21,9 +21,13 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import elm.hs.api.model.ElmUserFeedback;
-import elm.hs.api.model.HomeServerResponse;
+import elm.hs.api.ElmUserFeedback;
+import elm.hs.api.HomeServerResponse;
+import elm.sim.model.TapPoint;
 
+/**
+ * This class is an executable HTTP emulation of the CLAGE Home Server that is based on simulated {@link TapPoint}s.
+ */
 public class SimHomeServerServer {
 
 	@SuppressWarnings("serial")
@@ -176,10 +180,10 @@ public class SimHomeServerServer {
 	}
 
 	private final Server server;
-	private final SimHomeServer database;
+	private final SimHomeServerService database;
 	protected final Logger log = Logger.getLogger(getClass().getName());
 
-	public SimHomeServerServer(SimHomeServer database) {
+	public SimHomeServerServer(SimHomeServerService database) {
 		assert database != null;
 		assert !database.getDevices().isEmpty();
 		this.database = database;
@@ -202,7 +206,7 @@ public class SimHomeServerServer {
 		server.setHandler(handlers);
 	}
 
-	protected SimHomeServer getDatabase() {
+	protected SimHomeServerService getDatabase() {
 		return database;
 	}
 

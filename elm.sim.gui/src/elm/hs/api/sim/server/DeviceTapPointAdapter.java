@@ -1,6 +1,6 @@
 package elm.hs.api.sim.server;
 
-import elm.hs.api.model.Device;
+import elm.hs.api.Device;
 import elm.scheduler.model.UnsupportedDeviceModelException;
 import elm.sim.metamodel.SimModelEvent;
 import elm.sim.metamodel.SimModelListener;

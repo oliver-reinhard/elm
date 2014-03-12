@@ -5,17 +5,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import elm.hs.api.model.ElmUserFeedback;
+import elm.hs.api.ElmUserFeedback;
+import elm.hs.api.ElmUserFeedbackService;
 import elm.util.ClientException;
 
 public class ElmUserFeedbackManager {
 
 	static class Entry {
-		final ElmUserFeedbackClient client;
+		final ElmUserFeedbackService client;
 		boolean hasFeedback;
 		final Map<String, ElmUserFeedback> deviceMap = new HashMap<String, ElmUserFeedback>();
 
-		Entry(ElmUserFeedbackClient client) {
+		Entry(ElmUserFeedbackService client) {
 			assert client != null;
 			this.client = client;
 		}
@@ -80,9 +81,9 @@ public class ElmUserFeedbackManager {
 	private final Map<String, Entry> deviceFeedbackMap = new HashMap<String, Entry>();
 
 	/** Reverse map. */
-	private final Map<ElmUserFeedbackClient, Entry> clientFeedbackMap = new HashMap<ElmUserFeedbackClient, Entry>();
+	private final Map<ElmUserFeedbackService, Entry> clientFeedbackMap = new HashMap<ElmUserFeedbackService, Entry>();
 
-	public synchronized void addFeedbackServer(ElmUserFeedbackClient client, List<String> deviceIds) {
+	public synchronized void addFeedbackServer(ElmUserFeedbackService client, List<String> deviceIds) {
 		assert client != null;
 		assert deviceIds != null;
 		Entry entry = clientFeedbackMap.get(client); 
@@ -96,7 +97,7 @@ public class ElmUserFeedbackManager {
 		}
 	}
 
-	public synchronized void removeFeedbackServer(ElmUserFeedbackClient client) {
+	public synchronized void removeFeedbackServer(ElmUserFeedbackService client) {
 		assert client != null;
 		final List<String> toRemove = new ArrayList<String>();
 		for (String id : deviceFeedbackMap.keySet()) {
@@ -144,7 +145,7 @@ public class ElmUserFeedbackManager {
 	 * @throws ClientException
 	 *             if the operation ended in a status {@code != 200} or if the execution threw an exception
 	 */
-	public void sendFeedack(ElmUserFeedbackClient client) throws ClientException {
+	public void sendFeedack(ElmUserFeedbackService client) throws ClientException {
 		assert client != null;
 		List<ElmUserFeedback> feedback = null;
 		synchronized (this) {
@@ -175,7 +176,7 @@ public class ElmUserFeedbackManager {
 	}
 
 	/** Used for testing. */
-	public synchronized boolean hasFeedback(ElmUserFeedbackClient client) {
+	public synchronized boolean hasFeedback(ElmUserFeedbackService client) {
 		assert client != null;
 		Entry entry = clientFeedbackMap.get(client);
 		if (entry == null) {

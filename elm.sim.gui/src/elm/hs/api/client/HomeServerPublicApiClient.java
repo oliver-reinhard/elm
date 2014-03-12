@@ -9,15 +9,14 @@ import org.eclipse.jetty.http.HttpStatus;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import elm.hs.api.ElmUserFeedback;
+import elm.hs.api.ElmUserFeedbackService;
+import elm.hs.api.HomeServerResponse;
 import elm.hs.api.HomeServerService;
-import elm.hs.api.model.ElmUserFeedback;
-import elm.hs.api.model.HomeServerResponse;
-import elm.hs.api.model.Service;
-import elm.hs.api.model.Status;
-import elm.scheduler.ElmUserFeedbackClient;
+import elm.hs.api.Service;
 import elm.util.ClientException;
 
-public class HomeServerPublicApiClient extends AbstractHomeServerClient implements ElmUserFeedbackClient {
+public class HomeServerPublicApiClient extends AbstractHomeServerClient implements HomeServerService, ElmUserFeedbackService {
 
 	/** FIXME As of 2014-03-05 certain POST and PUT operations return an error 500 while still processing the request OK. */
 	public static final int ERROR_500_FIX = HttpStatus.INTERNAL_SERVER_ERROR_500;
@@ -57,125 +56,52 @@ public class HomeServerPublicApiClient extends AbstractHomeServerClient implemen
 		super(baseUri, user, pass);
 	}
 
-	/**
-	 * @return never {@code null}
-	 * @throws ClientException
-	 *             if the operation ended in a status {@code != 200} or if the execution threw an exception
-	 */
+	@Override
 	public HomeServerResponse getServerStatus() throws ClientException {
 		return doGet("", HomeServerResponse.class);
 	}
 
-	/**
-	 * Returns all devices registered at this Home Server, regardless of whether they are currently turned on or off.
-	 * 
-	 * @return never {@code null}
-	 * @throws ClientException
-	 *             if the operation ended in a status {@code != 200} or if the execution threw an exception
-	 */
-	public HomeServerResponse getRegisteredDevices() throws ClientException {
-		return doGet("/devices", HomeServerResponse.class);
-	}
-
-	/**
-	 * Initializes a device discovery and an update of the its device list at the Home Server.
-	 * <p>
-	 * <b>Note: </b>this method does not need to be called. Discovery is used before new devices can be registered at the Home Server.
-	 * </p>
-	 * <p>
-	 * <b>Note 2: </b>the discovery process, i.e. the invocation of this method, blocks out other calls for up to 10 seconds; the devices list may be incomplete
-	 * before that period has expired.
-	 * </p>
-	 * 
-	 * @throws ClientException
-	 *             if the operation ended in a status {@code != 202} or if the execution threw an exception
-	 */
+	@Override
 	public void discoverDevices() throws ClientException {
 		doPost("/devices", "autoConnect=false", new int[] { HttpStatus.ACCEPTED_202 });
 	}
 
-	/**
-	 * Returns all devices that the Home Server ever contacted since its last reboot. This includes devices that are not registered at this Home Server.
-	 * <p>
-	 * <b>Note: </b>this method does not need to be called. It would be used to (manually) register new devices at the Home Server.
-	 * </p>
-	 * <p>
-	 * 
-	 * @return never {@code null}
-	 * @throws ClientException
-	 */
+	@Override
+	public HomeServerResponse getRegisteredDevices() throws ClientException {
+		return doGet("/devices", HomeServerResponse.class);
+	}
+	
+	@Override
 	public HomeServerResponse getAllDevices() throws ClientException {
 		return doGet("/devices?showCache=true", HomeServerResponse.class);
 	}
-
-	/**
-	 * Gets the {@link Status} information for the given device.
-	 * <p>
-	 * <em>Note: </em>This method only succeeds for devices that have been {@link #manageDevice(String) added} as a managed device.
-	 * </p>
-	 * 
-	 * @param deviceID
-	 *            cannot be {@code null} or empty
-	 * @return never {@code null}
-	 * @throws ClientException
-	 *             if the operation ended in a status {@code != 200} or if the execution threw an exception
-	 */
+	
+	@Override
 	public HomeServerResponse getDeviceStatus(String deviceID) throws ClientException {
 		assert deviceID != null && !deviceID.isEmpty();
 		return doGet("/devices/status/" + deviceID, HomeServerResponse.class);
 	}
 
-	/**
-	 * Configures a device as managed by this Home Server.
-	 * 
-	 * @param deviceID
-	 *            cannot be {@code null} or empty
-	 * @throws ClientException
-	 *             if the operation ended in a status {@code != 200} or if the execution threw an exception
-	 */
+	@Override
 	public void manageDevice(String deviceID) throws ClientException {
 		assert deviceID != null && !deviceID.isEmpty();
 		doPut("/devices/" + deviceID, "forcedConnect=true", new int[] { HttpStatus.OK_200 });
 	}
 
-	/**
-	 * Frees a device from being managed this Home Server.
-	 * 
-	 * @param deviceID
-	 *            cannot be {@code null} or empty
-	 * @throws ClientException
-	 *             if the operation ended in a status {@code != 200} or if the execution threw an exception
-	 */
+	@Override
 	public void unmanageDevice(String deviceID) throws ClientException {
 		assert deviceID != null && !deviceID.isEmpty();
 		doDelete("/devices/" + deviceID, "", new int[] { HttpStatus.OK_200 });
 	}
 
-	/**
-	 * Returns the current reference temperature for the given device.
-	 * 
-	 * @param deviceID
-	 *            cannot be {@code null} or empty
-	 * @return temperature in [1/10°C]
-	 * @throws ClientException
-	 *             if the operation ended in a status {@code != 200} or if the execution threw an exception
-	 */
+	@Override
 	public short getReferenceTemperature(String deviceID) throws ClientException {
 		assert deviceID != null && !deviceID.isEmpty();
 		HomeServerResponse result = doGet("/devices/setpoint/" + deviceID, HomeServerResponse.class);
 		return result.devices.get(0).status.setpoint;
 	}
 
-	/**
-	 * Sets the reference temperature (a.k.a <em>setpoint</em)> for the given device.
-	 * 
-	 * @param newTemp
-	 *            in [1/10°C], cannot be {@code < 0}
-	 * @param deviceID
-	 *            cannot be {@code null} or empty
-	 * @throws ClientException
-	 *             if the operation ended in a status {@code != 200} or if the execution threw an exception
-	 */
+	@Override
 	public void setReferenceTemperature(String deviceID, int newTemp) throws ClientException {
 		assert newTemp >= 0;
 		assert deviceID != null && !deviceID.isEmpty();

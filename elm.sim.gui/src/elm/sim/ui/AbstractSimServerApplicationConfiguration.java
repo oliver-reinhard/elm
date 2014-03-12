@@ -2,7 +2,7 @@ package elm.sim.ui;
 
 import java.net.UnknownHostException;
 
-import elm.hs.api.sim.server.SimHomeServer;
+import elm.hs.api.sim.server.SimHomeServerService;
 import elm.scheduler.model.UnsupportedDeviceModelException;
 import elm.sim.model.SimpleScheduler;
 import elm.sim.model.TapPoint;
@@ -17,7 +17,7 @@ public abstract class AbstractSimServerApplicationConfiguration {
 	protected TapPoint[][] tapPoints;
 
 	/** Cannot be {@code null} */
-	protected SimHomeServer server;
+	protected SimHomeServerService server;
 
 	/** Optional, can be {@code null} */
 	protected SimpleScheduler scheduler;
@@ -44,7 +44,7 @@ public abstract class AbstractSimServerApplicationConfiguration {
 	 * 
 	 * @return never null {@code null}
 	 */
-	public SimHomeServer getServer() {
+	public SimHomeServerService getServer() {
 		return server;
 	}
 

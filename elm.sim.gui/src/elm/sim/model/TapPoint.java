@@ -1,8 +1,8 @@
 package elm.sim.model;
 
-import elm.hs.api.model.ElmStatus;
-import elm.hs.api.model.DeviceCharacteristics.DeviceModel;
-import elm.hs.api.model.Status;
+import elm.hs.api.ElmStatus;
+import elm.hs.api.Status;
+import elm.hs.api.DeviceCharacteristics.DeviceModel;
 import elm.scheduler.ElmScheduler;
 import elm.scheduler.model.DeviceController;
 import elm.sim.metamodel.SimAttribute;

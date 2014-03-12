@@ -6,12 +6,12 @@ import java.net.URISyntaxException;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.http.HttpStatus;
 
+import elm.hs.api.HomeServerInternalService;
+import elm.hs.api.HomeServerResponse;
 import elm.hs.api.HomeServerService;
-import elm.hs.api.model.HomeServerResponse;
-import elm.scheduler.model.RemoteDeviceUpdateClient;
 import elm.util.ClientException;
 
-public class HomeServerInternalApiClient extends AbstractHomeServerClient implements RemoteDeviceUpdateClient {
+public class HomeServerInternalApiClient extends AbstractHomeServerClient implements HomeServerInternalService {
 
 	protected final HomeServerPublicApiClient publicClient;
 
@@ -20,7 +20,7 @@ public class HomeServerInternalApiClient extends AbstractHomeServerClient implem
 	}
 
 	public HomeServerInternalApiClient(String user, String pass, HomeServerPublicApiClient publicClient) throws URISyntaxException {
-		this(new URI("http", null, publicClient.getBaseUri().getHost(), HomeServerService.INTERNAL_API_PORT, null, null, null),
+		this(new URI("http", null, publicClient.getBaseUri().getHost(), HomeServerInternalService.INTERNAL_API_PORT, null, null, null),
 				user, pass, publicClient);
 	}
 

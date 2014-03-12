@@ -1,10 +1,10 @@
 package elm.scheduler;
 
-import static elm.hs.api.model.ElmStatus.ERROR;
-import static elm.hs.api.model.ElmStatus.OFF;
-import static elm.hs.api.model.ElmStatus.ON;
-import static elm.hs.api.model.ElmStatus.OVERLOAD;
-import static elm.hs.api.model.ElmStatus.SATURATION;
+import static elm.hs.api.ElmStatus.ERROR;
+import static elm.hs.api.ElmStatus.OFF;
+import static elm.hs.api.ElmStatus.ON;
+import static elm.hs.api.ElmStatus.OVERLOAD;
+import static elm.hs.api.ElmStatus.SATURATION;
 import static elm.util.ElmLogFormatter.formatPower;
 
 import java.util.ArrayList;
@@ -15,7 +15,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import elm.hs.api.model.ElmStatus;
+import elm.hs.api.ElmStatus;
 import elm.scheduler.model.DeviceController;
 import elm.scheduler.model.DeviceController.DeviceStatus;
 import elm.scheduler.model.HomeServer;

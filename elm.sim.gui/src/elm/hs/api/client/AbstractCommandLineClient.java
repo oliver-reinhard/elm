@@ -15,6 +15,7 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
+import elm.hs.api.HomeServerInternalService;
 import elm.hs.api.HomeServerService;
 
 public abstract class AbstractCommandLineClient {
@@ -31,7 +32,7 @@ public abstract class AbstractCommandLineClient {
 	protected String user = HomeServerService.ADMIN_USER;
 	protected String password = HomeServerService.DEFAULT_PASSWORD;
 	protected URI publicBaseUri = HomeServerService.DEFAULT_URI;
-	protected URI internalBaseUri = HomeServerService.INTERNAL_API_URI;
+	protected URI internalBaseUri = HomeServerInternalService.INTERNAL_API_URI;
 	protected String deviceID;
 	protected boolean useInternalClient;
 	protected boolean verbose;

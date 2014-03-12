@@ -25,13 +25,13 @@ import java.util.logging.Logger;
 import org.junit.Before;
 import org.junit.Test;
 
-import elm.hs.api.model.Device;
-import elm.hs.api.model.ElmStatus;
-import elm.scheduler.ElmUserFeedbackClient;
+import elm.hs.api.Device;
+import elm.hs.api.ElmStatus;
+import elm.hs.api.ElmUserFeedbackService;
+import elm.hs.api.HomeServerInternalService;
 import elm.scheduler.ElmUserFeedbackManager;
 import elm.scheduler.model.DeviceController;
 import elm.scheduler.model.HomeServerChangeListener;
-import elm.scheduler.model.RemoteDeviceUpdateClient;
 import elm.scheduler.model.UnsupportedDeviceModelException;
 import elm.util.ClientException;
 
@@ -45,14 +45,14 @@ public class HomeServerTest {
 	final Logger log = Logger.getLogger(getClass().getName());
 
 	ElmUserFeedbackManager feedbackManager;
-	ElmUserFeedbackClient feedbackClient;
+	ElmUserFeedbackService feedbackClient;
 	HomeServerImpl hs1;
 	HomeServerChangeListener hsL1;
 
 	@Before
 	public void setup() {
 		feedbackManager = mock(ElmUserFeedbackManager.class);
-		feedbackClient = mock(ElmUserFeedbackClient.class);
+		feedbackClient = mock(ElmUserFeedbackService.class);
 		hs1 = (HomeServerImpl) createHomeServer(HS_ID, NUM_DEVICES, feedbackManager, feedbackClient);
 		resetListener();
 	}
@@ -153,7 +153,7 @@ public class HomeServerTest {
 			assertEquals(referenceTemperature, hs1.getDeviceController(d1_2.id).getUserDemandTemperatureUnits());
 			checkDeviceUpdatesSize(hs1, 2); // => clear-scald protection flag
 			//
-			RemoteDeviceUpdateClient client = mock(RemoteDeviceUpdateClient.class);
+			HomeServerInternalService client = mock(HomeServerInternalService.class);
 			hs1.executeRemoteDeviceUpdates(client, log);
 			verify(client).clearScaldProtection(d1_1.id, (int) ModelTestUtil.INITIAL_INFO_SETPOINT); // initial value
 			verify(client).clearScaldProtection(d1_2.id, (int) ModelTestUtil.INITIAL_INFO_SETPOINT);

@@ -3,7 +3,7 @@ package elm.sim.ui;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import elm.hs.api.sim.server.SimHomeServerImpl;
+import elm.hs.api.sim.server.SimHomeServerServiceImpl;
 import elm.scheduler.model.UnsupportedDeviceModelException;
 import elm.sim.model.HotWaterTemperature;
 import elm.sim.model.TapPoint;
@@ -28,7 +28,7 @@ public class SimpleSimServerApplicationConfiguration extends AbstractSimServerAp
 		tapPoints = new TapPoint[][] { { point1, point2 }, { point3, point4 } };
 
 		final String uri = "http://" + InetAddress.getLocalHost().getHostName() + ":" + serverPort;
-		final SimHomeServerImpl server = new SimHomeServerImpl(uri);
+		final SimHomeServerServiceImpl server = new SimHomeServerServiceImpl(uri);
 		server.addDevice(POINT_1_ID, (short) 380, point1);
 		server.addDevice(POINT_2_ID, (short) 420, point2);
 		server.addDevice(POINT_3_ID, (short) 450, point3);

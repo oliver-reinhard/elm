@@ -1,4 +1,4 @@
-package elm.hs.api.model;
+package elm.hs.api;
 
 /**
  * This class models the {@code service} object of the CLAGE Home Server.
